@@ -10,7 +10,7 @@ declare global {
 }
 
 // Set base URL from environment variable or use default
-const API_URL = window._env_?.VITE_APP_API_URL || 'http://localhost:5000';
+const API_URL = window._env_?.VITE_APP_API_URL || 'https://workbeat-api.vercel.app';
 
 // Service for employee authentication and attendance
 export const employeeAuthService = {
