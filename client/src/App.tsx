@@ -167,8 +167,7 @@ function App() {
   const toggleUserRole = async () => {
     if (!currentUser) return;
     
-    // In a real app, this would make an API call to change roles
-    // For demo purposes, we'll just toggle the role locally
+
     const newRole = currentUser.role === 'admin' ? 'employee' : 'admin';
     setCurrentUser({
       ...currentUser,

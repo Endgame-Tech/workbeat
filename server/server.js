@@ -18,9 +18,11 @@ connectDB();
 
 const app = express();
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
