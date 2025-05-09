@@ -1,15 +1,15 @@
 import axios from 'axios';
 
 interface RuntimeConfig {
-  REACT_APP_API_URL?: string;
+  VITE_APP_API_URL?: string;
   // Add other environment variables as needed
 }
 
 const getApiUrl = () => {
   // Check for runtime config with proper typing
   const runtimeConfig = (window as Window & { _env_?: RuntimeConfig })._env_;
-  if (runtimeConfig?.REACT_APP_API_URL) {
-    return runtimeConfig.REACT_APP_API_URL;
+  if (runtimeConfig?.VITE_APP_API_URL) {
+    return runtimeConfig.VITE_APP_API_URL;
   }
   
   // Fall back to hardcoded default

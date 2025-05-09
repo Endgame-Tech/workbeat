@@ -44,6 +44,6 @@ export interface FingerprintEnrollData extends Omit<FingerprintData, 'challenge'
 
 export interface Window {
   _env_?: {
-    REACT_APP_API_URL?: string;
+    VITE_APP_API_URL?: string;
   };
 }

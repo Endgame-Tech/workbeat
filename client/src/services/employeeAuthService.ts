@@ -4,13 +4,13 @@ import api from './api';
 declare global {
   interface Window {
     _env_?: {
-      REACT_APP_API_URL?: string;
+      VITE_APP_API_URL?: string;
     };
   }
 }
 
 // Set base URL from environment variable or use default
-const API_URL = window._env_?.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = window._env_?.VITE_APP_API_URL || 'http://localhost:5000';
 
 // Service for employee authentication and attendance
 export const employeeAuthService = {
