@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import { User, Calendar, Moon, Sun, Menu, X } from 'lucide-react';
 import Button from '../ui/Button';
+import { useTheme } from '../context/ThemeProvider';
 
 interface HeaderProps {
   user: { name: string; role: string } | null;
   onLogout: () => void;
-  onToggleTheme: () => void;
-  isDarkMode: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  user, 
-  onLogout, 
-  onToggleTheme,
-  isDarkMode
-}) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { toggleTheme, isDarkMode } = useTheme();
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -38,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <button 
-              onClick={onToggleTheme}
+              onClick={toggleTheme}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               aria-label="Toggle theme"
             >
@@ -110,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
               <button 
-                onClick={onToggleTheme}
+                onClick={toggleTheme}
                 className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                 aria-label="Toggle theme"
               >

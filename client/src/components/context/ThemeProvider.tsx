@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { themeService } from '../../services/themeService';
 
 type Theme = 'light' | 'dark';
 
@@ -11,28 +12,14 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Check if we're in the browser and if there's a stored preference
-  const initialTheme: Theme = 
-    (typeof window !== 'undefined' && localStorage.getItem('timetrackr-theme') as Theme) || 
-    (typeof window !== 'undefined' && 
-      window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-
-  const [theme, setTheme] = useState<Theme>(initialTheme);
+  const [theme, setTheme] = useState<Theme>(
+    themeService.getTheme()
+  );
 
   const toggleTheme = () => {
-    setTheme(prevTheme => {
-      const newTheme = prevTheme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('timetrackr-theme', newTheme);
-      return newTheme;
-    });
+    const newTheme = themeService.toggleTheme();
+    setTheme(newTheme);
   };
-
-  // Apply theme to document when it changes
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-  }, [theme]);
 
   const isDarkMode = theme === 'dark';
 
