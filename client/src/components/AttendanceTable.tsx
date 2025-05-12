@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AttendanceRecord, Employee } from '../types';
 import { formatTime, formatDate } from '../utils/attendanceUtils';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Clock, MapPin, ArrowDown, ArrowUp, Search, Filter, RefreshCw } from 'lucide-react';
+import { Clock, MapPin, ArrowDown, ArrowUp, Search, RefreshCw } from 'lucide-react';
 import Input from './ui/Input';
 import Button from './ui/Button';
 import { employeeService } from '../services/employeeService';
@@ -385,7 +385,20 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                         <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
                           <MapPin size={14} className="mr-1" />
                           <span className="truncate max-w-[120px]">
-                            {record.location.latitude.toFixed(4) + ', ' + record.location.longitude.toFixed(4)}
+                            {typeof record.location === 'string' 
+                              ? (() => {
+                                  try {
+                                    const loc = JSON.parse(record.location);
+                                    return `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`;
+                                  } catch (error) {
+                                    console.error('Error parsing location:', error);
+                                    return record.location; // If parsing fails, just display the string
+                                  }
+                                })()
+                              : record.location.latitude && record.location.longitude
+                                ? `${record.location.latitude.toFixed(4)}, ${record.location.longitude.toFixed(4)}`
+                                : 'Invalid location'
+                            }
                           </span>
                         </div>
                       ) : (

@@ -1,0 +1,137 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id            Int      @id @default(autoincrement())
+  name          String
+  industry      String
+  contactEmail  String   @unique
+  contactPhone  String
+  address       String?
+  settings      String?
+  subscription  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  users         User[]
+  employees     Employee[]
+  attendances   Attendance[]
+  dailyAttendances DailyAttendance[]
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  organizationId      Int
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  email              String    @unique
+  passwordHash        String
+  name               String
+  role               String    @default("employee")
+  organizationRole    String?
+  employeeId         Int?
+  lastLogin          DateTime?
+  failedLoginAttempts Int      @default(0)
+  isLocked           Boolean   @default(false)
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  auditLogs          AuditLog[]
+}
+
+model Employee {
+  id              Int       @id @default(autoincrement())
+  organizationId  Int
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  name            String
+  email           String    @unique
+  department      String
+  position        String
+  profileImage    String?
+  employeeId      String    @unique
+  phone           String?
+  workSchedule    String?
+  startDate       DateTime  @default(now())
+  employmentStatus String   @default("full-time")
+  accessLevel     String    @default("employee")
+  isActive        Boolean   @default(true)
+  faceRecognition String?
+  biometrics      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+  attendances     Attendance[]
+  dailyAttendances DailyAttendance[]
+  biometricData   BiometricData[]
+}
+
+model Attendance {
+  id                  Int       @id @default(autoincrement())
+  employeeId          Int
+  employee            Employee  @relation(fields: [employeeId], references: [id])
+  employeeName         String?
+  organizationId      Int
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  type               String    // 'sign-in' or 'sign-out'
+  timestamp          DateTime  @default(now())
+  location           String?
+  ipAddress          String?
+  isLate             Boolean   @default(false)
+  notes              String?
+  verificationMethod String    @default("manual")
+  facialVerification Boolean   @default(false)
+  facialCapture      String?
+  fingerprintVerification Boolean @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now())
+}
+
+model DailyAttendance {
+  id              Int       @id @default(autoincrement())
+  employeeId      Int
+  employee        Employee  @relation(fields: [employeeId], references: [id])
+  organizationId  Int
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  date            DateTime
+  status          String    @default("absent")
+  signInTime      DateTime?
+  signOutTime     DateTime?
+  workDuration    Int?      // in minutes
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+
+  @@unique([employeeId, date, organizationId])
+}
+
+model BiometricData {
+  id          Int       @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  type        String    // 'fingerprint' or 'face'
+  credentials String?
+  faceData    String?
+  status      String    @default("active")
+  metadata    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+}
+
+model AuditLog {
+  id            Int       @id @default(autoincrement())
+  userId        Int?
+  user          User?     @relation(fields: [userId], references: [id])
+  action        String
+  details       String?
+  ipAddress     String?
+  resourceType  String    @default("system")
+  resourceId    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
+}
+

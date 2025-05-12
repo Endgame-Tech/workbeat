@@ -1,6 +1,25 @@
-const Employee = require('../models/employeeModel');
-const AuditLog = require('../models/auditLogModel');
-const mongoose = require('mongoose');
+const { prisma } = require('../config/db');
+
+// Helper function to parse JSON fields
+const parseEmployeeJsonFields = (employee) => {
+  if (!employee) return employee;
+  
+  try {
+    if (employee.workSchedule) {
+      employee.workSchedule = JSON.parse(employee.workSchedule);
+    }
+    if (employee.faceRecognition) {
+      employee.faceRecognition = JSON.parse(employee.faceRecognition);
+    }
+    if (employee.biometrics) {
+      employee.biometrics = JSON.parse(employee.biometrics);
+    }
+  } catch (error) {
+    console.error('Error parsing employee JSON fields:', error);
+  }
+  
+  return employee;
+};
 
 // @desc    Get all employees
 // @route   GET /api/employees
@@ -16,33 +35,44 @@ const getEmployees = async (req, res) => {
         message: 'Organization ID not found for the current user'
       });
     }
-    
-    // Create base filter including organization restriction
-    const filter = { organizationId: organizationId };
-    
-    // Add additional filters from query params
-    if (req.query.isActive !== undefined) {
-      filter.isActive = req.query.isActive === 'true';
-    }
-    if (req.query.department) {
-      filter.department = req.query.department;
-    }
-    if (req.query.name) {
-      filter.name = { $regex: req.query.name, $options: 'i' }; // Case-insensitive search
-    }
+      // Create where clause for Prisma query
+    const where = {
+      organizationId: organizationId,
+      ...(req.query.isActive !== undefined && {
+        isActive: req.query.isActive === 'true'
+      }),
+      ...(req.query.department && {
+        department: req.query.department
+      }),
+      ...(req.query.name && {
+        name: {
+          contains: req.query.name,
+          mode: 'insensitive'
+        }
+      })
+    };
     if (req.query.email) {
-      filter.email = { $regex: req.query.email, $options: 'i' };
+      where.email = {
+        contains: req.query.email,
+        mode: 'insensitive'
+      };
     }
     
-    console.log('Applying employee filter:', filter);
-    
-    // Get filtered employees and sort by name
-    const employees = await Employee.find(filter).sort({ name: 1 });
-    
+    console.log('Applying employee filter:', where);
+      // Get filtered employees and sort by name using Prisma
+    const employees = await prisma.employee.findMany({
+      where,
+      orderBy: {
+        name: 'asc'
+      }
+    });
+      // Parse JSON fields for each employee
+    const parsedEmployees = employees.map(parseEmployeeJsonFields);
+
     res.status(200).json({
       success: true,
-      count: employees.length,
-      data: employees
+      count: parsedEmployees.length,
+      data: parsedEmployees
     });
   } catch (error) {
     console.error('Error getting employees:', error);
@@ -69,22 +99,25 @@ const getEmployee = async (req, res) => {
       });
     }
     
-    // Find employee with both ID and matching organization
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      organizationId: organizationId
-    });
-
-    if (!employee) {
+    // Find employee with both ID and matching organization using Prisma
+    const employee = await prisma.employee.findFirst({
+      where: {
+        id: parseInt(req.params.id),
+        organizationId: organizationId
+      }
+    });    if (!employee) {
       return res.status(404).json({
         success: false,
         message: 'Employee not found in your organization'
       });
     }
 
+    // Parse JSON fields
+    const parsedEmployee = parseEmployeeJsonFields(employee);
+
     res.status(200).json({
       success: true,
-      data: employee
+      data: parsedEmployee
     });
   } catch (error) {
     res.status(500).json({
@@ -99,29 +132,18 @@ const getEmployee = async (req, res) => {
 const createEmployee = async (req, res) => {
   console.log('Backend received create employee request:', req.body);
   try {
-    // Check for organizationId in the request body first
-    if (!req.body.organizationId) {
-      // If not in body, try to get from authenticated user
-      if (req.user && req.user.organizationId) {
-        req.body.organizationId = req.user.organizationId;
-        console.log('Added organizationId from user object:', req.user.organizationId);
-      } 
-      // Also check if organization is in alternate format (organization.id)
-      else if (req.user && req.user.organization && req.user.organization.id) {
-        req.body.organizationId = req.user.organization.id;
-        console.log('Added organizationId from user.organization.id:', req.user.organization.id);
-      }
-      else {
-        console.warn('No organizationId available in request body or user object');
-        return res.status(400).json({
-          success: false,
-          message: 'Organization ID is required'
-        });
-      }
+    // Get organizationId from authenticated user or request body
+    const organizationId = req.body.organizationId || req.user?.organizationId;
+    
+    if (!organizationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Organization ID is required'
+      });
     }
     
-    // Check for all required fields from your schema
-    const requiredFields = ['name', 'email', 'department', 'position', 'employeeId', 'organizationId'];
+    // Check for all required fields
+    const requiredFields = ['name', 'email', 'department', 'position', 'employeeId'];
     const missingFields = requiredFields.filter(field => !req.body[field]);
     
     if (missingFields.length > 0) {
@@ -132,29 +154,35 @@ const createEmployee = async (req, res) => {
       });
     }
     
-    // Validate organizationId is a valid MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(req.body.organizationId)) {
-      console.error('Invalid organizationId format:', req.body.organizationId);
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid organization ID format'
-      });
-    }
-    
-    // Create employee
-    console.log('Creating employee with data:', req.body);
-    const employee = await Employee.create(req.body);
-    console.log('Employee created in database:', employee);
+    // Create employee using Prisma
+    const employee = await prisma.employee.create({
+      data: {
+        organizationId: parseInt(organizationId),
+        name: req.body.name,
+        email: req.body.email,
+        department: req.body.department,
+        position: req.body.position,        employeeId: req.body.employeeId,
+        phone: req.body.phone,
+        workSchedule: JSON.stringify({
+          monday: { start: '09:00', end: '17:00' },
+          tuesday: { start: '09:00', end: '17:00' },
+          wednesday: { start: '09:00', end: '17:00' },
+          thursday: { start: '09:00', end: '17:00' },
+          friday: { start: '09:00', end: '17:00' }
+        })
+      }
+    });
 
     // Create an audit log
-    await AuditLog.create({
-      userId: req.user?._id || 'system',
-      action: 'create_employee',
-      details: `Created employee: ${employee.name}`,
-      ipAddress: req.ip,
-      resourceType: 'employee',
-      resourceId: employee._id,
-      organizationId: employee.organizationId
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user?.id,
+        action: 'create_employee',
+        details: `Created employee: ${employee.name}`,
+        ipAddress: req.ip,
+        resourceType: 'employee',
+        resourceId: String(employee.id)
+      }
     });
 
     res.status(201).json({
@@ -164,12 +192,10 @@ const createEmployee = async (req, res) => {
   } catch (error) {
     console.error('Backend error creating employee:', error);
     
-    // Specific MongoDB error handling
-    if (error.code === 11000) {
-      console.error('Duplicate key error details:', error.keyValue);
+    if (error.code === 'P2002') {
       return res.status(400).json({
         success: false,
-        message: `Employee with this ${Object.keys(error.keyValue).join(', ')} already exists`,
+        message: 'Employee with this email or employee ID already exists',
         error: error.message
       });
     }
@@ -197,38 +223,55 @@ const updateEmployee = async (req, res) => {
       });
     }
     
-    // Find employee with both ID and matching organization
-    let employee = await Employee.findOne({
-      _id: req.params.id,
-      organizationId: organizationId
+    // Parse the employee ID as an integer
+    const employeeId = parseInt(req.params.id);
+    
+    // First check if employee exists and belongs to organization
+    const existingEmployee = await prisma.employee.findFirst({
+      where: {
+        id: employeeId,  // Make sure the ID is included
+        organizationId: organizationId
+      }
     });
 
-    if (!employee) {
+    if (!existingEmployee) {
       return res.status(404).json({
         success: false,
         message: 'Employee not found in your organization'
       });
     }
     
-    // Update the employee
-    employee = await Employee.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true
-      }
-    );
+    // Prepare update data
+    const updateData = {
+      ...req.body,
+      // Convert JSON fields to strings if they exist in the request
+      ...(req.body.workSchedule && {
+        workSchedule: JSON.stringify(req.body.workSchedule)
+      }),
+      ...(req.body.faceRecognition && {
+        faceRecognition: JSON.stringify(req.body.faceRecognition)
+      }),
+      ...(req.body.biometrics && {
+        biometrics: JSON.stringify(req.body.biometrics)
+      })
+    };
 
+    // Update the employee
+    const employee = await prisma.employee.update({
+      where: { id: employeeId },
+      data: updateData
+    });
+    
     // Log the action
-    await AuditLog.create({
-      userId: req.user._id,
-      action: 'update_employee',
-      details: `Updated employee: ${employee.name}`,
-      ipAddress: req.ip,
-      resourceType: 'employee',
-      resourceId: employee._id,
-      organizationId: organizationId
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'update_employee',
+        details: `Updated employee: ${employee.name}`,
+        ipAddress: req.ip,
+        resourceType: 'employee',
+        resourceId: String(employee.id)
+      }
     });
 
     res.status(200).json({
@@ -243,7 +286,8 @@ const updateEmployee = async (req, res) => {
       error: error.message
     });
   }
-};
+};  
+
 
 const deleteEmployee = async (req, res) => {
   try {
@@ -256,11 +300,13 @@ const deleteEmployee = async (req, res) => {
         message: 'Organization ID not found for the current user'
       });
     }
-    
-    // Find employee with both ID and matching organization
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      organizationId: organizationId
+      // Find employee with both ID and matching organization using Prisma
+    const employeeId = parseInt(req.params.id);
+    const employee = await prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId: organizationId
+      }
     });
 
     if (!employee) {
@@ -270,19 +316,22 @@ const deleteEmployee = async (req, res) => {
       });
     }
 
-    // Instead of deleting, set to inactive
-    employee.isActive = false;
-    await employee.save();
+    // Instead of deleting, set to inactive using Prisma
+    const updatedEmployee = await prisma.employee.update({
+      where: { id: employeeId },
+      data: { isActive: false }
+    });
 
-    // Log the action
-    await AuditLog.create({
-      userId: req.user._id,
-      action: 'deactivate_employee',
-      details: `Deactivated employee: ${employee.name}`,
-      ipAddress: req.ip,
-      resourceType: 'employee',
-      resourceId: employee._id,
-      organizationId: organizationId
+    // Log the action using Prisma
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'deactivate_employee',
+        details: `Deactivated employee: ${employee.name}`,
+        ipAddress: req.ip,
+        resourceType: 'employee',
+        resourceId: String(employee.id)
+      }
     });
 
     res.status(200).json({
@@ -306,7 +355,10 @@ const deleteEmployee = async (req, res) => {
 // @access  Private/Admin
 const hardDeleteEmployee = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id);
+    const employeeId = parseInt(req.params.id);
+    const employee = await prisma.employee.findUnique({
+      where: { id: employeeId }
+    });
 
     if (!employee) {
       return res.status(404).json({
@@ -315,21 +367,24 @@ const hardDeleteEmployee = async (req, res) => {
       });
     }
 
-    // Store employee name for audit log
+    // Store employee info for audit log
     const employeeName = employee.name;
-    const employeeId = employee._id;
 
-    // Actually delete the employee
-    await employee.remove();
+    // Actually delete the employee using Prisma
+    await prisma.employee.delete({
+      where: { id: employeeId }
+    });
 
-    // Log the action
-    await AuditLog.create({
-      userId: req.user._id,
-      action: 'delete_employee',
-      details: `Permanently deleted employee: ${employeeName}`,
-      ipAddress: req.ip,
-      resourceType: 'employee',
-      resourceId: employeeId
+    // Log the action using Prisma
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'delete_employee',
+        details: `Permanently deleted employee: ${employeeName}`,
+        ipAddress: req.ip,
+        resourceType: 'employee',
+        resourceId: String(employeeId)
+      }
     });
 
     res.status(200).json({
@@ -351,27 +406,28 @@ const hardDeleteEmployee = async (req, res) => {
 // @access  Private/Admin
 const getDepartmentStats = async (req, res) => {
   try {
-    const departmentStats = await Employee.aggregate([
-      { $match: { isActive: true } },
-      {
-        $group: {
-          _id: '$department',
-          count: { $sum: 1 }
-        }
+    const departmentStats = await prisma.employee.groupBy({
+      by: ['department'],
+      where: {
+        isActive: true
       },
-      {
-        $project: {
-          department: '$_id',
-          count: 1,
-          _id: 0
-        }
+      _count: {
+        department: true
       },
-      { $sort: { count: -1 } }
-    ]);
+      orderBy: {
+        _count: {
+          department: 'desc'
+        }
+      }
+    });
 
-    res.status(200).json({
+    // Transform the data to match the expected format
+    const formattedStats = departmentStats.map(stat => ({
+      department: stat.department,
+      count: stat._count.department
+    }));    res.status(200).json({
       success: true,
-      data: departmentStats
+      data: formattedStats
     });
   } catch (error) {
     res.status(500).json({

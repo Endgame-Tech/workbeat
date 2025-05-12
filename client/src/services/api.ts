@@ -13,7 +13,7 @@ const getApiUrl = () => {
   }
   
   // Fall back to hardcoded default
-  return 'https://workbeat-api.vercel.app';
+  return 'http://localhost:5000';
 };
 
 // Create axios instance with default config

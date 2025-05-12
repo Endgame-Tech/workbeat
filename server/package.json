@@ -10,17 +10,18 @@
         "seed:delete": "node utils/seeder.js -d"
     },
     "dependencies": {
+        "@prisma/client": "^6.7.0",
         "aws-sdk": "^2.1692.0",
         "bcryptjs": "^2.4.3",
         "cors": "^2.8.5",
         "dotenv": "^16.5.0",
         "express": "^4.21.2",
         "jsonwebtoken": "^9.0.2",
-        "mongodb": "^6.16.0",
-        "mongoose": "^6.13.8",
-        "morgan": "^1.10.0"
+        "morgan": "^1.10.0",
+        "sqlite3": "^5.1.7"
     },
     "devDependencies": {
-        "nodemon": "^2.0.22"
+        "nodemon": "^2.0.22",
+        "prisma": "^6.7.0"
     }
 }

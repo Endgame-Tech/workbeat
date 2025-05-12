@@ -1,8 +1,4 @@
-const mongoose = require('mongoose');
-const Attendance = require('../models/attendanceModel');
-const Employee = require('../models/employeeModel');
-const DailyAttendance = require('../models/dailyAttendanceModel');
-const AuditLog = require('../models/auditLogModel');
+const { prisma } = require('../config/db');
 
 // Utility function to check if employee is late
 const checkIfLate = (currentTime, workingHours) => {
@@ -24,7 +20,7 @@ const checkIfLate = (currentTime, workingHours) => {
 const getAttendanceRecords = async (req, res) => {
   try {
     // Get organizationId from authenticated user or query parameter
-    const organizationId = req.user?.organizationId || req.query.organizationId;
+    const organizationId = parseInt(req.user?.organizationId) || parseInt(req.query.organizationId);
     
     if (!organizationId) {
       return res.status(400).json({
@@ -33,42 +29,68 @@ const getAttendanceRecords = async (req, res) => {
       });
     }
     
-    // Build filter with organization ID to restrict results to this organization
-    const filter = { organizationId };
-    const limit = parseInt(req.query.limit) || 100;
+    // Build where clause for Prisma query
+    let where = { organizationId };
     
-    // Date range filtering
+    // Date filtering
     if (req.query.startDate && req.query.endDate) {
-      filter.timestamp = {
-        $gte: new Date(req.query.startDate),
-        $lte: new Date(req.query.endDate)
+      where.timestamp = {
+        gte: new Date(req.query.startDate),
+        lte: new Date(req.query.endDate)
       };
     } else if (req.query.startDate) {
-      filter.timestamp = { $gte: new Date(req.query.startDate) };
+      where.timestamp = { gte: new Date(req.query.startDate) };
     } else if (req.query.endDate) {
-      filter.timestamp = { $lte: new Date(req.query.endDate) };
+      where.timestamp = { lte: new Date(req.query.endDate) };
     }
     
     // Employee filtering
     if (req.query.employeeId) {
-      filter.employeeId = req.query.employeeId;
+      where.employeeId = parseInt(req.query.employeeId);
     }
     
     // Type filtering
     if (req.query.type && ['sign-in', 'sign-out'].includes(req.query.type)) {
-      filter.type = req.query.type;
+      where.type = req.query.type;
     }
     
-    console.log('Fetching attendance records with filter:', filter);
+    console.log('Fetching attendance records with filter:', where);
     
-    // Get records with pagination
-    const records = await Attendance.find(filter)
-      .sort({ timestamp: -1 })
-      .limit(limit);
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100; // Default to 100 records per page
+    const skip = (page - 1) * limit;
+    
+    // Get records with pagination using Prisma
+    const records = await prisma.attendance.findMany({
+      where,
+      orderBy: {
+        timestamp: 'desc'
+      },
+      skip,
+      take: limit,
+      include: {
+        employee: {
+          select: {
+            name: true,
+            employeeId: true
+          }
+        }
+      }
+    });
+    
+    // Count total records for pagination info
+    const total = await prisma.attendance.count({ where });
     
     res.status(200).json({
       success: true,
       count: records.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      },
       data: records
     });
   } catch (error) {
@@ -86,10 +108,10 @@ const getAttendanceRecords = async (req, res) => {
 // @access  Private
 const getEmployeeAttendance = async (req, res) => {
   try {
-    const employeeId = req.params.id;
+    const employeeId = parseInt(req.params.id);
     
     // Get organizationId from authenticated user or query parameter
-    const organizationId = req.user?.organizationId || req.query.organizationId;
+    const organizationId = parseInt(req.user?.organizationId) || parseInt(req.query.organizationId);
     
     if (!organizationId) {
       return res.status(400).json({
@@ -98,10 +120,12 @@ const getEmployeeAttendance = async (req, res) => {
       });
     }
     
-    // Verify the employee exists and belongs to the user's organization
-    const employee = await Employee.findOne({
-      _id: employeeId,
-      organizationId // Ensure employee belongs to this organization
+    // Verify the employee exists and belongs to the user's organization using Prisma
+    const employee = await prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        organizationId
+      }
     });
     
     if (!employee) {
@@ -111,31 +135,42 @@ const getEmployeeAttendance = async (req, res) => {
       });
     }
     
-    // Build filter for date range, including organization ID
-    const filter = { 
+    // Build where clause for Prisma query
+    const where = { 
       employeeId,
       organizationId
     };
     
     if (req.query.startDate && req.query.endDate) {
-      filter.timestamp = {
-        $gte: new Date(req.query.startDate),
-        $lte: new Date(req.query.endDate)
+      where.timestamp = {
+        gte: new Date(req.query.startDate),
+        lte: new Date(req.query.endDate)
       };
     } else if (req.query.startDate) {
-      filter.timestamp = { $gte: new Date(req.query.startDate) };
+      where.timestamp = { gte: new Date(req.query.startDate) };
     } else if (req.query.endDate) {
-      filter.timestamp = { $lte: new Date(req.query.endDate) };
-    }
-    
-    // Default to last 30 days if no date range specified
-    if (!filter.timestamp) {
+      where.timestamp = { lte: new Date(req.query.endDate) };
+    } else {
+      // Default to last 30 days if no date range specified
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      filter.timestamp = { $gte: thirtyDaysAgo };
+      where.timestamp = { gte: thirtyDaysAgo };
     }
     
-    const records = await Attendance.find(filter).sort({ timestamp: -1 });
+    const records = await prisma.attendance.findMany({
+      where,
+      orderBy: {
+        timestamp: 'desc'
+      },
+      include: {
+        employee: {
+          select: {
+            name: true,
+            employeeId: true
+          }
+        }
+      }
+    });
     
     res.status(200).json({
       success: true,
@@ -157,10 +192,10 @@ const getEmployeeAttendance = async (req, res) => {
 // @access  Public
 const createAttendanceRecord = async (req, res) => {
   try {
-    const { employeeId, employeeName, type, notes, location, ipAddress, organizationId } = req.body;
+    const { employeeId, type, notes, location, ipAddress, organizationId } = req.body;
     
     // Check if organizationId is provided in the request or get from authenticated user
-    const recordOrganizationId = organizationId || (req.user ? req.user.organizationId : null);
+    const recordOrganizationId = parseInt(organizationId) || (req.user ? parseInt(req.user.organizationId) : null);
     
     if (!recordOrganizationId) {
       return res.status(400).json({
@@ -169,10 +204,12 @@ const createAttendanceRecord = async (req, res) => {
       });
     }
     
-    // Verify that the employee exists and belongs to the correct organization
-    const employee = await Employee.findOne({ 
-      _id: employeeId,
-      organizationId: recordOrganizationId // Ensure employee belongs to this organization
+    // Verify that the employee exists and belongs to the correct organization using Prisma
+    const employee = await prisma.employee.findFirst({ 
+      where: {
+        id: parseInt(employeeId),
+        organizationId: recordOrganizationId
+      }
     });
     
     if (!employee) {
@@ -183,128 +220,121 @@ const createAttendanceRecord = async (req, res) => {
       });
     }
     
-    console.log(`Creating attendance record for employee: ${employee.name} (${employee._id})`);
+    console.log(`Creating attendance record for employee: ${employee.name} (${employee.id})`);
     
     // Create timestamp
     const timestamp = new Date();
     
     // Check if employee is late (only for sign-in)
     const isLate = type === 'sign-in' ? 
-      checkIfLate(timestamp, employee.workingHours) : 
+      checkIfLate(timestamp, employee.workSchedule) : 
       false;
     
-    // Create attendance record with organization ID
-    const attendanceData = {
-      employeeId,
-      employeeName: employee.name || employeeName,
-      type,
-      timestamp,
-      location,
-      ipAddress,
-      notes,
-      isLate,
-      organizationId: recordOrganizationId // Ensure organization ID is set
-    };
+    // Create attendance record with organization ID using Prisma
+    const attendanceRecord = await prisma.attendance.create({
+      data: {
+        employeeId: parseInt(employeeId),
+        type,
+        timestamp,
+        location,
+        ipAddress,
+        notes,
+        isLate,
+        organizationId: recordOrganizationId
+      }
+    });
     
-    console.log('Creating attendance record with data:', attendanceData);
-    
-    const attendanceRecord = new Attendance(attendanceData);
-    await attendanceRecord.save();
-    
-    console.log(`Created attendance record: ${attendanceRecord._id}`);
+    console.log(`Created attendance record: ${attendanceRecord.id}`);
     
     // Update daily attendance
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let dailyAttendance = await DailyAttendance.findOne({
-      employeeId,
-      date: today,
-      organizationId: recordOrganizationId // Ensure we get the right daily attendance record
+    let dailyAttendance = await prisma.dailyAttendance.findFirst({
+      where: {
+        employeeId: parseInt(employeeId),
+        date: today,
+        organizationId: recordOrganizationId
+      }
     });
     
     if (type === 'sign-in') {
-      // If it's a sign-in, create or update daily attendance
       if (!dailyAttendance) {
         console.log('Creating new daily attendance record');
-        const newDailyAttendance = new DailyAttendance({
-          employeeId,
-          date: today,
-          status: isLate ? 'late' : 'present',
-          signInTime: timestamp,
-          notes: notes,
-          organizationId: recordOrganizationId // Ensure organization ID is set
+        dailyAttendance = await prisma.dailyAttendance.create({
+          data: {
+            employeeId: parseInt(employeeId),
+            date: today,
+            status: isLate ? 'late' : 'present',
+            signInTime: timestamp,
+            notes: notes,
+            organizationId: recordOrganizationId
+          }
         });
-        
-        await newDailyAttendance.save();
-        console.log(`Created daily attendance record: ${newDailyAttendance._id}`);
+        console.log(`Created daily attendance record: ${dailyAttendance.id}`);
       } else {
-        // Update existing record
-        console.log(`Updating existing daily attendance record: ${dailyAttendance._id}`);
-        
-        dailyAttendance.signInTime = timestamp;
-        dailyAttendance.status = isLate ? 'late' : 'present';
-        
-        if (notes) {
-          dailyAttendance.notes = notes;
-        }
-        
-        await dailyAttendance.save();
+        console.log(`Updating existing daily attendance record: ${dailyAttendance.id}`);
+        dailyAttendance = await prisma.dailyAttendance.update({
+          where: { id: dailyAttendance.id },
+          data: {
+            signInTime: timestamp,
+            status: isLate ? 'late' : 'present',
+            notes: notes || dailyAttendance.notes
+          }
+        });
         console.log('Updated daily attendance record');
       }
     } else if (type === 'sign-out') {
-      // For sign-out, update if daily record exists
       if (dailyAttendance) {
-        console.log(`Updating daily attendance record with sign-out: ${dailyAttendance._id}`);
+        console.log(`Updating daily attendance record with sign-out: ${dailyAttendance.id}`);
         
-        dailyAttendance.signOutTime = timestamp;
+        const workDuration = dailyAttendance.signInTime
+          ? Math.round((timestamp.getTime() - dailyAttendance.signInTime.getTime()) / (1000 * 60))
+          : null;
         
-        // Calculate work duration in minutes if sign-in time exists
-        if (dailyAttendance.signInTime) {
-          const signInTime = new Date(dailyAttendance.signInTime).getTime();
-          const signOutTime = timestamp.getTime();
-          dailyAttendance.workDuration = Math.round((signOutTime - signInTime) / (1000 * 60));
-        }
-        
-        if (notes) {
-          dailyAttendance.notes = dailyAttendance.notes
-            ? `${dailyAttendance.notes}; ${notes}`
-            : notes;
-        }
-        
-        await dailyAttendance.save();
+        dailyAttendance = await prisma.dailyAttendance.update({
+          where: { id: dailyAttendance.id },
+          data: {
+            signOutTime: timestamp,
+            workDuration,
+            notes: notes
+              ? dailyAttendance.notes
+                ? `${dailyAttendance.notes}; ${notes}`
+                : notes
+              : dailyAttendance.notes
+          }
+        });
         console.log('Updated daily attendance record with sign-out time');
       } else {
-        // If no daily record exists yet (unusual case), create one with sign-out only
         console.log('Creating new daily attendance record for sign-out only');
-        
-        const newDailyAttendance = new DailyAttendance({
-          employeeId,
-          date: today,
-          status: 'present', // Default to present since we have a sign-out but no sign-in
-          signOutTime: timestamp,
-          notes: notes,
-          organizationId: recordOrganizationId // Ensure organization ID is set
+
+        dailyAttendance = await prisma.dailyAttendance.create({
+          data: {
+            employeeId: parseInt(employeeId),
+            date: today,
+            status: type === 'sign-in' ? (isLate ? 'late' : 'present') : 'absent',
+            signInTime: timestamp,
+            notes: notes,
+            organizationId: parseInt(recordOrganizationId)
+          }
         });
-        
-        await newDailyAttendance.save();
-        console.log(`Created daily attendance record for sign-out: ${newDailyAttendance._id}`);
+        console.log(`Created daily attendance record for facial sign-in: ${dailyAttendance.id}`);
       }
     }
     
-    // Log the action
+    // Log the action using Prisma
     try {
-      const auditLog = new AuditLog({
-        action: `attendance_${type}`,
-        details: `Employee ${employee.name} ${type === 'sign-in' ? 'signed in' : 'signed out'}${isLate ? ' (late)' : ''}`,
-        ipAddress,
-        resourceType: 'attendance',
-        resourceId: attendanceRecord._id,
-        organizationId: recordOrganizationId // Ensure organization ID is set in audit log
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user?.id,
+          action: `attendance_${type}`,
+          details: `Employee ${employee.name} ${type === 'sign-in' ? 'signed in' : 'signed out'}${isLate ? ' (late)' : ''}`,
+          ipAddress,
+          resourceType: 'attendance',
+          resourceId: String(attendanceRecord.id)
+        }
       });
-      
-      await auditLog.save();
-      console.log(`Created audit log: ${auditLog._id}`);
+      console.log(`Created audit log for attendance`);
     } catch (logError) {
       console.error('Error creating audit log:', logError);
       // Continue even if audit log fails
@@ -343,11 +373,12 @@ const createAttendanceWithFace = async (req, res) => {
         message: 'Organization ID is required'
       });
     }
-    
-    // Verify that the employee exists and belongs to the correct organization
-    const employee = await Employee.findOne({ 
-      _id: employeeId,
-      organizationId: recordOrganizationId // Ensure employee belongs to this organization
+      // Verify that the employee exists and belongs to the correct organization using Prisma
+    const employee = await prisma.employee.findFirst({
+      where: {
+        id: parseInt(employeeId),
+        organizationId: parseInt(recordOrganizationId)
+      }
     });
     
     if (!employee) {
@@ -367,70 +398,60 @@ const createAttendanceWithFace = async (req, res) => {
     const isLate = type === 'sign-in' ? 
       checkIfLate(timestamp, employee.workingHours) : 
       false;
-    
-    // Create attendance record with organization ID
-    const attendanceData = {
-      employeeId,
-      employeeName: employee.name,
-      type,
-      timestamp,
-      facialVerification: true,
-      location,
-      notes,
-      isLate,
-      verificationMethod: 'face-recognition',
-      organizationId: recordOrganizationId // Ensure organization ID is set
-    };
-    
-    // Add facial capture if provided
-    if (facialCapture) {
-      attendanceData.facialCapture = { image: facialCapture };
-    }
-    
-    console.log('Creating facial attendance record...');
-    
-    const attendanceRecord = new Attendance(attendanceData);
-    await attendanceRecord.save();
+      // Create attendance record with organization ID using Prisma
+    const attendanceRecord = await prisma.attendance.create({
+      data: {
+        employeeId: parseInt(employeeId),
+        type,
+        timestamp,
+        facialVerification: true,
+        location,
+        notes,
+        isLate,
+        verificationMethod: 'face-recognition',
+        organizationId: parseInt(recordOrganizationId),
+        facialCapture: facialCapture ? { image: facialCapture } : undefined
+      }
+    });
     
     console.log(`Created facial attendance record: ${attendanceRecord._id}`);
-    
-    // Update daily attendance
+      // Update daily attendance
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let dailyAttendance = await DailyAttendance.findOne({
-      employeeId,
-      date: today,
-      organizationId: recordOrganizationId
+    let dailyAttendance = await prisma.dailyAttendance.findFirst({
+      where: {
+        employeeId: parseInt(employeeId),
+        date: today,
+        organizationId: parseInt(recordOrganizationId)
+      }
     });
     
     // Update daily attendance (same logic as createAttendanceRecord)
     if (type === 'sign-in') {
       if (!dailyAttendance) {
         console.log('Creating new daily attendance record for facial sign-in');
-        
-        const newDailyAttendance = new DailyAttendance({
-          employeeId,
-          date: today,
-          status: isLate ? 'late' : 'present',
-          signInTime: timestamp,
-          notes: notes,
-          organizationId: recordOrganizationId
+          dailyAttendance = await prisma.dailyAttendance.create({
+          data: {
+            employeeId: parseInt(employeeId),
+            date: today,
+            status: isLate ? 'late' : 'present',
+            signInTime: timestamp,
+            notes: notes,
+            organizationId: parseInt(recordOrganizationId)
+          }
         });
-        
-        await newDailyAttendance.save();
         console.log(`Created daily attendance record for facial sign-in: ${newDailyAttendance._id}`);
       } else {
         console.log(`Updating existing daily attendance record with facial sign-in: ${dailyAttendance._id}`);
-        
-        dailyAttendance.signInTime = timestamp;
-        dailyAttendance.status = isLate ? 'late' : 'present';
-        
-        if (notes) {
-          dailyAttendance.notes = notes;
-        }
-        
-        await dailyAttendance.save();
+          dailyAttendance = await prisma.dailyAttendance.update({
+          where: { id: dailyAttendance.id },
+          data: {
+            signInTime: timestamp,
+            status: isLate ? 'late' : 'present',
+            notes: notes || dailyAttendance.notes
+          }
+        });
         console.log('Updated daily attendance record with facial sign-in');
       }
     } else if (type === 'sign-out') {
@@ -455,33 +476,31 @@ const createAttendanceWithFace = async (req, res) => {
         console.log('Updated daily attendance record with facial sign-out');
       } else {
         console.log('Creating new daily attendance record for facial sign-out only');
-        
-        const newDailyAttendance = new DailyAttendance({
-          employeeId,
-          date: today,
-          status: 'present',
-          signOutTime: timestamp,
-          notes: notes,
-          organizationId: recordOrganizationId
+          dailyAttendance = await prisma.dailyAttendance.create({
+          data: {
+            employeeId: parseInt(employeeId),
+            date: today,
+            status: 'present',
+            signOutTime: timestamp,
+            notes: notes,
+            organizationId: parseInt(recordOrganizationId)
+          }
         });
-        
-        await newDailyAttendance.save();
         console.log(`Created daily attendance record for facial sign-out: ${newDailyAttendance._id}`);
       }
     }
-    
-    // Log the action
+      // Log the action using Prisma
     try {
-      const auditLog = new AuditLog({
-        action: `attendance_${type}_face`,
-        details: `Employee ${employee.name} ${type === 'sign-in' ? 'signed in' : 'signed out'} using facial recognition${isLate ? ' (late)' : ''}`,
-        resourceType: 'attendance',
-        resourceId: attendanceRecord._id,
-        organizationId: recordOrganizationId
+      await prisma.auditLog.create({
+        data: {
+          action: `attendance_${type}_face`,
+          details: `Employee ${employee.name} ${type === 'sign-in' ? 'signed in' : 'signed out'} using facial recognition${isLate ? ' (late)' : ''}`,
+          resourceType: 'attendance',
+          resourceId: String(attendanceRecord.id),
+          ipAddress: req.ip
+        }
       });
-      
-      await auditLog.save();
-      console.log(`Created audit log for facial attendance: ${auditLog._id}`);
+        console.log(`Created audit log for facial attendance`);
     } catch (logError) {
       console.error('Error creating audit log for facial attendance:', logError);
       // Continue even if audit log fails
@@ -508,7 +527,7 @@ const createAttendanceWithFace = async (req, res) => {
 const getTodayStats = async (req, res) => {
   try {
     // Get organizationId from authenticated user or query parameter
-    const organizationId = req.user?.organizationId || req.query.organizationId;
+    const organizationId = parseInt(req.user?.organizationId) || parseInt(req.query.organizationId);
     
     if (!organizationId) {
       return res.status(400).json({
@@ -527,32 +546,46 @@ const getTodayStats = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Get all active employees count for this organization
-    const totalActiveEmployees = await Employee.countDocuments({ 
-      isActive: true,
-      organizationId // Filter by organization ID
+    // Get all active employees count for this organization using Prisma
+    const totalActiveEmployees = await prisma.employee.count({ 
+      where: {
+        isActive: true,
+        organizationId
+      }
     });
     
     console.log(`Found ${totalActiveEmployees} active employees`);
     
-    // Get unique employees who have signed in today
-    const signedInEmployees = await Attendance.distinct('employeeId', {
-      type: 'sign-in',
-      timestamp: { $gte: today, $lt: tomorrow },
-      organizationId // Filter by organization ID
+    // Get unique employees who have signed in today using Prisma
+    const signedInEmployeesData = await prisma.attendance.findMany({
+      where: {
+        type: 'sign-in',
+        timestamp: {
+          gte: today,
+          lt: tomorrow
+        },
+        organizationId
+      },
+      distinct: ['employeeId']
     });
     
-    // Get employees who were late
-    const lateEmployees = await Attendance.distinct('employeeId', {
-      type: 'sign-in',
-      isLate: true,
-      timestamp: { $gte: today, $lt: tomorrow },
-      organizationId // Filter by organization ID
+    // Get employees who were late using Prisma
+    const lateEmployeesData = await prisma.attendance.findMany({
+      where: {
+        type: 'sign-in',
+        isLate: true,
+        timestamp: {
+          gte: today,
+          lt: tomorrow
+        },
+        organizationId
+      },
+      distinct: ['employeeId']
     });
     
     // Calculate stats
-    const presentCount = signedInEmployees.length;
-    const lateCount = lateEmployees.length;
+    const presentCount = signedInEmployeesData.length;
+    const lateCount = lateEmployeesData.length;
     const absentCount = Math.max(0, totalActiveEmployees - presentCount);
     
     // Calculate rates
@@ -576,7 +609,7 @@ const getTodayStats = async (req, res) => {
         attendanceRate,
         punctualityRate,
         date: today,
-        organizationId // Include organization ID in response
+        organizationId
       }
     });
   } catch (error) {
@@ -597,7 +630,7 @@ const getAttendanceReport = async (req, res) => {
     const { startDate, endDate, department } = req.query;
     
     // Get organizationId from authenticated user or query parameter
-    const organizationId = req.user?.organizationId || req.query.organizationId;
+    const organizationId = parseInt(req.user?.organizationId) || parseInt(req.query.organizationId);
     
     if (!organizationId) {
       return res.status(400).json({
@@ -630,99 +663,73 @@ const getAttendanceReport = async (req, res) => {
     
     console.log(`Generating attendance report from ${startDateObj} to ${endDateObj}`);
     
-    // Convert organizationId to MongoDB ObjectId
-    const orgObjectId = mongoose.Types.ObjectId(organizationId);
-    
-    // Build pipeline with organization filter
-    const pipeline = [
-      {
-        $match: {
-          date: { $gte: startDateObj, $lte: endDateObj },
-          organizationId: orgObjectId // Filter by organization ID
-        }
+    // Get attendance data using Prisma
+    const attendanceData = await prisma.dailyAttendance.findMany({
+      where: {
+        date: {
+          gte: startDateObj,
+          lte: endDateObj
+        },
+        organizationId,
+        ...(department && {
+          employee: {
+            department
+          }
+        })
       },
-      {
-        $lookup: {
-          from: 'employees',
-          localField: 'employeeId',
-          foreignField: '_id',
-          as: 'employee'
-        }
-      },
-      {
-        $unwind: {
-          path: '$employee',
-          preserveNullAndEmptyArrays: true // Keep records even if employee not found
-        }
-      },
-      // Ensure we only get employees from the same organization
-      {
-        $match: {
-          $or: [
-            { 'employee.organizationId': orgObjectId },
-            { 'employee': null } // Include records even if employee not found
-          ]
-        }
-      }
-    ];
-    
-    // Add department filter if specified
-    if (department) {
-      pipeline.push({
-        $match: {
-          'employee.department': department
-        }
-      });
-    }
-    
-    // Group by date and status
-    pipeline.push(
-      {
-        $group: {
-          _id: {
-            date: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-            status: '$status'
-          },
-          count: { $sum: 1 },
-          employees: {
-            $push: {
-              id: '$employee._id',
-              name: '$employee.name',
-              department: '$employee.department',
-              signInTime: '$signInTime',
-              signOutTime: '$signOutTime',
-              workDuration: '$workDuration'
-            }
+      include: {
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            department: true
           }
         }
       },
-      {
-        $group: {
-          _id: '$_id.date',
-          stats: {
-            $push: {
-              status: '$_id.status',
-              count: '$count',
-              employees: '$employees'
-            }
-          }
-        }
-      },
-      {
-        $project: {
-          date: '$_id',
-          stats: 1,
-          _id: 0
-        }
-      },
-      {
-        $sort: { date: 1 }
+      orderBy: {
+        date: 'asc'
       }
-    );
-    
-    console.log('Executing aggregation pipeline');
-    
-    const report = await DailyAttendance.aggregate(pipeline);
+    });
+
+    // Process the data into the required format
+    const reportByDate = {};
+    attendanceData.forEach(record => {
+      const dateStr = record.date.toISOString().split('T')[0];
+      if (!reportByDate[dateStr]) {
+        reportByDate[dateStr] = {
+          date: dateStr,
+          stats: []
+        };
+      }
+
+      const statusData = reportByDate[dateStr].stats.find(s => s.status === record.status);
+      if (statusData) {
+        statusData.count += 1;
+        statusData.employees.push({
+          id: record.employee.id,
+          name: record.employee.name,
+          department: record.employee.department,
+          signInTime: record.signInTime,
+          signOutTime: record.signOutTime,
+          workDuration: record.workDuration
+        });
+      } else {
+        reportByDate[dateStr].stats.push({
+          status: record.status,
+          count: 1,
+          employees: [{
+            id: record.employee.id,
+            name: record.employee.name,
+            department: record.employee.department,
+            signInTime: record.signInTime,
+            signOutTime: record.signOutTime,
+            workDuration: record.workDuration
+          }]
+        });
+      }
+    });
+
+    const report = Object.values(reportByDate);
     
     console.log(`Report generated with ${report.length} days of data`);
     

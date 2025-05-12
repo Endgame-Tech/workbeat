@@ -10,7 +10,7 @@ declare global {
 }
 
 // Set base URL from environment variable or use default
-const API_URL = window._env_?.VITE_APP_API_URL || 'https://workbeat-api.vercel.app';
+const API_URL = window._env_?.VITE_APP_API_URL || 'http://localhost:5000';
 
 // Service for employee authentication and attendance
 export const employeeAuthService = {
@@ -214,61 +214,76 @@ export const employeeAuthService = {
     }
   },
 
-  /**
-   * Record attendance with facial verification
-   * @param attendanceData The attendance data with facial capture
-   * @returns The created attendance record
-   */  async recordAttendanceWithFace(attendanceData: AttendanceData) {
+  async recordAttendanceWithFace(attendanceData: AttendanceData) {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const organizationId = user.organizationId;
+      console.log("Raw attendance data received:", JSON.stringify({
+        ...attendanceData,
+        facialImage: attendanceData.facialImage ? "[IMAGE DATA]" : undefined
+      }, null, 2));
+      
+      // Check for employeeId
+      if (!attendanceData.employeeId) {
+        console.error("Missing employeeId in attendance data");
+        throw new Error('Required field missing: employeeId is required');
+      }
+      
+      // Validate type
+      if (!attendanceData.type) {
+        console.error("Missing type in attendance data");
+        throw new Error('Required field missing: type is required');
+      }
+      
+      // Get organization ID from localStorage
+      let organizationId;
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        organizationId = user.organizationId;
+        
+        if (!organizationId) {
+          console.warn("No organizationId found in user data, trying to extract from attendance data");
+          // Try to get organizationId from the attendanceData if available
+          if (attendanceData.organizationId) {
+            organizationId = attendanceData.organizationId;
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
       
       if (!organizationId) {
+        console.error("No organization ID found");
         throw new Error('Organization ID not found. Please log in again.');
       }
       
-      // Validate required fields
-      if (!attendanceData.employeeId || !attendanceData.type) {
-        throw new Error('Required fields missing: employeeId and type are required');
-      }
-      
-      // Ensure all required fields are set to avoid validation errors
-      const dataToSubmit: AttendanceData = {
-        ...attendanceData,
-        verificationMethod: 'face-recognition',
-        organizationId,
-        timestamp: new Date().toISOString()
+      // Create a clean object with all required fields
+      const dataToSubmit = {
+        employeeId: String(attendanceData.employeeId), // Ensure string format
+        type: attendanceData.type,
+        employeeName: attendanceData.employeeName || '',
+        notes: attendanceData.notes || '',
+        facialImage: attendanceData.facialImage, // Send the image directly
+        organizationId: String(organizationId),
+        timestamp: attendanceData.timestamp || new Date().toISOString()
       };
       
-      // Format facial capture data correctly
-      if (dataToSubmit.facialImage) {
-        dataToSubmit.facialCapture = dataToSubmit.facialImage;
-        delete dataToSubmit.facialImage;
+      if (attendanceData.location) {
+        dataToSubmit.location = attendanceData.location;
       }
       
-      // Log the request (without the actual image data for brevity)
-      const logData = { ...dataToSubmit };
-      if (logData.facialCapture) {
-        logData.facialCapture = '[IMAGE DATA TRUNCATED]';
-      }
-      console.log('Recording attendance with face recognition:', JSON.stringify(logData));
+      console.log("Data to submit:", {
+        ...dataToSubmit,
+        facialImage: "[IMAGE DATA]"
+      });
       
       const response = await api.post('/api/employee-auth/record-attendance', dataToSubmit);
-      console.log('Face attendance record created successfully:', response.data);
+      console.log('Face attendance record response:', response.data);
       
       return response.data.data || response.data;
     } catch (error) {
-      const apiError = error as ApiError;
-      console.error('Error recording attendance with face:', apiError.message);
-      console.error('Error details:', {
-        message: apiError.message,
-        response: apiError.response?.data,
-        status: apiError.response?.status
-      });
-      
+      console.error('Error recording attendance with face:', error);
       throw error;
     }
   }
-};
+}
 
 export default employeeAuthService;

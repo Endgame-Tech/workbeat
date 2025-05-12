@@ -2,7 +2,8 @@
  * Employee interface
  */
 export interface Employee {
-  _id: string;
+  id: number;
+  _id?: string;
   organizationId: string;
   name: string;
   email: string;

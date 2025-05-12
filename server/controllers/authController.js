@@ -1,6 +1,4 @@
-const User = require('../models/userModel');
-const Employee = require('../models/employeeModel');
-const AuditLog = require('../models/auditLogModel');
+const { prisma } = require('../config/db');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -15,13 +13,14 @@ const generateToken = (id) => {
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Private/Admin
-// Fixed registerUser function
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, role, employeeId } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -31,7 +30,9 @@ const registerUser = async (req, res) => {
 
     // If linking to an employee, verify employee exists
     if (employeeId) {
-      const employee = await Employee.findById(employeeId);
+      const employee = await prisma.employee.findUnique({
+        where: { id: parseInt(employeeId) }
+      });
       if (!employee) {
         return res.status(404).json({
           success: false,
@@ -45,32 +46,36 @@ const registerUser = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     // Create user with passwordHash (not password)
-    const user = await User.create({
-      name,
-      email,
-      passwordHash, // Changed from password to passwordHash
-      role: role || 'employee',
-      employeeId: employeeId || null
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        role: role || 'employee',
+        employeeId: employeeId ? parseInt(employeeId) : null
+      }
     });
 
     // Log the action
-    await AuditLog.create({
-      userId: req.user ? req.user._id : null,
-      action: 'user_register',
-      details: `Registered new user: ${name} (${email}) with role: ${role || 'employee'}`,
-      ipAddress: req.ip,
-      resourceType: 'user',
-      resourceId: user._id
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user ? req.user.id : null,
+        action: 'user_register',
+        details: `Registered new user: ${name} (${email}) with role: ${role || 'employee'}`,
+        ipAddress: req.ip,
+        resourceType: 'user',
+        resourceId: String(user.id)
+      }
     });
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(201).json({
       success: true,
       token,
       data: {
-        _id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role
@@ -95,7 +100,7 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     // Check for user with email
-    const user = await User.findOne({ email }).select('+passwordHash');
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -115,22 +120,28 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       // Increment failed login attempts
-      user.failedLoginAttempts += 1;
-      
-      // Lock account after 5 failed attempts
-      if (user.failedLoginAttempts >= 50) {
-        user.isLocked = true;
+      const failedLoginAttempts = user.failedLoginAttempts + 1;
+      let isLocked = user.isLocked;
+      if (failedLoginAttempts >= 5) {
+        isLocked = true;
       }
-      
-      await user.save();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts,
+          isLocked
+        }
+      });
 
       // Log failed login attempt
-      await AuditLog.create({
-        action: 'login_failed',
-        details: `Failed login attempt for user: ${email}`,
-        ipAddress: req.ip,
-        resourceType: 'user',
-        resourceId: user._id
+      await prisma.auditLog.create({
+        data: {
+          action: 'login_failed',
+          details: `Failed login attempt for user: ${email}`,
+          ipAddress: req.ip,
+          resourceType: 'user',
+          resourceId: String(user.id)
+        }
       });
 
       return res.status(401).json({
@@ -140,68 +151,49 @@ const loginUser = async (req, res) => {
     }
 
     // Reset failed login attempts on successful login
-    user.failedLoginAttempts = 0;
-    user.lastLogin = new Date();
-    await user.save();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lastLogin: new Date(),
+        isLocked: false
+      }
+    });
 
     // Log successful login
-    await AuditLog.create({
-      userId: user._id,
-      action: 'login',
-      details: `User logged in: ${user.name}`,
-      ipAddress: req.ip,
-      resourceType: 'user',
-      resourceId: user._id
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'login',
+        details: `User logged in: ${user.name}`,
+        ipAddress: req.ip,
+        resourceType: 'user',
+        resourceId: String(user.id)
+      }
     });
 
     // Find organization ID for this user
-    let organizationId = null;
-    
-    // First, check if organizationId is directly on the user
-    if (user.organizationId) {
-      organizationId = user.organizationId;
-      console.log('Found organizationId on user:', organizationId);
-    } 
-    // If not, look for the organization where this user is an admin/owner
-    else {
-      // FIXED: changed "organization" to "Organization" (capital 'O')
-      const organization = await Organization.findOne({
-        $or: [
-          { adminUsers: user._id },
-          { owner: user._id }
-        ]
-      });
-      
-      if (organization) {
-        organizationId = organization._id;
-        console.log('Found organizationId from organization:', organizationId);
-      }
-    }
+    let organizationId = user.organizationId || null;
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
-    // Log entire response for debugging
-    const responseData = {
+    res.status(200).json({
       success: true,
       token,
       data: {
-        _id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        organizationId: organizationId // Include the organization ID in the response
+        organizationId
       }
-    };
-    
-    console.log('Login response being sent:', JSON.stringify(responseData));
-
-    res.status(200).json(responseData);
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Login failed',
+      message: 'Failed to login',
       error: error.message
     });
   }
@@ -213,42 +205,68 @@ const loginUser = async (req, res) => {
 // Updated getCurrentUser function that ensures organizationId is included
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-passwordHash');
+    // Use prisma.user.findUnique instead of User.findById
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(req.user.id) },
+      select: {
+        id: true,
+        name: true, 
+        email: true,
+        role: true,
+        organizationRole: true,
+        organizationId: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+        // Exclude passwordHash
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
     
     // Get employee details if linked
     let employeeDetails = null;
     if (user.employeeId) {
-      employeeDetails = await Employee.findById(user.employeeId);
+      employeeDetails = await prisma.employee.findUnique({
+        where: { id: parseInt(user.employeeId) }
+      });
     }
     
     // Ensure organizationId is included
-    let organizationId = null;
+    let organizationId = user.organizationId;
     
-    // Check if user already has an organizationId
-    if (user.organizationId) {
-      organizationId = user.organizationId;
-    } 
     // If not, look for an organization where this user is an admin or owner
-    else {
-      const organization = await Organization.findOne({
-        $or: [
-          { adminUsers: user._id },
-          { owner: user._id }
-        ]
+    if (!organizationId) {
+      // This lookup needs to be adapted for Prisma
+      // For now, let's create a simpler implementation
+      const organization = await prisma.organization.findFirst({
+        where: {
+          OR: [
+            { users: { some: { id: user.id, organizationRole: 'admin' } } },
+            { users: { some: { id: user.id, organizationRole: 'owner' } } }
+          ]
+        }
       });
       
       if (organization) {
         // Update the user with this organizationId for future reference
-        organizationId = organization._id;
-        user.organizationId = organizationId;
-        await user.save();
+        organizationId = organization.id;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { organizationId: organization.id }
+        });
         console.log('Updated user with organizationId:', organizationId);
       }
     }
     
     // Prepare user data with organizationId included
     const userData = {
-      _id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
@@ -279,9 +297,14 @@ const getCurrentUser = async (req, res) => {
 // @desc    Forgot password
 // @route   POST /api/auth/forgotpassword
 // @access  Public
+// @desc    Forgot password
+// @route   POST /api/auth/forgotpassword
+// @access  Public
 const forgotPassword = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const user = await prisma.user.findUnique({
+      where: { email: req.body.email }
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -293,16 +316,20 @@ const forgotPassword = async (req, res) => {
     // Generate reset token
     const resetToken = crypto.randomBytes(20).toString('hex');
     
-    // Hash token and set to resetPasswordToken field
-    user.resetPasswordToken = crypto
+    // Hash token
+    const resetPasswordToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
     
-    // Set expire
-    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
-    
-    await user.save();
+    // Set token and expiry in database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken,
+        resetPasswordExpire: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+      }
+    });
     
     // In a real environment, send an email with the token
     // For this demo, just return the token directly
@@ -314,6 +341,7 @@ const forgotPassword = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Forgot password error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to process forgot password request',
@@ -333,9 +361,13 @@ const resetPassword = async (req, res) => {
       .update(req.params.resettoken)
       .digest('hex');
     
-    const user = await User.findOne({
-      resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }
+    const user = await prisma.user.findFirst({
+      where: {
+        resetPasswordToken,
+        resetPasswordExpire: {
+          gt: new Date()
+        }
+      }
     });
     
     if (!user) {
@@ -349,25 +381,30 @@ const resetPassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(req.body.password, salt);
     
-    // Set new passwordHash (not password)
-    user.passwordHash = passwordHash;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    
-    await user.save();
+    // Update user with new password and clear reset fields
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        resetPasswordToken: null,
+        resetPasswordExpire: null
+      }
+    });
     
     // Log the action
-    await AuditLog.create({
-      userId: user._id,
-      action: 'password_reset',
-      details: `Password reset for user: ${user.email}`,
-      ipAddress: req.ip,
-      resourceType: 'user',
-      resourceId: user._id
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'password_reset',
+        details: `Password reset for user: ${user.email}`,
+        ipAddress: req.ip,
+        resourceType: 'user',
+        resourceId: String(user.id)
+      }
     });
     
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
     
     res.status(200).json({
       success: true,
@@ -375,6 +412,7 @@ const resetPassword = async (req, res) => {
       token
     });
   } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to reset password',
@@ -383,10 +421,21 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// Fixed updatePassword function
+// @desc    Update password
+// @route   PUT /api/auth/updatepassword
+// @access  Private
 const updatePassword = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('+passwordHash');
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(req.user.id) }
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
     
     // Check current password
     const isMatch = await bcrypt.compare(req.body.currentPassword, user.passwordHash);
@@ -401,22 +450,26 @@ const updatePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(req.body.newPassword, salt);
     
-    // Set new passwordHash (not password)
-    user.passwordHash = passwordHash;
-    await user.save();
+    // Update user with new password
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash }
+    });
     
     // Log the action
-    await AuditLog.create({
-      userId: user._id,
-      action: 'password_change',
-      details: `Password changed for user: ${user.email}`,
-      ipAddress: req.ip,
-      resourceType: 'user',
-      resourceId: user._id
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'password_change',
+        details: `Password changed for user: ${user.email}`,
+        ipAddress: req.ip,
+        resourceType: 'user',
+        resourceId: String(user.id)
+      }
     });
     
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
     
     res.status(200).json({
       success: true,
@@ -424,6 +477,7 @@ const updatePassword = async (req, res) => {
       token
     });
   } catch (error) {
+    console.error('Update password error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update password',
@@ -441,7 +495,15 @@ const updateDetails = async (req, res) => {
     
     // Check if email would cause conflict
     if (email) {
-      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          email,
+          NOT: {
+            id: parseInt(req.user.id)
+          }
+        }
+      });
+      
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -450,30 +512,42 @@ const updateDetails = async (req, res) => {
       }
     }
     
+    // Build update data object
     const fieldsToUpdate = {
-      name: name || undefined,
-      email: email || undefined
+      ...(name && { name }),
+      ...(email && { email })
     };
     
-    // Remove undefined fields
-    Object.keys(fieldsToUpdate).forEach(key => 
-      fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
-    );
+    // Only update if there are fields to update
+    if (Object.keys(fieldsToUpdate).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide fields to update'
+      });
+    }
     
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      fieldsToUpdate,
-      {
-        new: true,
-        runValidators: true
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(req.user.id) },
+      data: fieldsToUpdate,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true
       }
-    );
+    });
     
     res.status(200).json({
       success: true,
-      data: user
+      data: updatedUser
     });
   } catch (error) {
+    console.error('Update details error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update user details',

@@ -77,50 +77,65 @@ export const attendanceService = {
    * @param ipAddress Client IP address (only used when first param is employeeId)
    * @param location Location data (optional) (only used when first param is employeeId)
    * @param notes Additional notes (optional)
-   * @param qrValue QR code value (optional) (only used when first param is employeeId)
    * @returns Created attendance record
    */
   async recordAttendance(
-    employeeIdOrData: string | {
-      employeeId: string;
-      type: 'sign-in' | 'sign-out';
-      location?: { latitude: number; longitude: number };
-      notes?: string;
-      employeeName?: string;
-      ipAddress?: string;
-      qrValue?: string;
-    },
-    employeeName?: string,
-    type?: 'sign-in' | 'sign-out',
-    ipAddress?: string | null,
-    location?: { latitude: number; longitude: number } | null,
-    notes?: string,
-    qrValue?: string
-  ): Promise<AttendanceRecord> {
-    try {
-      // Get organization ID for filtering
-      const organizationId = employeeService.getCurrentOrganizationId();
-      
-      if (!organizationId) {
-        throw new Error('No organization ID found for recording attendance');
-      }
-      
-      const dataToSubmit = {
-        ...attendanceData,
-        organizationId,
-        timestamp: new Date().toISOString(),
-        verificationMethod: 'manual'
-      };
-      
-      console.log('Recording attendance:', JSON.stringify(dataToSubmit));
-      
-      const response = await api.post('/api/attendance', dataToSubmit);
-      return response.data.data;
-    } catch (error) {
-      console.error('Error recording attendance:', error);
-      throw error;
-    }
+  employeeIdOrData: string | {
+    employeeId: string;
+    type: 'sign-in' | 'sign-out';
+    location?: { latitude: number; longitude: number };
+    notes?: string;
+    employeeName?: string;
+    ipAddress?: string;
+    qrValue?: string;
   },
+  employeeName?: string,
+  type?: 'sign-in' | 'sign-out',
+  ipAddress?: string | null,
+  location?: { latitude: number; longitude: number } | null,
+  notes?: string,
+  qrValue?: string
+): Promise<AttendanceRecord> {
+  try {
+    // Get organization ID for filtering
+    const organizationId = employeeService.getCurrentOrganizationId();
+    
+    if (!organizationId) {
+      throw new Error('No organization ID found for recording attendance');
+    }
+    
+    // Create attendance data object based on parameters
+    let attendanceData;
+    if (typeof employeeIdOrData === 'string') {
+      attendanceData = {
+        employeeId: employeeIdOrData,
+        type: type || 'sign-in',
+        employeeName,
+        ipAddress: ipAddress || undefined,
+        location,
+        notes,
+        qrValue
+      };
+    } else {
+      attendanceData = employeeIdOrData;
+    }
+    
+    const dataToSubmit = {
+      ...attendanceData,
+      organizationId,
+      timestamp: new Date().toISOString(),
+      verificationMethod: 'manual'
+    };
+    
+    console.log('Recording attendance:', JSON.stringify(dataToSubmit));
+    
+    const response = await api.post('/api/attendance', dataToSubmit);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error recording attendance:', error);
+    throw error;
+  }
+},
 
   /**
    * Record attendance with facial recognition

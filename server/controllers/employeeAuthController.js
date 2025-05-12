@@ -1,11 +1,9 @@
-const Employee = require('../models/employeeModel.js');
-const Attendance = require('../models/attendanceModel.js');
-const AuditLog = require('../models/auditLogModel.js');
-const DailyAttendance = require('../models/dailyAttendanceModel.js');
-const { uploadToS3 } = require('../utils/s3Utils');
+const { prisma } = require('../config/db');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path'); 
 
-// Helper function to save a base64 image to S3
+// Helper function to save a base64 image
 const saveBase64Image = async (base64Image, employeeId) => {
   try {
     if (!base64Image) {
@@ -29,12 +27,20 @@ const saveBase64Image = async (base64Image, employeeId) => {
       // Generate unique filename
       const timestamp = Date.now();
       const filename = `${employeeId}_${timestamp}.jpg`;
-      const key = `faces/${filename}`;
-
-      // Upload to S3
-      const imageUrl = await uploadToS3(buffer, key);
-      return imageUrl;
-
+      
+      // Create directory if it doesn't exist
+      const uploadDir = path.join(__dirname, '../uploads/faces');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      const filePath = path.join(uploadDir, filename);
+      
+      // Write file to disk
+      await fs.promises.writeFile(filePath, buffer);
+      
+      // Return the relative URL to the file
+      return `/uploads/faces/${filename}`;
     } catch (error) {
       console.error('Error processing image:', error);
       throw new Error('Failed to process image data');
@@ -45,26 +51,46 @@ const saveBase64Image = async (base64Image, employeeId) => {
   }
 };
 
+module.exports = { saveBase64Image };
 
-// @desc    Record attendance with facial verification
-// @route   POST /api/employee-auth/record-attendance
-// @access  Public
+
+
 const recordAttendanceWithFace = async (req, res) => {
   try {
     const { 
       employeeId, 
-      type,  
-      facialImage, 
+      type,
+      facialImage,
+      facialCapture,
       location, 
       notes,
-      organizationId // Add organizationId to destructuring
+      organizationId
     } = req.body;
+
+    console.log('Received attendance request:', {
+      employeeId,
+      type,
+      hasFacialImage: !!facialImage,
+      hasFacialCapture: !!facialCapture,
+      location,
+      notes,
+      organizationId
+    });
 
     // Validate required fields
     if (!employeeId || !type || !organizationId) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields: employeeId, type, and organizationId are required'
+      });
+    }
+
+    // Parse employeeId as integer
+    const empId = parseInt(employeeId);
+    if (isNaN(empId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employeeId: must be a number'
       });
     }
 
@@ -77,7 +103,10 @@ const recordAttendanceWithFace = async (req, res) => {
     }
 
     // Verify employee exists
-    const employee = await Employee.findById(employeeId);
+    const employee = await prisma.employee.findUnique({
+      where: { id: empId }
+    });
+    
     if (!employee) {
       return res.status(404).json({
         success: false,
@@ -86,43 +115,39 @@ const recordAttendanceWithFace = async (req, res) => {
     }
 
     // Process the facial image if provided
-    let facialCapture = null;
+    let capturedImage = null;
+    
+    // Accept either facialImage or facialCapture.image
+    if (facialImage) {
+      capturedImage = facialImage;
+    } else if (facialCapture?.image) {
+      capturedImage = facialCapture.image;
+    }
+    
+    let facialCaptureData = null;
     let verificationMethod = 'manual'; // Default to manual verification
 
-    if (facialImage) {
+    if (capturedImage) {
       try {
         // Save the facial image
-        const imagePath = await saveBase64Image(facialImage, employeeId);
+        const imagePath = await saveBase64Image(capturedImage, employeeId);
         
         // In a real system, you would integrate with a facial recognition API here
         // For demo purposes, we'll simulate a match score
         const matchScore = Math.random() * 100; // 0-100 score
         const verified = matchScore > 80; // Threshold for verification
         
-        facialCapture = {
+        facialCaptureData = {
           image: imagePath,
           matchScore,
           verified
         };
         
         verificationMethod = verified ? 'face-recognition' : 'manual';
-        
-        // If this is the first facial image for the employee, store it for future reference
-        if (!employee.faceRecognition || !employee.faceRecognition.faceImages || employee.faceRecognition.faceImages.length === 0) {
-          employee.faceRecognition = {
-            faceId: crypto.randomBytes(16).toString('hex'),
-            faceImages: [imagePath],
-            lastUpdated: new Date()
-          };
-          await employee.save();
-        }
       } catch (imageError) {
         console.error('Error processing facial image:', imageError);
-        return res.status(400).json({
-          success: false,
-          message: 'Error processing facial image',
-          error: imageError.message
-        });
+        // Continue with manual verification
+        verificationMethod = 'manual';
       }
     }
 
@@ -131,35 +156,39 @@ const recordAttendanceWithFace = async (req, res) => {
     
     // Check if employee is late (only for sign-in)
     const isLate = type === 'sign-in' ? 
-      checkIfLate(timestamp, employee.workingHours) : 
+      checkIfLate(timestamp, employee.workSchedule ? JSON.parse(employee.workSchedule) : null) : 
       false;
     
-    // Create attendance record
-    const attendanceRecord = await Attendance.create({
-      employeeId,
+    // Convert location object to JSON string if it exists
+    const locationString = location ? JSON.stringify(location) : null;
+    
+    // Convert facialCaptureData to JSON string if it exists
+    const facialCaptureString = facialCaptureData ? JSON.stringify(facialCaptureData) : null;
+    
+    // Data object to create attendance record
+    const attendanceData = {
+      employeeId: empId,
       employeeName: employee.name,
-      organizationId, // Add organizationId to record
+      organizationId: parseInt(organizationId),
       type,
       timestamp,
-      location,
-      notes,
+      location: locationString, // This is now a string
+      notes: notes || "",
       isLate,
-      facialCapture,
+      facialCapture: facialCaptureString, // This is now a string
       verificationMethod,
-      ipAddress: req.ip // Add IP address for tracking
-    });
-
-    // Update daily attendance
-    await updateDailyAttendance(employeeId, type, isLate);
+      facialVerification: capturedImage ? true : false,
+      ipAddress: req.ip || '127.0.0.1'
+    };
     
-    // Log the action
-    await AuditLog.create({
-      action: `attendance_${type}`,
-      details: `Employee ${employee.name} ${type === 'sign-in' ? 'signed in' : 'signed out'}${isLate ? ' (late)' : ''} using ${verificationMethod}`,
-      ipAddress: req.ip,
-      resourceType: 'attendance',
-      resourceId: attendanceRecord._id,
-      organizationId // Add organizationId to audit log
+    console.log('Creating attendance with data:', {
+      ...attendanceData,
+      facialCapture: attendanceData.facialCapture ? '[DATA]' : null
+    });
+    
+    // Create the attendance record
+    const attendanceRecord = await prisma.attendance.create({
+      data: attendanceData
     });
     
     res.status(201).json({
@@ -281,55 +310,77 @@ const addEmployeeFace = async (req, res) => {
   /**
    * Helper function to update daily attendance record
    */
-  async function updateDailyAttendance(employeeId, type, isLate) {
-    try {
-      // Get today's date (without time)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      // Find or create daily attendance record
-      let dailyRecord = await DailyAttendance.findOne({
-        employeeId,
+  async function updateDailyAttendance(employeeId, organizationId, type, isLate, timestamp, notes) {
+  try {
+    // Get today's date (without time)
+    const today = new Date(timestamp);
+    today.setHours(0, 0, 0, 0);
+    
+    // Find or create daily attendance record using Prisma
+    let dailyRecord = await prisma.dailyAttendance.findFirst({
+      where: {
+        employeeId: parseInt(employeeId),
+        organizationId: parseInt(organizationId),
         date: today
-      });
-      
-      if (!dailyRecord) {
-        // Create new daily record
-        dailyRecord = new DailyAttendance({
-          employeeId,
-          date: today,
-          status: type === 'sign-in' ? (isLate ? 'late' : 'present') : 'absent' // Default to absent if first record is sign-out
-        });
       }
+    });
+    
+    const now = new Date(timestamp);
+    
+    if (!dailyRecord) {
+      // Create new daily record
+      dailyRecord = await prisma.dailyAttendance.create({
+        data: {
+          employeeId: parseInt(employeeId),
+          organizationId: parseInt(organizationId),
+          date: today,
+          status: type === 'sign-in' ? (isLate ? 'late' : 'present') : 'absent', // Default to absent if first record is sign-out
+          signInTime: type === 'sign-in' ? now : null,
+          signOutTime: type === 'sign-out' ? now : null,
+          notes: notes || null
+        }
+      });
+    } else {
+      // Update existing record
+      let updateData = {};
       
-      const now = new Date();
-      
-      // Update based on attendance type
       if (type === 'sign-in') {
-        dailyRecord.signInTime = now;
-        dailyRecord.status = isLate ? 'late' : 'present';
+        updateData.signInTime = now;
+        updateData.status = isLate ? 'late' : 'present';
       } else if (type === 'sign-out') {
-        dailyRecord.signOutTime = now;
+        updateData.signOutTime = now;
         
         // Calculate work duration if sign-in time exists
         if (dailyRecord.signInTime) {
-          const durationMs = now.getTime() - dailyRecord.signInTime.getTime();
-          dailyRecord.workDuration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
+          const durationMs = now.getTime() - new Date(dailyRecord.signInTime).getTime();
+          updateData.workDuration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
           
           // Update status based on work duration (e.g., half-day if less than 4 hours)
-          if (dailyRecord.workDuration < 240) { // Less than 4 hours
-            dailyRecord.status = 'half-day';
+          if (updateData.workDuration < 240) { // Less than 4 hours
+            updateData.status = 'half-day';
           }
         }
       }
       
-      await dailyRecord.save();
-      return dailyRecord;
-    } catch (error) {
-      console.error('Error updating daily attendance:', error);
-      // Don't throw, just log error to prevent main function from failing
+      // Add notes if provided
+      if (notes) {
+        updateData.notes = dailyRecord.notes 
+          ? `${dailyRecord.notes}; ${notes}` 
+          : notes;
+      }
+      
+      // Update the record
+      await prisma.dailyAttendance.update({
+        where: { id: dailyRecord.id },
+        data: updateData
+      });
     }
+    
+    return dailyRecord;
+  } catch (error) {
+    console.error('Error updating daily attendance:', error);
   }
+}
   
   async function compareFaces(capturedImage, registeredImages) {
     

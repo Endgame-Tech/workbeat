@@ -6,17 +6,34 @@ import { Employee } from '../types';
 const getCurrentOrganizationId = (): string | null => {
   try {
     const userString = localStorage.getItem('user');
-    if (userString) {
-      // Handle the case where "user" might be prepended
-      const jsonString = userString.startsWith('user{') 
-        ? userString.substring(4) 
-        : userString;
+    console.log("Raw user string from localStorage:", userString);
+    
+    if (!userString) {
+      console.warn("No user data in localStorage");
+      return null;
+    }
+    
+    // Handle the case where "user" might be prepended (unusual, but handling it anyway)
+    const jsonString = userString.startsWith('user{') 
+      ? userString.substring(4) 
+      : userString;
+    
+    try {
+      const userData = JSON.parse(jsonString);
+      console.log("Parsed user data:", userData);
       
-      try {
-        const userData = JSON.parse(jsonString);
-        return userData.organizationId || null;
-      } catch (err) {
-        console.error('Error parsing user data:', err);
+      if (!userData.organizationId) {
+        console.warn("No organizationId in user data");
+      }
+      
+      return userData.organizationId || null;
+    } catch (err) {
+      console.error('Error parsing user data:', err);
+      // Try a more flexible approach in case json is malformed
+      const match = jsonString.match(/"organizationId"\s*:\s*"?(\d+)"?/);
+      if (match && match[1]) {
+        console.log("Found organizationId via regex:", match[1]);
+        return match[1];
       }
     }
     return null;

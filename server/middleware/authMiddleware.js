@@ -1,7 +1,6 @@
-// Updated authMiddleware.js with organization context
+// Updated authMiddleware.js with Prisma
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-const Organization = require('../models/organizationModel');
+const { prisma } = require('../config/db');
 
 // Protect routes
 const protect = async (req, res, next) => {
@@ -17,7 +16,20 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from token (excluding password)
-      const user = await User.findById(decoded.id).select('-passwordHash');
+      const user = await prisma.user.findUnique({
+        where: { id: parseInt(decoded.id) },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          organizationId: true,
+          organizationRole: true,
+          employeeId: true,
+          lastLogin: true,
+          isLocked: true,
+        }
+      });
 
       if (!user) {
         return res.status(401).json({
@@ -28,7 +40,7 @@ const protect = async (req, res, next) => {
 
       // Check if user has organizationId
       if (!user.organizationId) {
-        console.warn(`User ${user._id} (${user.email}) has no organizationId`);
+        console.warn(`User ${user.id} (${user.email}) has no organizationId`);
         
         // Try to find organization for this user
         const organization = await Organization.findOne({

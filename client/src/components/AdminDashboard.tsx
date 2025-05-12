@@ -37,19 +37,20 @@ const AdminDashboard: React.FC = () => {
   // Extract organization ID and name on mount
   useEffect(() => {
     const orgId = employeeService.getCurrentOrganizationId();
+    console.log("Retrieved organization ID:", orgId);
     setOrganizationId(orgId);
     
-    // Get organization name from localStorage or API
-    const userString = localStorage.getItem('user');
-    if (userString) {
-      try {
+    // Try to get organization name from localStorage
+    try {
+      const userString = localStorage.getItem('user');
+      if (userString) {
         const userData = JSON.parse(userString);
         if (userData.organizationName) {
           setOrganizationName(userData.organizationName);
         }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
       }
+    } catch (error) {
+      console.error('Error getting organization name:', error);
     }
   }, []);
 
@@ -108,8 +109,11 @@ const AdminDashboard: React.FC = () => {
   // Fetch employees and attendance data on mount and when organizationId changes
   useEffect(() => {
     if (organizationId) {
+      console.log("Organization ID is available, fetching data:", organizationId);
       fetchEmployees();
       fetchAttendanceRecords();
+    } else {
+      console.warn("No organization ID available yet, data fetch delayed");
     }
   }, [organizationId, fetchEmployees, fetchAttendanceRecords]);
 

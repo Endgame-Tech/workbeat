@@ -88,9 +88,17 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     setNotes(e.target.value);
   };
 
-  const handleEmployeeSelect = (employee: Employee) => {
-    onEmployeeSelect(employee, notes);
-  };
+const handleEmployeeSelect = (employee: Employee) => {
+  console.log("Selected employee in selector:", employee);
+  console.log("Employee ID formats:", {
+    id: employee.id,
+    _id: employee._id,
+    employeeId: employee.employeeId
+  });
+  
+  // Make sure the entire employee object is passed through
+  onEmployeeSelect(employee, notes);
+};
 
   if (isLoading) {
     return (
@@ -133,7 +141,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
                            cursor-pointer transition-all duration-200 transform 
                            ${hoveredEmployeeId === employee._id ? 'scale-102 shadow-md bg-gray-50 dark:bg-gray-800 border-blue-400' : ''}`}
                 onClick={() => handleEmployeeSelect(employee)}
-                onMouseEnter={() => setHoveredEmployeeId(employee._id)}
+                onMouseEnter={() => setHoveredEmployeeId(employee._id || employee.id || employee.employeeId)}
                 onMouseLeave={() => setHoveredEmployeeId(null)}
               >
                 <div className="flex items-center">

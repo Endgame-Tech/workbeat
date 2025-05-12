@@ -1,7 +1,4 @@
-const Employee = require('../models/employeeModel.js');
-const BiometricData = require('../models/biometricDataModel.js');
-const Attendance = require('../models/attendanceModel.js');
-const AuditLog = require('../models/auditLogModel.js');
+const { prisma } = require('../config/db');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');

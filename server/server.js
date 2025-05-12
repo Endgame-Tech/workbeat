@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const connectDB = require('./config/db.js');
+const { connectDB } = require('./config/db.js');
 const employeeRoutes = require('./routes/employeeRoutes.js');
 const attendanceRoutes = require('./routes/attendanceRoutes.js');
 const authRoutes = require('./routes/authRoutes.js');
@@ -10,10 +10,11 @@ const organizationRoutes = require('./routes/organizationRoutes.js');
 const employeeAuthRoutes = require('./routes/employeeAuthRoutes.js');
 const path = require('path');
 
+
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
+// Connect to SQLite database
 connectDB();
 
 const app = express();
