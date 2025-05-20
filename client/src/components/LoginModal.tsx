@@ -148,13 +148,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose, isOpen }) => 
               </Button>
             </form>
             
-            <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-              <p className="font-medium mb-2">Demo Credentials:</p>
-              <div className="space-y-1">
-                <p><strong>Admin:</strong> admin@workbeat.com / admin123</p>
-                <p><strong>Employee:</strong> employee@workbeat.com / employee123</p>
-              </div>
-            </div>
           </CardContent>
 
           <CardFooter className="text-center">

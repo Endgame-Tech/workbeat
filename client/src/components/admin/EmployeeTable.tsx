@@ -127,12 +127,19 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
     event.stopPropagation(); // Prevent opening the modal when clicking this button
     
     try {
+      const employeeId = employee.id || employee._id;
+      console.log("Toggling status for employee with ID:", employeeId);
+      
+      if (!employeeId) {
+        throw new Error("Employee ID is missing or undefined");
+      }
+      
       const newStatus = !employee.isActive;
-      await employeeService.toggleEmployeeStatus(employee._id, newStatus);
+      await employeeService.toggleEmployeeStatus(String(employeeId), newStatus);
       
       // Update local state
       const updatedEmployees = employees.map(emp => 
-        emp._id === employee._id ? { ...emp, isActive: newStatus } : emp
+        (emp.id === employeeId || emp._id === employeeId) ? { ...emp, isActive: newStatus } : emp
       );
       
       setEmployees(updatedEmployees);
@@ -144,7 +151,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
       toast.error('Failed to update employee status');
     }
   };
-  
+
   // Handle row click to show details
   const handleRowClick = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -284,7 +291,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                   ) : (
                     filteredEmployees.map((employee) => (
                       <TableRow 
-                        key={employee._id}
+                        key={employee.id || employee._id} // Use either id or _id, whichever is available
                         className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                         onClick={() => handleRowClick(employee)}
                       >

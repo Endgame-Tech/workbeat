@@ -13,6 +13,9 @@ dist-ssr
 *.local
 .env
 
+#Uploads
+uploads
+
 # Prisma
 prisma/*.db
 prisma/dev.db

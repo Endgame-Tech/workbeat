@@ -226,35 +226,76 @@ const updateEmployee = async (req, res) => {
     // Parse the employee ID as an integer
     const employeeId = parseInt(req.params.id);
     
-    // First check if employee exists and belongs to organization
-    const existingEmployee = await prisma.employee.findFirst({
+    // Check for valid ID format
+    if (isNaN(employeeId)) {
+      console.error(`Invalid employee ID format: ${req.params.id}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID format'
+      });
+    }
+
+    console.log(`Attempting to update employee with ID: ${employeeId}`);
+    
+    // Find employee using findUnique
+    const existingEmployee = await prisma.employee.findUnique({
       where: {
-        id: employeeId,  // Make sure the ID is included
-        organizationId: organizationId
+        id: employeeId
       }
     });
 
     if (!existingEmployee) {
+      console.error(`Employee not found with ID: ${employeeId}`);
       return res.status(404).json({
         success: false,
-        message: 'Employee not found in your organization'
+        message: 'Employee not found'
       });
     }
     
-    // Prepare update data
-    const updateData = {
-      ...req.body,
-      // Convert JSON fields to strings if they exist in the request
-      ...(req.body.workSchedule && {
-        workSchedule: JSON.stringify(req.body.workSchedule)
-      }),
-      ...(req.body.faceRecognition && {
-        faceRecognition: JSON.stringify(req.body.faceRecognition)
-      }),
-      ...(req.body.biometrics && {
-        biometrics: JSON.stringify(req.body.biometrics)
-      })
-    };
+    // Check if employee belongs to the user's organization
+    if (existingEmployee.organizationId !== organizationId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Employee does not belong to your organization'
+      });
+    }
+    
+    // Create a cleaned update data object
+    const updateData = { ...req.body };
+    
+    // Remove the id field from update data if it exists - Prisma doesn't allow updating primary keys
+    if (updateData.id !== undefined) {
+      delete updateData.id;
+    }
+    
+    // Format the date fields correctly if they exist
+    if (updateData.startDate) {
+      try {
+        // Ensure date is in ISO format
+        updateData.startDate = new Date(updateData.startDate).toISOString();
+      } catch (error) {
+        console.error(`Invalid date format for startDate: ${updateData.startDate}`);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid date format for startDate'
+        });
+      }
+    }
+    
+    // Convert JSON fields to strings if they exist in the request
+    if (updateData.workSchedule && typeof updateData.workSchedule !== 'string') {
+      updateData.workSchedule = JSON.stringify(updateData.workSchedule);
+    }
+    
+    if (updateData.faceRecognition && typeof updateData.faceRecognition !== 'string') {
+      updateData.faceRecognition = JSON.stringify(updateData.faceRecognition);
+    }
+    
+    if (updateData.biometrics && typeof updateData.biometrics !== 'string') {
+      updateData.biometrics = JSON.stringify(updateData.biometrics);
+    }
+
+    console.log(`Updating employee ${employeeId} with data:`, updateData);
 
     // Update the employee
     const employee = await prisma.employee.update({
@@ -288,7 +329,6 @@ const updateEmployee = async (req, res) => {
   }
 };  
 
-
 const deleteEmployee = async (req, res) => {
   try {
     // Get organizationId from authenticated user
@@ -300,29 +340,45 @@ const deleteEmployee = async (req, res) => {
         message: 'Organization ID not found for the current user'
       });
     }
-      // Find employee with both ID and matching organization using Prisma
+    
+    // Parse the employee ID as an integer
     const employeeId = parseInt(req.params.id);
-    const employee = await prisma.employee.findFirst({
-      where: {
-        id: employeeId,
-        organizationId: organizationId
-      }
+    
+    // Check for valid ID format
+    if (isNaN(employeeId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid employee ID format'
+      });
+    }
+      
+    // Find employee using findUnique
+    const employee = await prisma.employee.findUnique({
+      where: { id: employeeId }
     });
 
     if (!employee) {
       return res.status(404).json({
         success: false,
-        message: 'Employee not found in your organization'
+        message: 'Employee not found'
+      });
+    }
+    
+    // Check if employee belongs to the user's organization
+    if (employee.organizationId !== organizationId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Employee does not belong to your organization'
       });
     }
 
-    // Instead of deleting, set to inactive using Prisma
+    // Instead of deleting, set to inactive
     const updatedEmployee = await prisma.employee.update({
       where: { id: employeeId },
       data: { isActive: false }
     });
 
-    // Log the action using Prisma
+    // Log the action
     await prisma.auditLog.create({
       data: {
         userId: req.user.id,

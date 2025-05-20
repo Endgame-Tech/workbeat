@@ -110,7 +110,31 @@ const createEmployee = async (employeeData: Partial<Employee>) => {
 // Update employee (ensuring it belongs to current organization)
 const updateEmployee = async (id: string, employeeData: Partial<Employee>) => {
   try {
-    // Backend will verify this employee belongs to the user's organization
+    if (!id) {
+      throw new Error("Employee ID is required");
+    }
+    
+    console.log("Updating employee with ID:", id);
+    
+    // Make sure data is properly formatted for the backend
+    // Format dates if any
+    if (employeeData.startDate && !String(employeeData.startDate).includes('T')) {
+      employeeData.startDate = new Date(employeeData.startDate).toISOString();
+    }
+    
+    // Convert any JSON fields to strings if needed
+    if (employeeData.workSchedule && typeof employeeData.workSchedule !== 'string') {
+      employeeData.workSchedule = JSON.stringify(employeeData.workSchedule);
+    }
+    
+    if (employeeData.faceRecognition && typeof employeeData.faceRecognition !== 'string') {
+      employeeData.faceRecognition = JSON.stringify(employeeData.faceRecognition);
+    }
+    
+    if (employeeData.biometrics && typeof employeeData.biometrics !== 'string') {
+      employeeData.biometrics = JSON.stringify(employeeData.biometrics);
+    }
+    
     const response = await api.put(`/api/employees/${id}`, employeeData);
     return response.data.data;
   } catch (error) {
@@ -118,6 +142,7 @@ const updateEmployee = async (id: string, employeeData: Partial<Employee>) => {
     throw error;
   }
 };
+
 
 // Delete employee (ensuring it belongs to current organization)
 const deleteEmployee = async (id: string) => {
@@ -134,6 +159,10 @@ const deleteEmployee = async (id: string) => {
 // Toggle employee active status (using updateEmployee)
 const toggleEmployeeStatus = async (id: string, isActive: boolean): Promise<Employee> => {
   try {
+    if (!id) {
+      throw new Error("Employee ID is required to toggle status");
+    }
+    
     console.log(`Toggling employee ${id} status to ${isActive ? 'active' : 'inactive'}`);
     const response = await updateEmployee(id, { isActive });
     return response;

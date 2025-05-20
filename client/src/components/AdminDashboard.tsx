@@ -142,47 +142,59 @@ const AdminDashboard: React.FC = () => {
     }
   }, [activeTab, fetchEmployees, fetchAttendanceRecords]);
 
-  const handleEmployeeSubmit = async (data: Partial<Employee>) => {
-    console.log('Form data received:', data);
-    setIsSubmitting(true);
-  
-    try {
-      // Ensure the organization ID is set
-      const employeeData = {
-        ...data,
-        organizationId: organizationId || undefined
-      };
-      
-      if (!employeeData.organizationId) {
-        throw new Error('Organization ID is required');
-      }
-      
-      if (editingEmployee) {
-        // Update existing employee
-        await employeeService.updateEmployee(editingEmployee._id, employeeData);
-        toast.success(`Employee ${data.name} updated successfully`);
-      } else {
-        // Create new employee
-        await employeeService.createEmployee(employeeData);
-        toast.success(`Employee ${data.name} created successfully`);
-      }
-      
-      // Refresh the employee list and close the form
-      await fetchEmployees();
-      setShowEmployeeForm(false);
-      setEditingEmployee(null);
-    } catch (error) {
-      console.error('Error saving employee:', error);
-      toast.error('Error saving employee. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  // In AdminDashboard.jsx
   function handleEditEmployee(employee: Employee) {
+    console.log("Employee to edit:", employee);
+    console.log("Employee ID value:", employee.id || employee._id);
     setEditingEmployee(employee);
     setShowEmployeeForm(true);
   }
+
+  const handleEmployeeSubmit = async (data: Partial<Employee>) => {
+  console.log('Form data received:', data);
+  setIsSubmitting(true);
+
+  try {
+    // Format dates properly if they exist
+    if (data.startDate && typeof data.startDate === 'string' && !data.startDate.includes('T')) {
+      data.startDate = new Date(data.startDate).toISOString();
+    }
+    
+    // Ensure the organization ID is set
+    const employeeData = {
+      ...data,
+      organizationId: organizationId || undefined
+    };
+    
+    if (!employeeData.organizationId) {
+      throw new Error('Organization ID is required');
+    }
+    
+    if (editingEmployee) {
+      // Get the ID, handling both potential formats (_id or id)
+      const employeeId = editingEmployee._id || editingEmployee.id;
+      console.log('Updating employee with ID:', employeeId);
+      
+      // Update existing employee
+      await employeeService.updateEmployee(String(employeeId), employeeData);
+      toast.success(`Employee ${data.name} updated successfully`);
+    } else {
+      // Create new employee
+      await employeeService.createEmployee(employeeData);
+      toast.success(`Employee ${data.name} created successfully`);
+    }
+    
+    // Refresh the employee list and close the form
+    await fetchEmployees();
+    setShowEmployeeForm(false);
+    setEditingEmployee(null);
+  } catch (error) {
+    console.error('Error saving employee:', error);
+    toast.error('Error saving employee. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   function handleCancelEmployeeForm() {
     setShowEmployeeForm(false);

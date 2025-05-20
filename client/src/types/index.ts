@@ -89,19 +89,6 @@ export interface DailyAttendance {
   updatedAt: Date;
 }
 
-/**
- * QR Code interface
- */
-export interface QRCode {
-  _id: string;
-  value: string;
-  expiresAt: string | Date;
-  location?: string;
-  isActive: boolean;
-  createdBy?: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
 
 /**
  * User interface
