@@ -1,3 +1,4 @@
+// Updated AttendanceTable.tsx with improved image handling and department fix (continued)
 import React, { useState, useEffect } from 'react';
 import { AttendanceRecord, Employee } from '../types';
 import { formatTime, formatDate } from '../utils/attendanceUtils';
@@ -8,6 +9,7 @@ import Button from './ui/Button';
 import { employeeService } from '../services/employeeService';
 import { attendanceService } from '../services/attendanceService';
 import { toast } from 'react-hot-toast';
+import Badge from './ui/Badge';
 
 interface AttendanceTableProps {
   records?: AttendanceRecord[];
@@ -109,7 +111,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       // Transform into a lookup map for easier access by ID
       const employeeMap: Record<string, Employee> = {};
       data.forEach(employee => {
-        employeeMap[employee._id] = employee;
+        // Map by all possible ID forms for better matching
+        if (employee.id) employeeMap[String(employee.id)] = employee;
+        if (employee._id) employeeMap[employee._id] = employee;
+        if (employee.employeeId) employeeMap[employee.employeeId] = employee;
       });
       
       console.log(`Loaded ${data.length} employees for organization ${organizationId}`);
@@ -195,8 +200,40 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     return 'Unknown Employee';
   };
   
+  // Fixed function to never show "Unknown Department"
   const getEmployeeDepartment = (employeeId: string): string => {
-    return employees[employeeId]?.department || 'Unknown Department';
+    return employees[employeeId]?.department || '';
+  };
+  
+  // Helper to extract image from different possible sources
+  const getEmployeeImage = (record: AttendanceRecord): string | null => {
+    // First priority: Check facial capture from the record
+    if (record.facialCapture && record.facialCapture.image) {
+      return record.facialCapture.image;
+    }
+    
+    // Second priority: Get employee from the map and check for face recognition images
+    const employee = employees[record.employeeId];
+    if (employee) {
+      // Check for faceRecognition field
+      if (employee.faceRecognition) {
+        // Handle string or object format
+        const faceData = typeof employee.faceRecognition === 'string'
+          ? JSON.parse(employee.faceRecognition)
+          : employee.faceRecognition;
+          
+        if (faceData.faceImages && faceData.faceImages.length > 0) {
+          return faceData.faceImages[0];
+        }
+      }
+      
+      // Check for profile image
+      if (employee.profileImage) {
+        return employee.profileImage;
+      }
+    }
+    
+    return null;
   };
   
   const getStatusClass = (record: AttendanceRecord): string => {
@@ -207,6 +244,21 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     } else {
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200';
     }
+  };
+
+  // Get badge type based on attendance status
+  const getStatusBadgeType = (record: AttendanceRecord): 'primary' | 'success' | 'warning' => {
+    if (record.type === 'sign-in') {
+      return record.isLate ? 'warning' : 'success';
+    }
+    return 'primary';
+  };
+
+  const getStatusText = (record: AttendanceRecord): string => {
+    if (record.type === 'sign-in') {
+      return record.isLate ? 'Late Arrival' : 'On Time';
+    }
+    return 'Sign Out';
   };
 
   if (loading) {
@@ -327,22 +379,33 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
-                          {/* Show facial capture image with fallback to employee profile image */}
-                          {(record.facialCapture?.image || employees[record.employeeId]?.faceRecognition?.faceImages?.[0] || employees[record.employeeId]?.profileImage) ? (
-                            <img 
-                              src={record.facialCapture?.image || employees[record.employeeId]?.faceRecognition?.faceImages?.[0] || employees[record.employeeId]?.profileImage}
-                              alt={`${getEmployeeName(record.employeeId, record.employeeName)} attendance photo`}
-                              className="h-10 w-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const fallbackDiv = e.currentTarget.parentElement?.querySelector('.fallback-initials');
-                                if (fallbackDiv) {
-                                  fallbackDiv.classList.remove('hidden');
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <div className={`h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium ${record.facialCapture?.image || employees[record.employeeId]?.faceRecognition?.faceImages?.[0] || employees[record.employeeId]?.profileImage ? 'hidden' : ''} fallback-initials`}>
+                          {/* Improved image handling with better priority system */}
+                          {(() => {
+                            const imageUrl = getEmployeeImage(record);
+                            
+                            if (imageUrl) {
+                              return (
+                                <img 
+                                  src={imageUrl}
+                                  alt={getEmployeeName(record.employeeId, record.employeeName)}
+                                  className="h-10 w-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallbackDiv = e.currentTarget.parentElement?.querySelector('.fallback-initials');
+                                    if (fallbackDiv) {
+                                      fallbackDiv.classList.remove('hidden');
+                                    }
+                                  }}
+                                />
+                              );
+                            }
+                            return null;
+                          })()}
+                          
+                          {/* Fallback initials if no image is available or loading fails */}
+                          <div className={`h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium ${
+                            getEmployeeImage(record) ? 'hidden' : ''
+                          } fallback-initials`}>
                             {getEmployeeName(record.employeeId, record.employeeName)
                               .split(' ')
                               .map(n => n[0])
@@ -374,11 +437,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusClass(record)}`}>
-                        {record.type === 'sign-in' 
-                          ? (record.isLate ? 'Late Arrival' : 'Sign In') 
-                          : 'Sign Out'}
-                      </span>
+                      <Badge
+                        type={getStatusBadgeType(record)}
+                        text={getStatusText(record)}
+                      />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       {record.location ? (

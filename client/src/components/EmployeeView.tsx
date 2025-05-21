@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+// Fixed EmployeeView.tsx with properly working lateness detection
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/Card';
-import { Clock, CalendarDays, Fingerprint, Camera } from 'lucide-react';
+import { Clock, CalendarDays, Camera } from 'lucide-react';
 import Button from './ui/Button';
 import { AttendanceRecord, Employee } from '../types';
 import { employeeAuthService } from '../services/employeeAuthService';
@@ -37,100 +39,149 @@ const EmployeeView: React.FC = () => {
   };
   
   // Handle employee selection
-// Handle employee selection
-const handleEmployeeSelect = async (employee: Employee, notes: string) => {
-  console.log("Selected Employee:", employee);
-  setEmployeeData(employee);
-  
-  // Log all potential ID forms for debugging
-  console.log("Employee ID formats:", {
-    id: employee.id,
-    _id: employee._id,
-    employeeId: employee.employeeId
-  });
-  
-  // Submit attendance with the selected employee and notes
-  if (capturedFaceImage) {
-    await submitAttendance(employee, capturedFaceImage, notes);
-  }
-};
-
-// Update the submitAttendance function
-const submitAttendance = async (employee: Employee, faceImage: string, notes: string) => {
-  try {
-    // Print detailed information about the employee object
-    console.log("Employee in submitAttendance:", JSON.stringify(employee, null, 2));
+  const handleEmployeeSelect = async (employee: Employee, notes: string) => {
+    console.log("👤 Selected Employee:", employee.name);
+    setEmployeeData(employee);
     
-    // Get current location (if available)
-    let location = null;
+    // Detailed logging of employee ID formats to help debugging
+    console.log("👤 Employee ID formats:", {
+      id: employee.id,
+      _id: employee._id,
+      employeeId: employee.employeeId
+    });
+    
+    // Submit attendance with the selected employee and notes
+    if (capturedFaceImage) {
+      try {
+        await submitAttendance(employee, capturedFaceImage, notes);
+      } catch (error) {
+        console.error("Error submitting attendance:", error);
+        toast.error("Failed to record attendance. Please try again.");
+        // Reset to initial state on error
+        setCurrentStep(AttendanceStep.INITIAL);
+      }
+    } else {
+      toast.error("No face capture image available. Please try again.");
+      setCurrentStep(AttendanceStep.INITIAL);
+    }
+  };
+
+  // Submit attendance
+  const submitAttendance = async (employee: Employee, faceImage: string, notes: string) => {
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
+      // Print useful debug info
+      console.log("📋 Submitting attendance for:", employee.name);
+      console.log("📋 Attendance type:", attendanceType);
+      console.log("📋 Work schedule:", typeof employee.workSchedule === 'string' ? 
+        employee.workSchedule.substring(0, 50) + '...' : 
+        JSON.stringify(employee.workSchedule));
+      
+      // Get current location if available
+      let location = null;
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 5000,
+            maximumAge: 0
+          });
+        });
+        
+        location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        console.log("📋 Got location:", location);
+      } catch (error) {
+        console.warn('📋 Location access denied or unavailable:', error);
+      }
+      
+      // Determine the best ID to use
+      let employeeId: string | number | null = null;
+      
+      if (employee._id) {
+        employeeId = employee._id;
+        console.log("📋 Using _id field:", employeeId);
+      } else if (employee.id) {
+        employeeId = employee.id;
+        console.log("📋 Using id field:", employeeId);
+      } else if (employee.employeeId) {
+        employeeId = employee.employeeId;
+        console.log("📋 Using employeeId field:", employeeId);
+      }
+      
+      if (!employeeId) {
+        console.error("📋 No valid employee ID found");
+        toast.error("Failed to record attendance: No valid employee ID found");
+        return;
+      }
+      
+      // Get current timestamp
+      const timestamp = new Date().toISOString();
+      console.log("📋 Attendance timestamp:", timestamp);
+      
+      // Prepare attendance data
+      const attendanceData = {
+        employeeId: String(employeeId),
+        employeeName: employee.name || '',
+        type: attendanceType,
+        facialImage: faceImage,
+        verificationMethod: 'face-recognition',
+        location,
+        notes,
+        timestamp,
+        // Let the service handle isLate
+      };
+      
+      console.log("📋 Calling employeeAuthService.recordAttendanceWithFace");
+      
+      // Send to service
+      const result = await employeeAuthService.recordAttendanceWithFace(attendanceData);
+      
+      // IMPORTANT: Log the result with explicit mention of the isLate flag
+      console.log("📋 Attendance result received:", {
+        ...result,
+        facialCapture: result.facialCapture ? "[IMAGE DATA]" : null,
+        isLate: result.isLate, // Explicitly log this
+        timestamp: result.timestamp
       });
       
-      location = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude
-      };
-    } catch (error) {
-      console.warn('Location access denied or unavailable');
-    }
-    
-    // Determine the best ID to use
-    // Priority: 1. _id if exists, 2. id if exists, 3. employeeId as fallback
-    let employeeId: string | number | null = null;
-    
-    if (employee._id) {
-      employeeId = employee._id;
-      console.log("Using _id field:", employeeId);
-    } else if (employee.id) {
-      employeeId = employee.id;
-      console.log("Using id field:", employeeId);
-    } else if (employee.employeeId) {
-      employeeId = employee.employeeId;
-      console.log("Using employeeId field:", employeeId);
-    }
-    
-    if (!employeeId) {
-      console.error("No valid employee ID found:", employee);
-      toast.error("Failed to record attendance: No valid employee ID found");
-      return;
-    }
-    
-    // Prepare and submit attendance record with notes
-    const attendanceData = {
-      employeeId: String(employeeId), // Force to string type
-      employeeName: employee.name || '',
-      type: attendanceType,
-      facialImage: faceImage,
-      verificationMethod: 'face-recognition',
-      location,
-      notes, // Include notes in the request
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log("Attendance Data being sent:", {
-      ...attendanceData,
-      facialImage: "[IMAGE DATA]"
-    });
+      // Make sure isLate exists in the result
+      if (result) {
+        if (typeof result.isLate === 'undefined' && attendanceType === 'sign-in') {
+          console.warn("📋 isLate flag is undefined in the result, explicitly setting to false");
+          result.isLate = false;
+        }
+        
+        // Double check the boolean value is properly set
+        if (attendanceType === 'sign-in') {
+          console.log(`📋 Final isLate value being used: ${result.isLate}`);
+          
+          // Force isLate to be a proper boolean (not undefined, null, string, etc.)
+          result.isLate = Boolean(result.isLate);
+        }
+      }
       
-    // Try to call the actual service
-    const result = await employeeAuthService.recordAttendanceWithFace(attendanceData);
-    
-    // Set record and move to success step
-    setRecord(result);
-    setCurrentStep(AttendanceStep.SUCCESS);
-    toast.success(`${attendanceType === 'sign-in' ? 'Signed in' : 'Signed out'} successfully!`);
-  } catch (error) {
-    console.error('Error recording attendance:', error);
-    
-    // Get the best available ID for the mock result
-    const bestId = employee._id || employee.id || employee.employeeId;
-    
-    setCurrentStep(AttendanceStep.SUCCESS);
-    toast.success(`Test mode: ${attendanceType === 'sign-in' ? 'Signed in' : 'Signed out'} successfully!`);
-  }
-};
+      // Update UI with the result
+      setRecord(result);
+      setCurrentStep(AttendanceStep.SUCCESS);
+      
+      // Show appropriate message
+      if (attendanceType === 'sign-in') {
+        if (result.isLate) {
+          toast.success("Signed in successfully (marked as late)");
+        } else {
+          toast.success("Signed in successfully (on time)");
+        }
+      } else {
+        toast.success("Signed out successfully");
+      }
+      
+    } catch (error) {
+      console.error('Error recording attendance:', error);
+      toast.error("Failed to record attendance. Please try again.");
+      throw error; // Re-throw to allow the calling function to handle it
+    }
+  };
   
   const handleCancel = () => {
     setCurrentStep(AttendanceStep.INITIAL);
@@ -170,12 +221,15 @@ const submitAttendance = async (employee: Employee, faceImage: string, notes: st
       case AttendanceStep.SUCCESS:
         if (!record) return null;
         
+        // IMPORTANT: Log the isLate value before rendering the success screen
+        console.log("📋 Rendering Success screen with isLate =", record.isLate);
+        
         return (
           <AttendanceSuccess 
             type={record.type}
-            timestamp={record.timestamp}
+            timestamp={typeof record.timestamp === 'string' ? record.timestamp : record.timestamp.toISOString()}
             employeeName={record.employeeName || 'Employee'}
-            isLate={record.isLate}
+            isLate={Boolean(record.isLate)} // IMPORTANT: Force boolean with Boolean()
             onDone={handleDone}
           />
         );
@@ -267,4 +321,4 @@ const submitAttendance = async (employee: Employee, faceImage: string, notes: st
   );
 };
 
-export default EmployeeView
+export default EmployeeView;

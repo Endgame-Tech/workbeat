@@ -1,4 +1,3 @@
-// Updated EmployeeSelector.tsx with notes parameter and hover interactions
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardFooter } from './ui/Card';
 import Button from './ui/Button';
@@ -9,7 +8,7 @@ import Input from './ui/Input';
 import { toast } from 'react-hot-toast';
 
 interface EmployeeSelectorProps {
-  onEmployeeSelect: (employee: Employee, notes: string) => void;  // Updated to include notes
+  onEmployeeSelect: (employee: Employee, notes: string) => Promise<void>; // Updated to return Promise
   onCancel: () => void;
   attendanceType: 'sign-in' | 'sign-out';
   capturedFaceImage: string;
@@ -28,8 +27,10 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [organizationId, setOrganizationId] = useState<string | null>(propOrgId || null);
-  const [notes, setNotes] = useState<string>('');  // Added notes state
-  const [hoveredEmployeeId, setHoveredEmployeeId] = useState<string | null>(null);  // Added for hover state
+  const [notes, setNotes] = useState<string>('');
+  const [hoveredEmployeeId, setHoveredEmployeeId] = useState<string | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false); // New state for selection in progress
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null); // New state for active employee
 
   // Get organization ID if not provided as a prop
   useEffect(() => {
@@ -49,7 +50,6 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   const fetchEmployees = async () => {
     try {
       setIsLoading(true);
-      // Only get active employees for the current organization
       const activeEmployees = await employeeService.getAllEmployees(true);
       
       console.log(`Fetched ${activeEmployees.length} active employees for organization ${organizationId}`);
@@ -88,17 +88,30 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     setNotes(e.target.value);
   };
 
-const handleEmployeeSelect = (employee: Employee) => {
-  console.log("Selected employee in selector:", employee);
-  console.log("Employee ID formats:", {
-    id: employee.id,
-    _id: employee._id,
-    employeeId: employee.employeeId
-  });
-  
-  // Make sure the entire employee object is passed through
-  onEmployeeSelect(employee, notes);
-};
+  const handleEmployeeSelect = async (employee: Employee) => {
+    if (isSelecting) return; // Prevent multiple clicks while processing
+
+    setIsSelecting(true);
+    setSelectedEmployeeId(employee._id || employee.id || employee.employeeId);
+    
+    console.log("Selected employee in selector:", employee);
+    console.log("Employee ID formats:", {
+      id: employee.id,
+      _id: employee._id,
+      employeeId: employee.employeeId
+    });
+
+    try {
+      await onEmployeeSelect(employee, notes);
+      toast.success(`Successfully ${attendanceType === 'sign-in' ? 'signed in' : 'signed out'} ${employee.name}`);
+    } catch (error) {
+      console.error('Error during employee selection:', error);
+      toast.error(`Failed to ${attendanceType === 'sign-in' ? 'sign in' : 'sign out'} ${employee.name}`);
+    } finally {
+      setIsSelecting(false);
+      setSelectedEmployeeId(null); // Reset active state after completion
+    }
+  };
 
   if (isLoading) {
     return (
@@ -122,6 +135,7 @@ const handleEmployeeSelect = (employee: Employee) => {
             value={searchQuery}
             onChange={handleSearch}
             leftIcon={<Search size={18} />}
+            disabled={isSelecting} // Disable search during selection
           />
         </div>
       </CardHeader>
@@ -137,12 +151,16 @@ const handleEmployeeSelect = (employee: Employee) => {
               <div
                 key={employee._id}
                 className={`p-3 border border-gray-200 dark:border-gray-700 rounded-lg 
-                           hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-blue-400 
-                           cursor-pointer transition-all duration-200 transform 
-                           ${hoveredEmployeeId === employee._id ? 'scale-102 shadow-md bg-gray-50 dark:bg-gray-800 border-blue-400' : ''}`}
-                onClick={() => handleEmployeeSelect(employee)}
-                onMouseEnter={() => setHoveredEmployeeId(employee._id || employee.id || employee.employeeId)}
-                onMouseLeave={() => setHoveredEmployeeId(null)}
+                           ${isSelecting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
+                           ${selectedEmployeeId === (employee._id || employee.id || employee.employeeId) 
+                             ? 'bg-blue-100 dark:bg-blue-900 border-blue-400' 
+                             : hoveredEmployeeId === (employee._id || employee.id || employee.employeeId) && !isSelecting 
+                             ? 'hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-blue-400 scale-102 shadow-md' 
+                             : ''} 
+                           transition-all duration-200 transform`}
+                onClick={() => !isSelecting && handleEmployeeSelect(employee)}
+                onMouseEnter={() => !isSelecting && setHoveredEmployeeId(employee._id || employee.id || employee.employeeId)}
+                onMouseLeave={() => !isSelecting && setHoveredEmployeeId(null)}
               >
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-10 w-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
@@ -165,7 +183,6 @@ const handleEmployeeSelect = (employee: Employee) => {
         )}
       </CardContent>
 
-      {/* Added Notes Section */}
       <div className="px-4 pb-3">
         <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           <FileText size={16} className="mr-2" />
@@ -179,11 +196,12 @@ const handleEmployeeSelect = (employee: Employee) => {
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                    bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           rows={3}
+          disabled={isSelecting} // Disable notes during selection
         />
       </div>
 
       <CardFooter className="flex justify-between">
-        <Button variant="ghost" onClick={onCancel}>
+        <Button variant="ghost" onClick={onCancel} disabled={isSelecting}>
           Cancel
         </Button>
         <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center">

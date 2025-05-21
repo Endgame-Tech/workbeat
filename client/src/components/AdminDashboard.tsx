@@ -1,12 +1,12 @@
+// Complete Improved AdminDashboard.tsx with better report structure
+
 import React, { useEffect, useState, useCallback } from 'react';
 import DashboardStats from './DashboardStats';
 import AttendanceTable from './AttendanceTable';
 import EmployeeForm from './admin/EmployeeForm';
-// import EmployeeCard from './admin/EmployeeCard';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Layers, Settings, Calendar, Clock, Download, Users, PlusCircle, Search, RefreshCw } from 'lucide-react';
+import { Layers, Settings, Calendar, Clock, Download, Users, PlusCircle, Search, RefreshCw, FileText } from 'lucide-react';
 import Button from './ui/Button';
-// import Input from './ui/Input';
 import { Employee, AttendanceRecord } from '../types';
 import { employeeService } from '../services/employeeService';
 import { attendanceService } from '../services/attendanceService';
@@ -17,6 +17,18 @@ enum DashboardTab {
   OVERVIEW,
   REPORTS,
   WORKERS
+}
+
+enum ReportType {
+  DAILY = 'Daily',
+  WEEKLY = 'Weekly',
+  MONTHLY = 'Monthly'
+}
+
+enum ReportFormat {
+  DETAILED = 'Detailed',
+  EMPLOYEE_SUMMARY = 'Employee Summary',
+  MONTHLY = 'Monthly Summary'
 }
 
 const AdminDashboard: React.FC = () => {
@@ -33,6 +45,9 @@ const AdminDashboard: React.FC = () => {
   const [organizationName, setOrganizationName] = useState<string>('Your Organization');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [exportingReport, setExportingReport] = useState<boolean>(false);
+  const [selectedReportPeriod, setSelectedReportPeriod] = useState<ReportType | null>(null);
+  const [reportFormat, setReportFormat] = useState<ReportFormat>(ReportFormat.EMPLOYEE_SUMMARY);
 
   // Extract organization ID and name on mount
   useEffect(() => {
@@ -55,23 +70,59 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   // Define fetchAttendanceRecords as a useCallback to prevent recreation on each render
-  const fetchAttendanceRecords = useCallback(async () => {
+  const fetchAttendanceRecords = useCallback(async (startDate?: Date, endDate?: Date) => {
     if (!organizationId) {
       console.warn('Cannot fetch attendance records: Missing organization ID');
-      return;
+      return [];
     }
     
     setLoadingAttendance(true);
     try {
       console.log('Fetching attendance records for organization:', organizationId);
-      const records = await attendanceService.getAllAttendanceRecords(100);
+      
+      // If dates are provided, use them for filtering
+      let records;
+      if (startDate && endDate) {
+        console.log(`Fetching filtered records from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+        
+        // Try to use attendance report endpoint if available
+        try {
+          records = await attendanceService.getAttendanceReport(
+            startDate.toISOString().split('T')[0], 
+            endDate.toISOString().split('T')[0]
+          );
+        } catch (reportError) {
+          console.warn('Failed to fetch from report endpoint, using regular endpoint with filtering:', reportError);
+          // Fallback to regular endpoint
+          records = await attendanceService.getAllAttendanceRecords(500);
+          
+          // Filter records by date client-side
+          records = records.filter(record => {
+            const recordDate = new Date(record.timestamp);
+            return recordDate >= startDate && recordDate <= endDate;
+          });
+        }
+      } else {
+        // Regular fetch for all recent records
+        records = await attendanceService.getAllAttendanceRecords(100);
+      }
+      
       console.log(`Fetched ${records.length} attendance records`);
-      setAttendanceRecords(records);
-      setLastUpdated(new Date());
+      
+      // Only update state if not generating a report
+      if (!startDate && !endDate) {
+        setAttendanceRecords(records);
+        setLastUpdated(new Date());
+      }
+      
+      return records;
     } catch (error) {
       console.error('Error fetching attendance records:', error);
-      toast.error('Failed to load attendance records');
-      setAttendanceRecords([]);
+      if (!startDate && !endDate) {
+        toast.error('Failed to load attendance records');
+        setAttendanceRecords([]);
+      }
+      return [];
     } finally {
       setLoadingAttendance(false);
     }
@@ -81,7 +132,7 @@ const AdminDashboard: React.FC = () => {
   const fetchEmployees = useCallback(async () => {
     if (!organizationId) {
       console.warn('Cannot fetch employees: Missing organization ID');
-      return;
+      return [];
     }
     
     setLoadingEmployees(true);
@@ -97,10 +148,13 @@ const AdminDashboard: React.FC = () => {
       if (!data || data.length === 0) {
         console.warn('No employees returned from API');
       }
+      
+      return data || [];
     } catch (err) {
       console.error('Error in fetch operation:', err);
       toast.error('Failed to load employees');
       setEmployees([]);
+      return [];
     } finally {
       setLoadingEmployees(false);
     }
@@ -142,7 +196,7 @@ const AdminDashboard: React.FC = () => {
     }
   }, [activeTab, fetchEmployees, fetchAttendanceRecords]);
 
-  // In AdminDashboard.jsx
+  // Handle employee editing
   function handleEditEmployee(employee: Employee) {
     console.log("Employee to edit:", employee);
     console.log("Employee ID value:", employee.id || employee._id);
@@ -150,51 +204,52 @@ const AdminDashboard: React.FC = () => {
     setShowEmployeeForm(true);
   }
 
+  // Handle employee form submission
   const handleEmployeeSubmit = async (data: Partial<Employee>) => {
-  console.log('Form data received:', data);
-  setIsSubmitting(true);
+    console.log('Form data received:', data);
+    setIsSubmitting(true);
 
-  try {
-    // Format dates properly if they exist
-    if (data.startDate && typeof data.startDate === 'string' && !data.startDate.includes('T')) {
-      data.startDate = new Date(data.startDate).toISOString();
-    }
-    
-    // Ensure the organization ID is set
-    const employeeData = {
-      ...data,
-      organizationId: organizationId || undefined
-    };
-    
-    if (!employeeData.organizationId) {
-      throw new Error('Organization ID is required');
-    }
-    
-    if (editingEmployee) {
-      // Get the ID, handling both potential formats (_id or id)
-      const employeeId = editingEmployee._id || editingEmployee.id;
-      console.log('Updating employee with ID:', employeeId);
+    try {
+      // Format dates properly if they exist
+      if (data.startDate && typeof data.startDate === 'string' && !data.startDate.includes('T')) {
+        data.startDate = new Date(data.startDate).toISOString();
+      }
       
-      // Update existing employee
-      await employeeService.updateEmployee(String(employeeId), employeeData);
-      toast.success(`Employee ${data.name} updated successfully`);
-    } else {
-      // Create new employee
-      await employeeService.createEmployee(employeeData);
-      toast.success(`Employee ${data.name} created successfully`);
+      // Ensure the organization ID is set
+      const employeeData = {
+        ...data,
+        organizationId: organizationId || undefined
+      };
+      
+      if (!employeeData.organizationId) {
+        throw new Error('Organization ID is required');
+      }
+      
+      if (editingEmployee) {
+        // Get the ID, handling both potential formats (_id or id)
+        const employeeId = editingEmployee._id || editingEmployee.id;
+        console.log('Updating employee with ID:', employeeId);
+        
+        // Update existing employee
+        await employeeService.updateEmployee(String(employeeId), employeeData);
+        toast.success(`Employee ${data.name} updated successfully`);
+      } else {
+        // Create new employee
+        await employeeService.createEmployee(employeeData);
+        toast.success(`Employee ${data.name} created successfully`);
+      }
+      
+      // Refresh the employee list and close the form
+      await fetchEmployees();
+      setShowEmployeeForm(false);
+      setEditingEmployee(null);
+    } catch (error) {
+      console.error('Error saving employee:', error);
+      toast.error('Error saving employee. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Refresh the employee list and close the form
-    await fetchEmployees();
-    setShowEmployeeForm(false);
-    setEditingEmployee(null);
-  } catch (error) {
-    console.error('Error saving employee:', error);
-    toast.error('Error saving employee. Please try again.');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   function handleCancelEmployeeForm() {
     setShowEmployeeForm(false);
@@ -231,6 +286,514 @@ const AdminDashboard: React.FC = () => {
     employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Get date range for report types
+  const getReportDateRange = (reportType: ReportType): { startDate: Date, endDate: Date } => {
+    const endDate = new Date(); // Today
+    endDate.setHours(23, 59, 59, 999); // End of today
+    
+    let startDate = new Date();
+    
+    switch (reportType) {
+      case ReportType.DAILY:
+        // Just today
+        startDate.setHours(0, 0, 0, 0); // Beginning of today
+        break;
+      case ReportType.WEEKLY:
+        // Last 7 days
+        startDate.setDate(startDate.getDate() - 7);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case ReportType.MONTHLY:
+        // Last 30 days
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
+    
+    return { startDate, endDate };
+  };
+
+  // Generate and export attendance report
+  const generateReport = async (reportType: ReportType) => {
+    setSelectedReportPeriod(reportType);
+    setExportingReport(true);
+    
+    try {
+      // First ensure we have all employees data
+      const employeesData = await fetchEmployees();
+      
+      // Get date range based on report type
+      const { startDate, endDate } = getReportDateRange(reportType);
+      
+      // Fetch attendance records for the specified period
+      const records = await fetchAttendanceRecords(startDate, endDate);
+      
+      if (records.length === 0) {
+        toast.error(`No attendance records found for ${reportType.toLowerCase()} report period`);
+        return;
+      }
+      
+      // Export the data to CSV with the chosen format
+      exportAttendanceData(records, employeesData, reportType);
+      
+      toast.success(`${reportType} report generated successfully`);
+    } catch (error) {
+      console.error(`Error generating ${reportType} report:`, error);
+      toast.error(`Failed to generate ${reportType} report`);
+    } finally {
+      setExportingReport(false);
+      setSelectedReportPeriod(null);
+    }
+  };
+
+  // Enhanced export function with more comprehensive data
+  const exportAttendanceData = (
+    recordsToExport = attendanceRecords,
+    employeesData = employees,
+    reportType?: ReportType
+  ) => {
+    if (recordsToExport.length === 0) {
+      toast.error('No attendance records to export');
+      return;
+    }
+    
+    // Create a lookup map for faster employee access
+    const employeeMap: Record<string, Employee> = {};
+    employeesData.forEach(emp => {
+      if (emp.id) employeeMap[emp.id.toString()] = emp;
+      if (emp._id) employeeMap[emp._id] = emp;
+      if (emp.employeeId) employeeMap[emp.employeeId] = emp;
+    });
+    
+    // Calculate attendance statistics by employee
+    interface EmployeeStat {
+      totalSignIns: number;
+      onTime: number;
+      late: number;
+      totalHoursWorked: number;
+      averageArrivalTime: string;
+      averageDepartureTime: string;
+      attendanceDates: Set<string>;
+      // Track monthly attendance
+      monthlyAttendance: Record<string, {
+        present: number;
+        late: number;
+        absent: number;
+        workHours: number;
+      }>;
+      // Track records by date for detailed view
+      recordsByDate: Record<string, AttendanceRecord[]>;
+    }
+    
+    const employeeStats: Record<string, EmployeeStat> = {};
+    
+    // Initialize stats for all employees
+    employeesData.forEach(emp => {
+      const empId = emp._id || emp.id?.toString() || emp.employeeId;
+      if (empId) {
+        employeeStats[empId] = {
+          totalSignIns: 0,
+          onTime: 0,
+          late: 0,
+          totalHoursWorked: 0,
+          averageArrivalTime: '',
+          averageDepartureTime: '',
+          attendanceDates: new Set<string>(),
+          monthlyAttendance: {},
+          recordsByDate: {}
+        };
+      }
+    });
+    
+    // Process records to calculate stats
+    recordsToExport.forEach(record => {
+      const empId = record.employeeId;
+      if (!employeeStats[empId]) {
+        // Initialize for employees not in our initial data
+        employeeStats[empId] = {
+          totalSignIns: 0,
+          onTime: 0,
+          late: 0,
+          totalHoursWorked: 0,
+          averageArrivalTime: '',
+          averageDepartureTime: '',
+          attendanceDates: new Set<string>(),
+          monthlyAttendance: {},
+          recordsByDate: {}
+        };
+      }
+      
+      const recordDate = new Date(record.timestamp);
+      const dateStr = recordDate.toISOString().split('T')[0];
+      const monthStr = dateStr.substring(0, 7); // YYYY-MM format
+      
+      // Track attendance dates
+      employeeStats[empId].attendanceDates.add(dateStr);
+      
+      // Initialize recordsByDate if needed
+      if (!employeeStats[empId].recordsByDate[dateStr]) {
+        employeeStats[empId].recordsByDate[dateStr] = [];
+      }
+      
+      // Add record to this date
+      employeeStats[empId].recordsByDate[dateStr].push(record);
+      
+      // Initialize monthlyAttendance if needed
+      if (!employeeStats[empId].monthlyAttendance[monthStr]) {
+        employeeStats[empId].monthlyAttendance[monthStr] = {
+          present: 0,
+          late: 0,
+          absent: 0,
+          workHours: 0
+        };
+      }
+      
+      // Track sign-in/out and lateness
+      if (record.type === 'sign-in') {
+        employeeStats[empId].totalSignIns++;
+        employeeStats[empId].monthlyAttendance[monthStr].present++;
+        
+        if (record.isLate) {
+          employeeStats[empId].late++;
+          employeeStats[empId].monthlyAttendance[monthStr].late++;
+        } else {
+          employeeStats[empId].onTime++;
+        }
+      }
+    });
+    
+    // Choose export format based on selected format
+    switch (reportFormat) {
+      case ReportFormat.EMPLOYEE_SUMMARY:
+        exportEmployeeSummaryReport(recordsToExport, employeeStats, employeeMap, reportType);
+        break;
+      case ReportFormat.MONTHLY:
+        exportMonthlyReport(recordsToExport, employeeStats, employeeMap, reportType);
+        break;
+      case ReportFormat.DETAILED:
+      default:
+        exportDetailedReport(recordsToExport, employeeStats, employeeMap, reportType);
+        break;
+    }
+  };
+  
+  // Export detailed report (all records)
+  const exportDetailedReport = (
+    recordsToExport: AttendanceRecord[],
+    employeeStats: Record<string, any>,
+    employeeMap: Record<string, Employee>,
+    reportType?: ReportType
+  ) => {
+    // Comprehensive headers for the CSV
+    const headers = [
+      'Employee ID',
+      'Employee Name',
+      'Email',
+      'Department',
+      'Position',
+      'Date',
+      'Type',
+      'Timestamp',
+      'Status',
+      'Location',
+      'Notes',
+      'IP Address',
+      'Verification Method',
+      'Face Verified',
+      'Total Sign-Ins',
+      'Times On Time',
+      'Times Late',
+      'Attendance Rate (%)',
+      'Punctuality Rate (%)'
+    ];
+    
+    // Create CSV content
+    const csvRows = [headers.join(',')];
+    
+    // Add data for each record
+    recordsToExport.forEach(record => {
+      const employee = employeeMap[record.employeeId] || {
+        name: record.employeeName || 'Unknown',
+        email: 'unknown@example.com',
+        department: 'Unknown',
+        position: 'Unknown'
+      };
+      
+      const empId = record.employeeId;
+      const stats = employeeStats[empId];
+      
+      // Calculate rates
+      const attendanceRate = stats.attendanceDates.size > 0 
+        ? Math.round((stats.attendanceDates.size / 30) * 100) 
+        : 0;
+      
+      const punctualityRate = stats.totalSignIns > 0 
+        ? Math.round((stats.onTime / stats.totalSignIns) * 100) 
+        : 0;
+      
+      // Format timestamp
+      const timestamp = new Date(record.timestamp);
+      const dateStr = timestamp.toISOString().split('T')[0];
+      const timeStr = timestamp.toLocaleTimeString();
+      
+      // Process location
+      let locationStr = '';
+      try {
+        if (record.location) {
+          if (typeof record.location === 'string') {
+            const locObj = JSON.parse(record.location);
+            locationStr = `${locObj.latitude?.toFixed(4) || ''}, ${locObj.longitude?.toFixed(4) || ''}`;
+          } else if (record.location.latitude && record.location.longitude) {
+            locationStr = `${record.location.latitude.toFixed(4)}, ${record.location.longitude.toFixed(4)}`;
+          }
+        }
+      } catch (e) {
+        locationStr = 'Invalid location format';
+      }
+      
+      // Add row to CSV
+      csvRows.push([
+        record.employeeId,
+        employee.name,
+        employee.email || 'Unknown',
+        employee.department || 'Unknown',
+        employee.position || 'Unknown',
+        dateStr,
+        record.type,
+        timeStr,
+        record.isLate && record.type === 'sign-in' ? 'Late' : (record.type === 'sign-in' ? 'On Time' : 'Sign Out'),
+        locationStr || 'No location',
+        (record.notes || '').replace(/,/g, ' '), // Remove commas to avoid CSV issues
+        record.ipAddress || 'Unknown',
+        record.verificationMethod || 'manual',
+        record.facialVerification ? 'Yes' : 'No',
+        stats.totalSignIns,
+        stats.onTime,
+        stats.late,
+        attendanceRate,
+        punctualityRate
+      ].join(','));
+    });
+    
+    downloadCsv(csvRows, reportType, 'detailed');
+  };
+  
+  // Export employee summary report (one row per employee)
+  const exportEmployeeSummaryReport = (
+    recordsToExport: AttendanceRecord[],
+    employeeStats: Record<string, any>,
+    employeeMap: Record<string, Employee>,
+    reportType?: ReportType
+  ) => {
+    // Headers for employee summary
+    const headers = [
+      'Employee ID',
+      'Employee Name',
+      'Email',
+      'Department',
+      'Position',
+      'Total Days Present',
+      'Total Sign-Ins',
+      'Times On Time',
+      'Times Late',
+      'Attendance Rate (%)',
+      'Punctuality Rate (%)',
+      'Last Sign-In Date',
+      'Last Sign-In Time',
+      'Last Sign-In Status'
+    ];
+    
+    // Create CSV content
+    const csvRows = [headers.join(',')];
+    
+    // Process each employee
+    Object.keys(employeeStats).forEach(empId => {
+      const stats = employeeStats[empId];
+      const employee = employeeMap[empId] || {
+        name: 'Unknown Employee',
+        email: 'unknown@example.com',
+        department: 'Unknown',
+        position: 'Unknown'
+      };
+      
+      // Calculate rates
+      const attendanceRate = stats.attendanceDates.size > 0 
+        ? Math.round((stats.attendanceDates.size / 30) * 100) 
+        : 0;
+      
+      const punctualityRate = stats.totalSignIns > 0 
+        ? Math.round((stats.onTime / stats.totalSignIns) * 100) 
+        : 0;
+      
+      // Find most recent sign-in
+      let lastSignIn: AttendanceRecord | null = null;
+      let lastSignInDate = '';
+      let lastSignInTime = '';
+      let lastSignInStatus = '';
+      
+      // Look through all records to find the latest sign-in
+      recordsToExport.forEach(record => {
+        if (record.employeeId === empId && record.type === 'sign-in') {
+          if (!lastSignIn || new Date(record.timestamp) > new Date(lastSignIn.timestamp)) {
+            lastSignIn = record;
+          }
+        }
+      });
+      
+      // Format last sign-in info if found
+      if (lastSignIn) {
+        const lastTimestamp = new Date(lastSignIn.timestamp);
+        lastSignInDate = lastTimestamp.toISOString().split('T')[0];
+        lastSignInTime = lastTimestamp.toLocaleTimeString();
+        lastSignInStatus = lastSignIn.isLate ? 'Late' : 'On Time';
+      }
+      
+      // Add row to CSV
+      csvRows.push([
+        empId,
+        employee.name,
+        employee.email || 'Unknown',
+        employee.department || 'Unknown',
+        employee.position || 'Unknown',
+        stats.attendanceDates.size,
+        stats.totalSignIns,
+        stats.onTime,
+        stats.late,
+        attendanceRate,
+        punctualityRate,
+        lastSignInDate,
+        lastSignInTime,
+        lastSignInStatus
+      ].join(','));
+    });
+    
+    downloadCsv(csvRows, reportType, 'employee_summary');
+  };
+  
+  // Export monthly report (grouped by month and employee)
+  const exportMonthlyReport = (
+    recordsToExport: AttendanceRecord[],
+    employeeStats: Record<string, any>,
+    employeeMap: Record<string, Employee>,
+    reportType?: ReportType
+  ) => {
+    // Get all months from records
+    const months = new Set<string>();
+    recordsToExport.forEach(record => {
+      const month = new Date(record.timestamp).toISOString().substring(0, 7); // YYYY-MM
+      months.add(month);
+    });
+    
+    // Sort months
+    const sortedMonths = Array.from(months).sort();
+    
+    // Build headers: Basic employee info + one column per month
+    const baseHeaders = [
+      'Employee ID',
+      'Employee Name',
+      'Email',
+      'Department',
+      'Position'
+    ];
+    
+    // Add month columns
+    sortedMonths.forEach(month => {
+      baseHeaders.push(`${month} Present`);
+      baseHeaders.push(`${month} Late`);
+      baseHeaders.push(`${month} Attendance %`);
+    });
+    
+    // Add total columns
+    baseHeaders.push('Total Days Present');
+    baseHeaders.push('Total Sign-Ins On Time');
+    baseHeaders.push('Total Sign-Ins Late');
+    baseHeaders.push('Overall Attendance %');
+    baseHeaders.push('Overall Punctuality %');
+    
+    // Create CSV content
+    const csvRows = [baseHeaders.join(',')];
+    
+    // Add a row for each employee
+    Object.keys(employeeStats).forEach(empId => {
+      const stats = employeeStats[empId];
+      const employee = employeeMap[empId] || {
+        name: 'Unknown Employee',
+        email: 'unknown@example.com',
+        department: 'Unknown',
+        position: 'Unknown'
+      };
+      
+      // Start with base employee info
+      const row = [
+        empId,
+        employee.name,
+        employee.email || 'Unknown',
+        employee.department || 'Unknown',
+        employee.position || 'Unknown'
+      ];
+      
+      // Add data for each month
+      sortedMonths.forEach(month => {
+        const monthStats = stats.monthlyAttendance[month] || { present: 0, late: 0, absent: 0 };
+        
+        // Calculate attendance percentage for this month
+        const daysInMonth = new Date(parseInt(month.substring(0, 4)), parseInt(month.substring(5, 7)), 0).getDate();
+        const attendanceRate = Math.round((monthStats.present / daysInMonth) * 100);
+        
+        row.push(String(monthStats.present || 0)); // Present days
+        row.push(String(monthStats.late || 0));    // Late days
+        row.push(String(attendanceRate || 0));     // Attendance %
+      });
+      
+      // Add totals
+      const attendanceRate = stats.attendanceDates.size > 0 
+        ? Math.round((stats.attendanceDates.size / 30) * 100) 
+        : 0;
+      
+      const punctualityRate = stats.totalSignIns > 0 
+        ? Math.round((stats.onTime / stats.totalSignIns) * 100) 
+        : 0;
+      
+      row.push(String(stats.attendanceDates.size));  // Total days present
+      row.push(String(stats.onTime));               // Total on time
+      row.push(String(stats.late));                 // Total late
+      row.push(String(attendanceRate));             // Overall attendance %
+      row.push(String(punctualityRate));            // Overall punctuality %
+      
+      // Add row to CSV
+      csvRows.push(row.join(','));
+    });
+    
+    downloadCsv(csvRows, reportType, 'monthly');
+  };
+  
+  // Helper to download CSV
+  const downloadCsv = (
+    csvRows: string[],
+    reportType?: ReportType,
+    formatType: string = 'default'
+  ) => {
+    // Create the CSV content
+    const csvContent = csvRows.join('\n');
+    
+    // Create a download link and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    
+    // Set filename based on report type and format
+    const datePart = new Date().toISOString().split('T')[0];
+    const reportTypeName = reportType ? `_${reportType.toLowerCase()}` : '';
+    const formatName = formatType ? `_${formatType}` : '';
+    
+    link.setAttribute('download', `${organizationName}_attendance${reportTypeName}${formatName}_${datePart}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -273,13 +836,13 @@ const AdminDashboard: React.FC = () => {
                   onClick={() => exportAttendanceData()}
                   disabled={attendanceRecords.length === 0}
                 >
-                  Export Data
+                  Export All Data
                 </Button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[ 'Daily', 'Weekly', 'Monthly' ].map(period => (
+              {Object.values(ReportType).map(period => (
                 <Card key={period}>
                   <CardHeader className="pb-2">
                     <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
@@ -289,9 +852,17 @@ const AdminDashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      Attendance summary for {period.toLowerCase()}
+                      Attendance summary for {period.toLowerCase()} period
                     </p>
-                    <Button variant="ghost" className="w-full">Generate Report</Button>
+                    <Button 
+                      variant="primary" 
+                      className="w-full"
+                      onClick={() => generateReport(period)}
+                      isLoading={exportingReport && selectedReportPeriod === period}
+                      leftIcon={<FileText size={16} />}
+                    >
+                      Generate Report
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -414,43 +985,6 @@ const AdminDashboard: React.FC = () => {
           </>
         );
     }
-  };
-
-  // Helper function to export attendance data as CSV
-  const exportAttendanceData = () => {
-    if (attendanceRecords.length === 0) return;
-    
-    // Create CSV content
-    const headers = ['Employee ID', 'Employee Name', 'Type', 'Timestamp', 'Status', 'Notes'];
-    
-    const csvRows = [
-      headers.join(','),
-      ...attendanceRecords.map(record => {
-        const employee = employees.find(emp => emp._id === record.employeeId);
-        return [
-          record.employeeId,
-          employee?.name || record.employeeName || 'Unknown',
-          record.type,
-          new Date(record.timestamp).toLocaleString(),
-          record.isLate ? 'Late' : record.type === 'sign-in' ? 'On Time' : 'Sign Out',
-          record.notes?.replace(/,/g, ' ') || ''
-        ].join(',');
-      })
-    ];
-    
-    const csvContent = csvRows.join('\n');
-    
-    // Create a download link and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${organizationName}_attendance_report_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success('Attendance data exported successfully');
   };
 
   return (
