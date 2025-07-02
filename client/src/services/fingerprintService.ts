@@ -9,7 +9,7 @@
 
 import api from './api';
 // Type for credential entries from server
-interface ServerCredential { rawId: string; }
+interface ServerCredential { rawId: string; employeeId: string; }
 
 // WebAuthn options for fingerprint authentication
 const FINGERPRINT_OPTIONS = {
@@ -120,72 +120,62 @@ const enrollFingerprint = async (employeeId: string, employeeName: string): Prom
 };
 
 /**
- * Verify fingerprint for attendance
- * @param employeeId Optional employee ID (can be omitted for testing)
- * @returns Promise resolving to verification result
+ * Verify fingerprint for attendance across all enrolled employees
+ * @returns Promise resolving to verification result with matched employeeId
  */
-const verifyFingerprint = async (
-  employeeId?: string
-): Promise<{ verified: boolean; employeeId?: string }> => {
+const verifyFingerprint = async (): Promise<{ verified: boolean; employeeId?: string }> => {
   try {
     // Check if fingerprint is supported
     const isSupported = await checkFingerprintSupport();
-    
+
     if (!isSupported) {
       console.error('Fingerprint not supported');
       return { verified: false };
     }
-    
-    // If no employee ID is provided, we can't verify with the server
-    if (!employeeId) {
-      throw new Error('Employee ID required for fingerprint verification');
-    }
-    
-    // Get challenge and credential info from server
-    const { data } = await api.get(`/api/biometrics/fingerprint/verify-challenge/${employeeId}`);
+
+    // Get challenge and credential info for all employees
+    const { data } = await api.get(`/api/biometrics/fingerprint/verify-challenge`);
     const challenge = Uint8Array.from(atob(data.challenge), c => c.charCodeAt(0));
-    
-    // Update options with the challenge
+
+    // Prepare allowed credentials list
+    const allowCredentials = (data.credentials as ServerCredential[]).map(cred => ({
+      id: base64ToArrayBuffer(cred.rawId),
+      type: 'public-key',
+      transports: ['internal'] as AuthenticatorTransport[]
+    }));
+
     const requestOptions: CredentialRequestOptions = {
       publicKey: {
         challenge,
-        allowCredentials: (data.credentials as ServerCredential[]).map(cred => ({
-          id: base64ToArrayBuffer(cred.rawId),
-          type: 'public-key',
-          transports: ['internal']
-        })),
+        allowCredentials,
         timeout: 60000,
-        userVerification: 'required' as UserVerificationRequirement
+        userVerification: 'required'
       }
     };
-    
-    // Verify fingerprint
-    const credential = await navigator.credentials.get(requestOptions);
-    
+
+    // Perform WebAuthn assertion
+    const credential = (await navigator.credentials.get(requestOptions)) as PublicKeyCredential;
     if (!credential) {
       throw new Error('Failed to get credential');
     }
-    
-    // Convert credential to a format that can be sent to the server
-    const publicKeyCredential = credential as PublicKeyCredential;
-    const assertionResponse = publicKeyCredential.response as AuthenticatorAssertionResponse;
-    
+
+    const assertionResponse = credential.response as AuthenticatorAssertionResponse;
+    const rawId = arrayBufferToBase64(credential.rawId);
+
     // Verify with the server
-    const response = await api.post(`/api/biometrics/fingerprint/verify/${employeeId}`, {
-      id: publicKeyCredential.id,
-      rawId: arrayBufferToBase64(publicKeyCredential.rawId),
+    const response = await api.post(`/api/biometrics/fingerprint/verify`, {
+      id: credential.id,
+      rawId,
       response: {
         clientDataJSON: arrayBufferToBase64(assertionResponse.clientDataJSON),
         authenticatorData: arrayBufferToBase64(assertionResponse.authenticatorData),
         signature: arrayBufferToBase64(assertionResponse.signature),
-        userHandle: assertionResponse.userHandle 
-          ? arrayBufferToBase64(assertionResponse.userHandle) 
-          : null
+        userHandle: assertionResponse.userHandle ? arrayBufferToBase64(assertionResponse.userHandle) : null
       },
-      type: publicKeyCredential.type
+      type: credential.type
     });
-    
-    return { verified: response.data.success, employeeId };
+
+    return { verified: response.data.success, employeeId: response.data.employeeId };
   } catch (error) {
     console.error('Error verifying fingerprint:', error);
     return { verified: false };
