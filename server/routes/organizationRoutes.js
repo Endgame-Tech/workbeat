@@ -13,6 +13,6 @@ router.post('/register', registerOrganization);
 
 // Protected routes
 router.get('/:id', protect, getOrganization);
-router.put('/:id', protect, authorize('admin', 'owner'), updateOrganization);
+router.put('/:id', protect, updateOrganization);
 
 module.exports = router;

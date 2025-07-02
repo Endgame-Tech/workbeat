@@ -64,6 +64,43 @@ const AnalyticsDashboard: React.FC = () => {
   const [reportType, setReportType] = useState<'overview' | 'patterns' | 'departments' | 'custom'>('overview');
   const [showExportOptions, setShowExportOptions] = useState(false);
 
+  // Custom Report Builder State
+  const [customReport, setCustomReport] = useState({
+    template: 'Monthly Attendance Summary',
+    metrics: ['Attendance Rate', 'Punctuality Score', 'Total Hours', 'Department Comparison', 'Time Patterns', 'Employee Notes & Reasons'],
+    format: 'PDF Report'
+  });
+  const [generatingCustomReport, setGeneratingCustomReport] = useState(false);
+
+  // Template configurations for different report types
+  const reportTemplates = {
+    'Monthly Attendance Summary': {
+      description: 'Comprehensive monthly overview of attendance patterns and statistics',
+      recommendedMetrics: ['Attendance Rate', 'Punctuality Score', 'Department Comparison'],
+      defaultFormat: 'PDF Report'
+    },
+    'Department Performance Report': {
+      description: 'Compare performance metrics across different departments',
+      recommendedMetrics: ['Department Comparison', 'Attendance Rate', 'Total Hours'],
+      defaultFormat: 'Excel Spreadsheet'
+    },
+    'Individual Employee Report': {
+      description: 'Detailed analysis for specific employees including attendance notes and explanations',
+      recommendedMetrics: ['Attendance Rate', 'Punctuality Score', 'Total Hours', 'Time Patterns', 'Employee Notes & Reasons'],
+      defaultFormat: 'PDF Report'
+    },
+    'Late Arrival Analysis': {
+      description: 'Focus on punctuality trends with employee-provided reasons for late arrivals',
+      recommendedMetrics: ['Punctuality Score', 'Time Patterns', 'Department Comparison', 'Employee Notes & Reasons'],
+      defaultFormat: 'Excel Spreadsheet'
+    },
+    'Productivity Trends': {
+      description: 'Analyze productivity patterns and working hour trends',
+      recommendedMetrics: ['Total Hours', 'Overtime Hours', 'Time Patterns', 'Attendance Rate'],
+      defaultFormat: 'PDF Report'
+    }
+  };
+
   const getWorkingDays = useCallback(() => {
     const start = new Date(dateRange.start);
     const end = new Date(dateRange.end);
@@ -344,6 +381,90 @@ const AnalyticsDashboard: React.FC = () => {
     }
   };
 
+  const handleGenerateCustomReport = async () => {
+    if (!analytics) {
+      toast.error('No analytics data available to generate report');
+      return;
+    }
+
+    if (customReport.metrics.length === 0) {
+      toast.error('Please select at least one metric to include in the report');
+      return;
+    }
+
+    setGeneratingCustomReport(true);
+    
+    try {
+      toast.loading(`Generating ${customReport.template.toLowerCase()}...`);
+      
+      // Route to specific template handler based on selection
+      switch (customReport.template) {
+        case 'Individual Employee Report':
+          await generateIndividualEmployeeReport();
+          break;
+        case 'Department Performance Report':
+          await generateDepartmentPerformanceReport();
+          break;
+        case 'Monthly Attendance Summary':
+          await generateMonthlyAttendanceReport();
+          break;
+        case 'Late Arrival Analysis':
+          await generateLateArrivalReport();
+          break;
+        case 'Productivity Trends':
+          await generateProductivityTrendsReport();
+          break;
+        default:
+          // Fallback to generic custom report
+          await generateGenericCustomReport();
+          break;
+      }
+      
+      toast.dismiss();
+      toast.success(
+        `${customReport.template} successfully generated as ${customReport.format}! 
+        ${customReport.metrics.length} metrics included.`
+      );
+    } catch (error) {
+      console.error('Custom report generation error:', error);
+      toast.dismiss();
+      
+      // More specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('network')) {
+          toast.error('Network error: Please check your connection and try again.');
+        } else if (error.message.includes('permission')) {
+          toast.error('Permission error: You may not have access to generate reports.');
+        } else {
+          toast.error(`Failed to generate ${customReport.template.toLowerCase()}: ${error.message}`);
+        }
+      } else {
+        toast.error(`Failed to generate ${customReport.template.toLowerCase()}. Please try again.`);
+      }
+    } finally {
+      setGeneratingCustomReport(false);
+    }
+  };
+
+  const handleCustomReportChange = (field: string, value: string | string[]) => {
+    setCustomReport(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleTemplateChange = (templateName: string) => {
+    const template = reportTemplates[templateName as keyof typeof reportTemplates];
+    if (template) {
+      setCustomReport(prev => ({
+        ...prev,
+        template: templateName,
+        metrics: template.recommendedMetrics,
+        format: template.defaultFormat
+      }));
+    }
+  };
+
   const renderOverviewCards = () => {
     if (!analytics) return null;
 
@@ -584,6 +705,437 @@ const AnalyticsDashboard: React.FC = () => {
     );
   };
 
+  // Template-specific report generators
+  const generateIndividualEmployeeReport = async () => {
+    try {
+      // Fetch fresh employee and attendance data
+      const employees = await employeeService.getAllEmployees();
+      const records = await attendanceService.getAttendanceReport(dateRange.start, dateRange.end);
+      
+      const formatMap: Record<string, 'pdf' | 'excel' | 'csv'> = {
+        'PDF Report': 'pdf',
+        'Excel Spreadsheet': 'excel', 
+        'CSV Data': 'csv',
+        'PowerPoint Presentation': 'pdf'
+      };
+      
+      const exportFormat = formatMap[customReport.format] || 'pdf';
+      
+      // Generate individual reports for each employee
+      for (const employee of employees.filter((emp: Employee) => emp.isActive)) {
+        // Filter records for this specific employee
+        const employeeRecords = records.filter((record: AttendanceRecord) => 
+          record.employeeId === (employee.id || employee._id)
+        );
+        
+        if (employeeRecords.length === 0) continue; // Skip employees with no records
+        
+        // Calculate employee-specific analytics
+        const employeeAnalytics = processEmployeeSpecificAnalytics(employee, employeeRecords);
+        
+        const exportOptions: ExportOptions = {
+          dateRange,
+          reportType: `individual-employee-${employee.name.replace(/\s+/g, '-').toLowerCase()}`,
+          selectedDepartment: employee.department || 'unknown',
+          analytics: employeeAnalytics,
+          includeCharts: true,
+          includeNotes: true
+        };
+        
+        // Generate report for this specific employee
+        await exportService.exportCustomReport(
+          `Individual Report - ${employee.name}`,
+          customReport.metrics,
+          exportFormat,
+          exportOptions
+        );
+      }
+    } catch (error) {
+      console.error('Individual employee report error:', error);
+      throw error;
+    }
+  };
+
+  const generateDepartmentPerformanceReport = async () => {
+    try {
+      const employees = await employeeService.getAllEmployees();
+      const records = await attendanceService.getAttendanceReport(dateRange.start, dateRange.end);
+      
+      const formatMap: Record<string, 'pdf' | 'excel' | 'csv'> = {
+        'PDF Report': 'pdf',
+        'Excel Spreadsheet': 'excel',
+        'CSV Data': 'csv', 
+        'PowerPoint Presentation': 'pdf'
+      };
+      
+      const exportFormat = formatMap[customReport.format] || 'excel';
+      
+      // Group employees by department
+      const departmentGroups = employees.reduce((acc: Record<string, Employee[]>, emp: Employee) => {
+        const dept = emp.department || 'Unknown';
+        if (!acc[dept]) acc[dept] = [];
+        acc[dept].push(emp);
+        return acc;
+      }, {} as Record<string, Employee[]>);
+      
+      // Process department-specific analytics
+      const departmentAnalytics = processDepartmentSpecificAnalytics(departmentGroups, records);
+      
+      const exportOptions: ExportOptions = {
+        dateRange,
+        reportType: 'department-performance',
+        selectedDepartment: 'all',
+        analytics: departmentAnalytics,
+        includeCharts: true
+      };
+      
+      await exportService.exportCustomReport(
+        'Department Performance Analysis',
+        customReport.metrics,
+        exportFormat,
+        exportOptions
+      );
+    } catch (error) {
+      console.error('Department performance report error:', error);
+      throw error;
+    }
+  };
+
+  const generateMonthlyAttendanceReport = async () => {
+    try {
+      const records = await attendanceService.getAttendanceReport(dateRange.start, dateRange.end);
+      
+      const formatMap: Record<string, 'pdf' | 'excel' | 'csv'> = {
+        'PDF Report': 'pdf',
+        'Excel Spreadsheet': 'excel',
+        'CSV Data': 'csv',
+        'PowerPoint Presentation': 'pdf'
+      };
+      
+      const exportFormat = formatMap[customReport.format] || 'pdf';
+      
+      // Process monthly aggregated data
+      const monthlyAnalytics = processMonthlyAnalytics(records);
+      
+      const exportOptions: ExportOptions = {
+        dateRange,
+        reportType: 'monthly-attendance-summary',
+        selectedDepartment: 'all',
+        analytics: monthlyAnalytics,
+        includeCharts: true
+      };
+      
+      await exportService.exportCustomReport(
+        'Monthly Attendance Summary',
+        customReport.metrics,
+        exportFormat,
+        exportOptions
+      );
+    } catch (error) {
+      console.error('Monthly attendance report error:', error);
+      throw error;
+    }
+  };
+
+  const generateLateArrivalReport = async () => {
+    try {
+      const records = await attendanceService.getAttendanceReport(dateRange.start, dateRange.end);
+      
+      const formatMap: Record<string, 'pdf' | 'excel' | 'csv'> = {
+        'PDF Report': 'pdf',
+        'Excel Spreadsheet': 'excel',
+        'CSV Data': 'csv',
+        'PowerPoint Presentation': 'pdf'
+      };
+      
+      const exportFormat = formatMap[customReport.format] || 'excel';
+      
+      // Filter to only late arrival records
+      const lateRecords = records.filter((record: AttendanceRecord) => 
+        record.type === 'sign-in' && record.isLate
+      );
+      
+      if (lateRecords.length === 0) {
+        throw new Error('No late arrival records found in the selected date range');
+      }
+      
+      // Fetch employee data for names
+      const employees = await employeeService.getAllEmployees();
+      const employeeMap = employees.reduce((acc: Record<string, Employee>, emp: Employee) => {
+        const empId = emp.id || emp._id;
+        if (empId) {
+          acc[empId] = emp;
+        }
+        return acc;
+      }, {});
+      
+      // Process late arrival specific analytics with enhanced notes focus
+      const lateArrivalAnalytics = processLateArrivalAnalytics(lateRecords, employeeMap);
+      
+      const exportOptions: ExportOptions = {
+        dateRange,
+        reportType: 'late-arrival-analysis',
+        selectedDepartment: 'all',
+        analytics: lateArrivalAnalytics,
+        includeCharts: true,
+        includeNotes: true
+      };
+      
+      await exportService.exportCustomReport(
+        'Late Arrival Analysis with Notes',
+        customReport.metrics,
+        exportFormat,
+        exportOptions
+      );
+    } catch (error) {
+      console.error('Late arrival report error:', error);
+      throw error;
+    }
+  };
+
+  const generateProductivityTrendsReport = async () => {
+    try {
+      const records = await attendanceService.getAttendanceReport(dateRange.start, dateRange.end);
+      
+      const formatMap: Record<string, 'pdf' | 'excel' | 'csv'> = {
+        'PDF Report': 'pdf',
+        'Excel Spreadsheet': 'excel',
+        'CSV Data': 'csv',
+        'PowerPoint Presentation': 'pdf'
+      };
+      
+      const exportFormat = formatMap[customReport.format] || 'pdf';
+      
+      // Process productivity-focused analytics
+      const productivityAnalytics = processProductivityAnalytics(records);
+      
+      const exportOptions: ExportOptions = {
+        dateRange,
+        reportType: 'productivity-trends',
+        selectedDepartment: 'all',
+        analytics: productivityAnalytics,
+        includeCharts: true
+      };
+      
+      await exportService.exportCustomReport(
+        'Productivity Trends Analysis',
+        customReport.metrics,
+        exportFormat,
+        exportOptions
+      );
+    } catch (error) {
+      console.error('Productivity trends report error:', error);
+      throw error;
+    }
+  };
+
+  const generateGenericCustomReport = async () => {
+    // Fallback to original generic implementation
+    const formatMap: Record<string, 'pdf' | 'excel' | 'csv'> = {
+      'PDF Report': 'pdf',
+      'Excel Spreadsheet': 'excel',
+      'CSV Data': 'csv',
+      'PowerPoint Presentation': 'pdf'
+    };
+    
+    const exportFormat = formatMap[customReport.format] || 'pdf';
+    
+    const exportOptions: ExportOptions = {
+      dateRange,
+      reportType: 'custom',
+      selectedDepartment: 'all',
+      analytics: analytics!,
+      includeCharts: true
+    };
+
+    await exportService.exportCustomReport(
+      customReport.template,
+      customReport.metrics,
+      exportFormat,
+      exportOptions
+    );
+  };
+
+  // Helper functions to process different types of analytics
+  const processEmployeeSpecificAnalytics = (employee: Employee, records: AttendanceRecord[]): AnalyticsData => {
+    // Calculate employee-specific metrics
+    const employeeStats = {
+      totalRecords: records.length,
+      signInRecords: records.filter(r => r.type === 'sign-in').length,
+      lateRecords: records.filter(r => r.type === 'sign-in' && r.isLate).length,
+      recordsWithNotes: records.filter(r => r.notes && r.notes.trim()).length,
+      attendanceRate: 0,
+      punctualityRate: 0
+    };
+
+    if (employeeStats.signInRecords > 0) {
+      employeeStats.punctualityRate = Math.round(
+        ((employeeStats.signInRecords - employeeStats.lateRecords) / employeeStats.signInRecords) * 100
+      );
+    }
+
+    // Create analytics focused on this single employee with notes emphasis
+    return {
+      departmentStats: [{
+        department: employee.department || 'Unknown',
+        totalEmployees: 1,
+        avgAttendanceRate: employeeStats.attendanceRate,
+        avgPunctualityRate: employeeStats.punctualityRate,
+        totalHours: 0,
+        lateArrivals: employeeStats.lateRecords
+      }],
+      timePatterns: calculateTimePatterns(records),
+      lateArrivalTrends: calculateLateArrivalTrends(records),
+      topPerformers: [{
+        employee,
+        attendanceRate: employeeStats.attendanceRate,
+        punctualityRate: employeeStats.punctualityRate,
+        totalHours: 0
+      }],
+      weeklyTrends: calculateWeeklyTrends(records)
+    };
+  };
+
+  const processDepartmentSpecificAnalytics = (
+    departmentGroups: Record<string, Employee[]>, 
+    records: AttendanceRecord[]
+  ): AnalyticsData => {
+    // Calculate department-focused analytics
+    const departmentStats = Object.entries(departmentGroups).map(([dept, employees]) => {
+      const deptRecords = records.filter((record: AttendanceRecord) => 
+        employees.some((emp: Employee) => (emp.id || emp._id) === record.employeeId)
+      );
+      const signInRecords = deptRecords.filter((r: AttendanceRecord) => r.type === 'sign-in');
+      const lateRecords = deptRecords.filter((r: AttendanceRecord) => r.type === 'sign-in' && r.isLate);
+      
+      return {
+        department: dept,
+        totalEmployees: employees.length,
+        avgAttendanceRate: Math.round((signInRecords.length / employees.length) * 100),
+        avgPunctualityRate: signInRecords.length > 0 
+          ? Math.round(((signInRecords.length - lateRecords.length) / signInRecords.length) * 100)
+          : 100,
+        totalHours: 0,
+        lateArrivals: lateRecords.length
+      };
+    });
+
+    return {
+      departmentStats,
+      timePatterns: calculateTimePatterns(records),
+      lateArrivalTrends: calculateLateArrivalTrends(records),
+      topPerformers: [],
+      weeklyTrends: calculateWeeklyTrends(records)
+    };
+  };
+
+  const processMonthlyAnalytics = (records: AttendanceRecord[]): AnalyticsData => {
+    // Group records by month and calculate monthly trends
+    const monthlyData = new Map<string, { signIns: number; lateArrivals: number }>();
+    
+    records.filter((r: AttendanceRecord) => r.type === 'sign-in').forEach((record: AttendanceRecord) => {
+      const monthKey = new Date(record.timestamp).toISOString().substring(0, 7); // YYYY-MM
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { signIns: 0, lateArrivals: 0 });
+      }
+      const monthData = monthlyData.get(monthKey)!;
+      monthData.signIns++;
+      if (record.isLate) monthData.lateArrivals++;
+    });
+
+    return {
+      departmentStats: [],
+      timePatterns: calculateTimePatterns(records),
+      lateArrivalTrends: calculateLateArrivalTrends(records),
+      topPerformers: [],
+      weeklyTrends: calculateWeeklyTrends(records)
+    };
+  };
+
+  const processLateArrivalAnalytics = (lateRecords: AttendanceRecord[], employeeMap?: Record<string, Employee>): AnalyticsData => {
+    // Focus entirely on late arrival patterns with enhanced notes analysis
+    
+    // Group late arrivals by employee with notes
+    const employeeLateArrivals = new Map<string, {
+      count: number;
+      records: AttendanceRecord[];
+      employee?: Employee;
+      notesWithReasons: string[];
+    }>();
+    
+    lateRecords.forEach((record: AttendanceRecord) => {
+      const empId = record.employeeId;
+      if (!employeeLateArrivals.has(empId)) {
+        employeeLateArrivals.set(empId, {
+          count: 0,
+          records: [],
+          employee: employeeMap?.[empId],
+          notesWithReasons: []
+        });
+      }
+      
+      const empData = employeeLateArrivals.get(empId)!;
+      empData.count++;
+      empData.records.push(record);
+      
+      // Collect notes for analysis
+      if (record.notes && record.notes.trim()) {
+        empData.notesWithReasons.push(record.notes.trim());
+      }
+    });
+    
+    // Create department stats focusing on late arrivals
+    const departmentLateStats = new Map<string, { total: number; withNotes: number; withoutNotes: number }>();
+    
+    Array.from(employeeLateArrivals.values()).forEach(empData => {
+      const dept = empData.employee?.department || 'Unknown';
+      if (!departmentLateStats.has(dept)) {
+        departmentLateStats.set(dept, { total: 0, withNotes: 0, withoutNotes: 0 });
+      }
+      
+      const deptStats = departmentLateStats.get(dept)!;
+      deptStats.total += empData.count;
+      
+      empData.records.forEach(record => {
+        if (record.notes && record.notes.trim()) {
+          deptStats.withNotes++;
+        } else {
+          deptStats.withoutNotes++;
+        }
+      });
+    });
+    
+    const departmentStats = Array.from(departmentLateStats.entries()).map(([dept, stats]) => ({
+      department: dept,
+      totalEmployees: Array.from(employeeLateArrivals.values()).filter(emp => 
+        emp.employee?.department === dept || (!emp.employee?.department && dept === 'Unknown')
+      ).length,
+      avgAttendanceRate: 0, // Not applicable for late arrival analysis
+      avgPunctualityRate: 0, // All are late arrivals
+      totalHours: 0,
+      lateArrivals: stats.total
+    }));
+
+    return {
+      departmentStats,
+      timePatterns: calculateTimePatterns(lateRecords),
+      lateArrivalTrends: calculateLateArrivalTrends(lateRecords),
+      topPerformers: [], // Not applicable for late arrival analysis
+      weeklyTrends: calculateWeeklyTrends(lateRecords)
+    };
+  };
+
+  const processProductivityAnalytics = (records: AttendanceRecord[]): AnalyticsData => {
+    // Focus on working hours and productivity patterns
+    return {
+      departmentStats: [],
+      timePatterns: calculateTimePatterns(records),
+      lateArrivalTrends: [],
+      topPerformers: [],
+      weeklyTrends: calculateWeeklyTrends(records)
+    };
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -760,54 +1312,152 @@ const AnalyticsDashboard: React.FC = () => {
                 <h3 className="text-lg font-semibold">Custom Report Builder</h3>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Template Selection */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Report Template</label>
-                    <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
-                      <option>Monthly Attendance Summary</option>
-                      <option>Department Performance Report</option>
-                      <option>Individual Employee Report</option>
-                      <option>Late Arrival Analysis</option>
-                      <option>Productivity Trends</option>
+                    <select 
+                      className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={customReport.template}
+                      onChange={(e) => handleTemplateChange(e.target.value)}
+                    >
+                      {Object.keys(reportTemplates).map(template => (
+                        <option key={template} value={template}>
+                          {template}
+                        </option>
+                      ))}
                     </select>
+                    {reportTemplates[customReport.template as keyof typeof reportTemplates] && (
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        {reportTemplates[customReport.template as keyof typeof reportTemplates].description}
+                      </p>
+                    )}
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Metrics Selection */}
                     <div>
-                      <label className="block text-sm font-medium mb-2">Include Metrics</label>
-                      <div className="space-y-2">
+                      <label className="block text-sm font-medium mb-3">Include Metrics</label>
+                      <div className="space-y-3">
                         {[
                           'Attendance Rate',
                           'Punctuality Score',
                           'Total Hours',
                           'Overtime Hours',
                           'Department Comparison',
-                          'Time Patterns'
+                          'Time Patterns',
+                          'Employee Notes & Reasons'
                         ].map(metric => (
-                          <label key={metric} className="flex items-center">
-                            <input type="checkbox" className="mr-2" defaultChecked />
-                            <span className="text-sm">{metric}</span>
+                          <label key={metric} className="flex items-center group cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                              checked={customReport.metrics.includes(metric)}
+                              onChange={(e) => {
+                                const newMetrics = e.target.checked
+                                  ? [...customReport.metrics, metric]
+                                  : customReport.metrics.filter(m => m !== metric);
+                                handleCustomReportChange('metrics', newMetrics);
+                              }}
+                            />
+                            <span className="text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {metric}
+                            </span>
                           </label>
                         ))}
                       </div>
+                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {customReport.metrics.length} metric{customReport.metrics.length !== 1 ? 's' : ''} selected
+                      </p>
                     </div>
                     
+                    {/* Format Selection */}
                     <div>
-                      <label className="block text-sm font-medium mb-2">Export Format</label>
-                      <div className="space-y-2">
-                        {['PDF Report', 'Excel Spreadsheet', 'CSV Data', 'PowerPoint Presentation'].map(format => (
-                          <label key={format} className="flex items-center">
-                            <input type="radio" name="format" className="mr-2" />
-                            <span className="text-sm">{format}</span>
+                      <label className="block text-sm font-medium mb-3">Export Format</label>
+                      <div className="space-y-3">
+                        {[
+                          { value: 'PDF Report', label: 'PDF Report', description: 'Professional document format' },
+                          { value: 'Excel Spreadsheet', label: 'Excel Spreadsheet', description: 'Editable data tables' },
+                          { value: 'CSV Data', label: 'CSV Data', description: 'Raw data for analysis' },
+                          { value: 'PowerPoint Presentation', label: 'PowerPoint Presentation', description: 'Presentation-ready slides' }
+                        ].map(format => (
+                          <label key={format.value} className="flex items-start group cursor-pointer">
+                            <input 
+                              type="radio" 
+                              name="format" 
+                              className="mr-3 mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
+                              checked={customReport.format === format.value}
+                              onChange={() => handleCustomReportChange('format', format.value)}
+                            />
+                            <div className="flex-1">
+                              <span className="text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {format.label}
+                              </span>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {format.description}
+                              </p>
+                            </div>
                           </label>
                         ))}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex gap-3">
-                    <Button variant="primary">Generate Report</Button>
-                    <Button variant="ghost">Save Template</Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <Button 
+                      variant="primary"
+                      onClick={handleGenerateCustomReport}
+                      isLoading={generatingCustomReport}
+                      disabled={!analytics || customReport.metrics.length === 0}
+                      leftIcon={<FileText size={16} />}
+                      className="flex-1"
+                    >
+                      {generatingCustomReport ? 'Generating...' : 'Generate Report'}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      disabled={generatingCustomReport}
+                      className="px-6"
+                    >
+                      Save Template
+                    </Button>
+                  </div>
+                  
+                  {/* Selected Configuration Summary */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Report Preview:</h4>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium text-blue-600 dark:text-blue-400">Template:</span> 
+                        <div className="flex-1">
+                          <p className="font-medium">{customReport.template}</p>
+                          <p className="text-xs mt-1">
+                            {customReport.template === 'Individual Employee Report' && 'Generates separate reports for each active employee with detailed individual metrics and attendance notes.'}
+                            {customReport.template === 'Department Performance Report' && 'Compares performance across departments with ranking and comparison metrics.'}
+                            {customReport.template === 'Monthly Attendance Summary' && 'Provides month-by-month attendance trends and summary statistics.'}
+                            {customReport.template === 'Late Arrival Analysis' && 'Focuses specifically on late arrival patterns with employee-provided reasons and explanations.'}
+                            {customReport.template === 'Productivity Trends' && 'Analyzes working hours, productivity patterns, and time utilization.'}
+                          </p>
+                        </div>
+                      </div>
+                      <p><span className="font-medium">Format:</span> {customReport.format}</p>
+                      <p><span className="font-medium">Metrics:</span> {customReport.metrics.join(', ')}</p>
+                      {(customReport.template === 'Individual Employee Report' || customReport.template === 'Late Arrival Analysis') && (
+                        <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                          <p className="text-xs text-green-700 dark:text-green-300">
+                            📝 This report includes employee notes and explanations captured during sign-in
+                          </p>
+                        </div>
+                      )}
+                      {customReport.template === 'Individual Employee Report' && (
+                        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            📊 This will generate multiple files - one report per employee
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

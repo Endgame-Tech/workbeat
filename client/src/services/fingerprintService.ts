@@ -1,6 +1,3 @@
-// @ts-nocheck
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * Fingerprint Service
  * This service provides functionality for fingerprint enrollment and verification
@@ -8,32 +5,134 @@
  */
 
 import api from './api';
-// Type for credential entries from server
-interface ServerCredential { rawId: string; employeeId: string; }
 
-// WebAuthn options for fingerprint authentication
-const FINGERPRINT_OPTIONS = {
-  publicKey: {
-    challenge: new Uint8Array(32), // Will be updated with a proper challenge
-    rp: {
-      name: "WorkBeat Attendance System",
-      id: window.location.hostname
+// Type for credential entries from server
+interface ServerCredential { 
+  rawId: string; 
+  employeeId: string; 
+}
+
+// Environment detection
+const getEnvironment = (): 'development' | 'production' => {
+  return process.env.NODE_ENV === 'production' ? 'production' : 'development';
+};
+
+/**
+ * Get the appropriate relying party ID based on environment
+ */
+const getRelyingPartyId = (): string => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // Handle localhost and development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'localhost';
+    }
+    
+    // For production, use the actual domain
+    return hostname;
+  }
+  
+  return 'workbeat.app'; // Fallback
+};
+
+/**
+ * Configuration for different environments and security settings
+ * 
+ * This configuration object handles:
+ * 1. Environment-specific timeouts (development vs production)
+ * 2. Security preferences for WebAuthn
+ * 3. Supported cryptographic algorithms
+ * 4. Application-specific settings
+ * 
+ * Key configuration decisions:
+ * - Development has longer timeouts for easier testing
+ * - Production has shorter timeouts for better UX
+ * - Platform authenticators only (no roaming/external devices)
+ * - Required user verification for maximum security
+ * - ES256 algorithm prioritized for best compatibility
+ * - Attestation set to 'none' for privacy
+ */
+const FINGERPRINT_CONFIG = {
+  // Environment-specific timeouts
+  timeouts: {
+    development: {
+      auth: 60000,      // 1 minute for testing
+      enrollment: 120000 // 2 minutes for testing
     },
-    userVerification: "required" as UserVerificationRequirement,
-    authenticatorSelection: {
-      authenticatorAttachment: "platform" as AuthenticatorAttachment,
-      requireResidentKey: false,
-      userVerification: "required" as UserVerificationRequirement
-    },
-    attestation: "direct" as AttestationConveyancePreference,
-    pubKeyCredParams: [
-      { type: "public-key", alg: -7 }, // ES256
-      { type: "public-key", alg: -257 } // RS256
-    ]
+    production: {
+      auth: 30000,      // 30 seconds for production
+      enrollment: 60000  // 1 minute for production
+    }
+  },
+  
+  // Retry and rate limiting
+  retries: {
+    maxAttempts: 3,
+    cooldownPeriod: 5000 // 5 seconds between retries
+  },
+  
+  // Security preferences
+  security: {
+    userVerification: 'required' as UserVerificationRequirement,
+    attestation: 'none' as AttestationConveyancePreference,
+    requireResidentKey: true,
+    authenticatorAttachment: 'platform' as AuthenticatorAttachment
+  },
+  
+  // Supported algorithms (in order of preference)
+  algorithms: [
+    { type: "public-key" as const, alg: -7 },   // ES256 (most widely supported)
+    { type: "public-key" as const, alg: -257 }, // RS256 (RSA)
+    { type: "public-key" as const, alg: -8 }    // EdDSA (modern, efficient)
+  ],
+  
+  // Application info
+  app: {
+    name: "WorkBeat Attendance System",
+    relyingPartyId: getRelyingPartyId()
   }
 };
 
-// Removed mock data - using real fingerprint authentication only
+/**
+ * Get current configuration based on environment
+ */
+const getCurrentConfig = () => {
+  const env = getEnvironment();
+  return {
+    authTimeout: FINGERPRINT_CONFIG.timeouts[env].auth,
+    enrollTimeout: FINGERPRINT_CONFIG.timeouts[env].enrollment,
+    maxRetries: FINGERPRINT_CONFIG.retries.maxAttempts,
+    cooldownPeriod: FINGERPRINT_CONFIG.retries.cooldownPeriod,
+    ...FINGERPRINT_CONFIG.security,
+    algorithms: FINGERPRINT_CONFIG.algorithms,
+    app: FINGERPRINT_CONFIG.app
+  };
+};
+
+/**
+ * Get current fingerprint service configuration
+ * @returns The current configuration object
+ */
+const getConfig = () => getCurrentConfig();
+
+/**
+ * Check if the current environment is development
+ * @returns boolean indicating if in development mode
+ */
+const isDevelopment = (): boolean => getEnvironment() === 'development';
+
+/**
+ * Get the current timeout for authentication operations
+ * @returns timeout in milliseconds
+ */
+const getAuthTimeout = (): number => getCurrentConfig().authTimeout;
+
+/**
+ * Get the current timeout for enrollment operations
+ * @returns timeout in milliseconds
+ */
+const getEnrollTimeout = (): number => getCurrentConfig().enrollTimeout;
 
 /**
  * Check if the device has fingerprint authentication capabilities
@@ -72,21 +171,35 @@ const enrollFingerprint = async (employeeId: string, employeeName: string): Prom
       return null;
     }
     
+    // Get current configuration
+    const config = getCurrentConfig();
+    
     // Get a challenge from the server
     const { data } = await api.get(`/api/biometrics/fingerprint/challenge/${employeeId}`);
     const challenge = Uint8Array.from(atob(data.challenge), c => c.charCodeAt(0));
     
-    // Update options with the challenge and user info
-    const options = {
-      ...FINGERPRINT_OPTIONS,
+    // Create enrollment options
+    const options: CredentialCreationOptions = {
       publicKey: {
-        ...FINGERPRINT_OPTIONS.publicKey,
         challenge,
+        rp: {
+          name: config.app.name,
+          id: config.app.relyingPartyId
+        },
         user: {
           id: Uint8Array.from(employeeId, c => c.charCodeAt(0)),
           name: employeeName,
           displayName: employeeName
-        }
+        },
+        authenticatorSelection: {
+          authenticatorAttachment: config.authenticatorAttachment,
+          requireResidentKey: config.requireResidentKey,
+          userVerification: config.userVerification
+        },
+        attestation: config.attestation,
+        pubKeyCredParams: config.algorithms,
+        timeout: config.enrollTimeout,
+        excludeCredentials: []
       }
     };
     
@@ -133,14 +246,17 @@ const verifyFingerprint = async (): Promise<{ verified: boolean; employeeId?: st
       return { verified: false };
     }
 
+    // Get current configuration
+    const config = getCurrentConfig();
+
     // Get challenge and credential info for all employees
     const { data } = await api.get(`/api/biometrics/fingerprint/verify-challenge`);
     const challenge = Uint8Array.from(atob(data.challenge), c => c.charCodeAt(0));
 
-    // Prepare allowed credentials list
-    const allowCredentials = (data.credentials as ServerCredential[]).map(cred => ({
+    // Prepare allowed credentials list with proper typing
+    const allowCredentials: PublicKeyCredentialDescriptor[] = (data.credentials as ServerCredential[]).map(cred => ({
       id: base64ToArrayBuffer(cred.rawId),
-      type: 'public-key',
+      type: 'public-key' as const,
       transports: ['internal'] as AuthenticatorTransport[]
     }));
 
@@ -148,8 +264,8 @@ const verifyFingerprint = async (): Promise<{ verified: boolean; employeeId?: st
       publicKey: {
         challenge,
         allowCredentials,
-        timeout: 60000,
-        userVerification: 'required'
+        timeout: config.authTimeout,
+        userVerification: config.userVerification
       }
     };
 
@@ -234,7 +350,12 @@ export const fingerprintService = {
   checkFingerprintSupport,
   enrollFingerprint,
   verifyFingerprint,
-  deleteFingerprint
+  deleteFingerprint,
+  // Configuration utilities
+  getConfig,
+  isDevelopment,
+  getAuthTimeout,
+  getEnrollTimeout
 };
 
 export default fingerprintService;

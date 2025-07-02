@@ -1,6 +1,7 @@
 // Complete Improved AdminDashboard.tsx with better report structure
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardStats from './DashboardStats';
 import AttendanceTable from './AttendanceTable';
 import EmployeeForm from './admin/EmployeeForm';
@@ -53,7 +54,12 @@ interface EmployeeStat {
   recordsByDate: Record<string, AttendanceRecord[]>;
 }
 
-const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  organizationId?: string;
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrganizationId }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<DashboardTab>(DashboardTab.OVERVIEW);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
@@ -63,7 +69,7 @@ const AdminDashboard: React.FC = () => {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(propOrganizationId || null);
   const [organizationName, setOrganizationName] = useState<string>('Your Organization');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
@@ -79,7 +85,8 @@ const AdminDashboard: React.FC = () => {
 
   // Extract organization ID and name on mount
   useEffect(() => {
-    const orgId = employeeService.getCurrentOrganizationId();
+    // Use prop organization ID if provided, otherwise get from service
+    const orgId = propOrganizationId || employeeService.getCurrentOrganizationId();
     console.log("Retrieved organization ID:", orgId);
     setOrganizationId(orgId);
     
@@ -95,7 +102,7 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error getting organization name:', error);
     }
-  }, []);
+  }, [propOrganizationId]);
 
   // Define fetchAttendanceRecords as a useCallback to prevent recreation on each render
   const fetchAttendanceRecords = useCallback(async (startDate?: Date, endDate?: Date) => {
@@ -667,7 +674,11 @@ const AdminDashboard: React.FC = () => {
         escapeCsvValue(timeStr),
         escapeCsvValue(record.isLate && record.type === 'sign-in' ? 'Late' : (record.type === 'sign-in' ? 'On Time' : 'Sign Out')),
         escapeCsvValue(locationStr || 'No location'),
-        escapeCsvValue((record.notes || '').replace(/,/g, ' ')), // Remove commas to avoid CSV issues
+        escapeCsvValue(
+          record.isLate && record.type === 'sign-in' && record.notes 
+            ? `[LATE ARRIVAL REASON] ${(record.notes || '').replace(/,/g, ' ')}` 
+            : (record.notes || '').replace(/,/g, ' ')
+        ), // Highlight late arrival notes
         escapeCsvValue(record.ipAddress || 'Unknown'),
         escapeCsvValue(record.verificationMethod || 'manual'),
         escapeCsvValue(record.facialVerification ? 'Yes' : 'No'),
@@ -1412,6 +1423,8 @@ const AdminDashboard: React.FC = () => {
                     <Button 
                       variant="ghost" 
                       leftIcon={<Download size={18} />} 
+                      onClick={() => exportAttendanceData()}
+                      disabled={attendanceRecords.length === 0}
                       className="w-full justify-start h-10 rounded-lg"
                     >
                       Export Report
@@ -1419,6 +1432,43 @@ const AdminDashboard: React.FC = () => {
                     <Button 
                       variant="ghost" 
                       leftIcon={<Settings size={18} />} 
+                      onClick={() => {
+                        // Try multiple ways to get the organization ID
+                        let orgId = organizationId;
+                        
+                        if (!orgId) {
+                          // Try to get it directly from localStorage
+                          try {
+                            const userString = localStorage.getItem('user');
+                            if (userString) {
+                              const userData = JSON.parse(userString);
+                              orgId = userData.organizationId || userData.organization?.id;
+                            }
+                          } catch (err) {
+                            console.error('Error getting org ID from localStorage:', err);
+                          }
+                        }
+                        
+                        if (!orgId) {
+                          // Try organization localStorage entry
+                          try {
+                            const orgString = localStorage.getItem('organization');
+                            if (orgString) {
+                              const orgData = JSON.parse(orgString);
+                              orgId = orgData.id;
+                            }
+                          } catch (err) {
+                            console.error('Error getting org ID from organization localStorage:', err);
+                          }
+                        }
+                        
+                        if (orgId) {
+                          navigate(`/organization/${orgId}/settings`);
+                        } else {
+                          toast.error('Organization ID not found. Please try refreshing the page.');
+                          console.error('Organization ID not available. Current organizationId state:', organizationId);
+                        }
+                      }}
                       className="w-full justify-start h-10 rounded-lg"
                     >
                       Settings

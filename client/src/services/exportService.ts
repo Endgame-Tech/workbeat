@@ -12,6 +12,7 @@ export interface ExportOptions {
   selectedDepartment: string;
   analytics: AnalyticsData;
   includeCharts?: boolean;
+  includeNotes?: boolean;
 }
 
 class ExportService {
@@ -163,6 +164,34 @@ class ExportService {
     analytics.timePatterns.forEach((pattern) => {
       csvData.push(`${pattern.hour}:00,${pattern.checkIns},${pattern.checkOuts}`);
     });
+    
+    // Late Arrival Trends with Notes (if it's a late arrival analysis)
+    if (options.reportType === 'late-arrival-analysis' && analytics.lateArrivalTrends.length > 0) {
+      csvData.push('');
+      csvData.push('Late Arrival Analysis');
+      csvData.push('Date,Late Count,Total Check-ins,Percentage');
+      
+      analytics.lateArrivalTrends.forEach((trend) => {
+        csvData.push(`${trend.date},${trend.lateCount},${trend.totalCheckIns},${trend.percentage}%`);
+      });
+      
+      csvData.push('');
+      csvData.push('📝 IMPORTANT: Late Arrival Notes');
+      csvData.push('This report focuses on late arrivals. Employee notes explaining');
+      csvData.push('reasons for lateness are captured during sign-in and available');
+      csvData.push('in detailed attendance records. Common reasons include:');
+      csvData.push('- Traffic delays and transportation issues');
+      csvData.push('- Personal emergencies and appointments');
+      csvData.push('- Weather-related delays');
+      csvData.push('- Work-related overtime or meetings');
+      csvData.push('Contact HR for specific employee notes and explanations.');
+    }
+    
+    csvData.push('');
+    csvData.push('Report Notes:');
+    csvData.push('- Employee notes are captured during sign-in for context');
+    csvData.push('- Late arrival reasons help understand attendance patterns');
+    csvData.push('- Individual reports include detailed notes for each employee');
     
     // Create and download CSV
     const csvContent = csvData.join('\n');

@@ -14,8 +14,10 @@ const router = express.Router();
 
 // Fingerprint routes
 router.get('/fingerprint/challenge/:id', protect, generateChallenge);
+router.get('/fingerprint/verify-challenge', generateVerifyChallenge); // Global verification challenge
 router.get('/fingerprint/verify-challenge/:id', generateVerifyChallenge);
 router.post('/fingerprint/enroll/:id', protect, authorize('admin'), enrollFingerprint);
+router.post('/fingerprint/verify', verifyFingerprint); // Global verification
 router.post('/fingerprint/verify/:id', verifyFingerprint);
 router.get('/fingerprint/employee/:credentialId', getEmployeeByFingerprint);
 router.delete('/fingerprint/:id/:credentialId', protect, authorize('admin'), deleteFingerprint);

@@ -88,6 +88,41 @@ const generateVerifyChallenge = async (req, res) => {
   try {
     const { id } = req.params;
     
+    // If no ID provided, return challenge for all credentials
+    if (!id) {
+      // Get all fingerprint credentials from all employees
+      const allBiometricData = await BiometricData.find({ type: 'fingerprint' });
+      
+      if (!allBiometricData || allBiometricData.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No fingerprint credentials found in the system'
+        });
+      }
+      
+      // Flatten all credentials and add employeeId for identification
+      const allCredentials = [];
+      for (const data of allBiometricData) {
+        for (const cred of data.credentials) {
+          allCredentials.push({
+            rawId: cred.rawId,
+            employeeId: data.employeeId
+          });
+        }
+      }
+      
+      // Generate a random challenge
+      const challenge = crypto.randomBytes(32).toString('base64');
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          challenge,
+          credentials: allCredentials
+        }
+      });
+    }
+    
     // Verify employee exists
     const employee = await Employee.findById(id);
     if (!employee) {
@@ -216,6 +251,59 @@ const verifyFingerprint = async (req, res) => {
   try {
     const { id } = req.params;
     const assertionData = req.body;
+    
+    // If no ID provided, verify against all credentials 
+    if (!id) {
+      // Get all biometric data for verification
+      const allBiometricData = await BiometricData.find({ type: 'fingerprint' });
+      
+      if (!allBiometricData || allBiometricData.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No fingerprint credentials found in the system'
+        });
+      }
+      
+      // Find the matching credential across all employees
+      let matchedEmployee = null;
+      let matchedCredential = null;
+      
+      for (const data of allBiometricData) {
+        const credential = data.credentials.find(cred => cred.rawId === assertionData.rawId);
+        if (credential) {
+          matchedCredential = credential;
+          matchedEmployee = await Employee.findById(data.employeeId);
+          break;
+        }
+      }
+      
+      if (!matchedEmployee || !matchedCredential) {
+        return res.status(400).json({
+          success: false,
+          message: 'Fingerprint not recognized'
+        });
+      }
+      
+      // Log the successful verification
+      await AuditLog.create({
+        action: 'fingerprint_verification_global',
+        details: `Global fingerprint verification for employee ${matchedEmployee.name} (${matchedEmployee.employeeId})`,
+        ipAddress: req.ip,
+        resourceType: 'employee',
+        resourceId: matchedEmployee._id
+      });
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Fingerprint verified successfully',
+        data: {
+          employeeId: matchedEmployee._id,
+          employeeName: matchedEmployee.name,
+          department: matchedEmployee.department,
+          position: matchedEmployee.position
+        }
+      });
+    }
     
     // Verify employee exists
     const employee = await Employee.findById(id);

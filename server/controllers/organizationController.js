@@ -119,7 +119,7 @@ const registerOrganization = async (req, res) => {
 
 // @desc    Get organization details
 // @route   GET /api/organizations/:id
-// @access  Private (Admin only)
+// @access  Private
 const getOrganization = async (req, res) => {
   try {    const organization = await prisma.organization.findUnique({
       where: { id: parseInt(req.params.id) }
@@ -157,7 +157,7 @@ const getOrganization = async (req, res) => {
 
 // @desc    Update organization details
 // @route   PUT /api/organizations/:id
-// @access  Private (Admin only)
+// @access  Private
 const updateOrganization = async (req, res) => {
   try {
     const organizationId = parseInt(req.params.id);
@@ -173,9 +173,8 @@ const updateOrganization = async (req, res) => {
       });
     }
     
-    // Check if user belongs to this organization and is an admin
-    if (req.user.organizationId !== organizationId || 
-        !['admin', 'owner'].includes(req.user.organizationRole)) {
+    // Check if user belongs to this organization
+    if (req.user.organizationId !== organizationId) {
       return res.status(403).json({
         success: false,
         message: 'Access denied'
