@@ -4,8 +4,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import DashboardStats from './DashboardStats';
 import AttendanceTable from './AttendanceTable';
 import EmployeeForm from './admin/EmployeeForm';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Layers, Settings, Calendar, Clock, Download, Users, PlusCircle, Search, RefreshCw, FileText } from 'lucide-react';
+import { Layers, Settings, Calendar, Download, Users, PlusCircle, RefreshCw, FileText, BarChart3 } from 'lucide-react';
 import Button from './ui/Button';
 import { Employee, AttendanceRecord } from '../types';
 import { employeeService } from '../services/employeeService';
@@ -16,6 +17,7 @@ import EmployeeTable from './admin/EmployeeTable';
 enum DashboardTab {
   OVERVIEW,
   REPORTS,
+  ANALYTICS,
   WORKERS
 }
 
@@ -28,7 +30,27 @@ enum ReportType {
 enum ReportFormat {
   DETAILED = 'Detailed',
   EMPLOYEE_SUMMARY = 'Employee Summary',
-  MONTHLY = 'Monthly Summary'
+  MONTHLY = 'Monthly Summary',
+  TIME_GRID = 'Time Grid'
+}
+
+interface EmployeeStat {
+  totalSignIns: number;
+  onTime: number;
+  late: number;
+  totalHoursWorked: number;
+  averageArrivalTime: string;
+  averageDepartureTime: string;
+  attendanceDates: Set<string>;
+  // Track monthly attendance
+  monthlyAttendance: Record<string, {
+    present: number;
+    late: number;
+    absent: number;
+    workHours: number;
+  }>;
+  // Track records by date for detailed view
+  recordsByDate: Record<string, AttendanceRecord[]>;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -48,6 +70,12 @@ const AdminDashboard: React.FC = () => {
   const [exportingReport, setExportingReport] = useState<boolean>(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState<ReportType | null>(null);
   const [reportFormat, setReportFormat] = useState<ReportFormat>(ReportFormat.EMPLOYEE_SUMMARY);
+  const [gridStartDate, setGridStartDate] = useState<string>(
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
+  const [gridEndDate, setGridEndDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
 
   // Extract organization ID and name on mount
   useEffect(() => {
@@ -314,6 +342,58 @@ const AdminDashboard: React.FC = () => {
     return { startDate, endDate };
   };
 
+  // Helper function to properly escape CSV values
+  const escapeCsvValue = (value: string | number | undefined): string => {
+    if (value === undefined || value === null) return '';
+    const stringValue = String(value);
+    // If the value contains comma, quote, or newline, wrap it in quotes and escape internal quotes
+    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  // Helper function to calculate working days for attendance rate calculation
+  const getWorkingDaysInPeriod = (reportType?: ReportType): number => {
+    if (!reportType) return 30; // Default fallback
+    
+    const today = new Date();
+    let workingDays = 0;
+    
+    switch (reportType) {
+      case ReportType.DAILY: {
+        // For daily report, just check if today is a weekday
+        const dayOfWeek = today.getDay();
+        return (dayOfWeek >= 1 && dayOfWeek <= 5) ? 1 : 0;
+      }
+        
+      case ReportType.WEEKLY: {
+        // Count working days in the last 7 days
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const day = date.getDay();
+          if (day >= 1 && day <= 5) workingDays++; // Monday to Friday
+        }
+        return workingDays;
+      }
+        
+      case ReportType.MONTHLY: {
+        // Count working days in the last 30 days
+        for (let i = 0; i < 30; i++) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const day = date.getDay();
+          if (day >= 1 && day <= 5) workingDays++; // Monday to Friday
+        }
+        return workingDays;
+      }
+        
+      default:
+        return 22; // Approximate working days in a month
+    }
+  };
+
   // Generate and export attendance report
   const generateReport = async (reportType: ReportType) => {
     setSelectedReportPeriod(reportType);
@@ -347,6 +427,44 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Generate and export time grid report using date range
+  const generateTimeGridReport = async () => {
+    setExportingReport(true);
+    
+    try {
+      // First ensure we have all employees data
+      const employeesData = await fetchEmployees();
+      
+      // Convert date strings to Date objects
+      const startDate = new Date(gridStartDate);
+      const endDate = new Date(gridEndDate);
+      
+      // Validate date range
+      if (startDate > endDate) {
+        toast.error('Start date must be before end date');
+        return;
+      }
+      
+      // Fetch attendance records for the specified period
+      const records = await fetchAttendanceRecords(startDate, endDate);
+      
+      if (records.length === 0) {
+        toast.error(`No attendance records found for the selected date range`);
+        return;
+      }
+      
+      // Export the data to CSV with the TIME_GRID format
+      exportAttendanceData(records, employeesData);
+      
+      toast.success(`Time grid report generated successfully`);
+    } catch (error) {
+      console.error(`Error generating time grid report:`, error);
+      toast.error(`Failed to generate time grid report`);
+    } finally {
+      setExportingReport(false);
+    }
+  };
+
   // Enhanced export function with more comprehensive data
   const exportAttendanceData = (
     recordsToExport = attendanceRecords,
@@ -367,25 +485,6 @@ const AdminDashboard: React.FC = () => {
     });
     
     // Calculate attendance statistics by employee
-    interface EmployeeStat {
-      totalSignIns: number;
-      onTime: number;
-      late: number;
-      totalHoursWorked: number;
-      averageArrivalTime: string;
-      averageDepartureTime: string;
-      attendanceDates: Set<string>;
-      // Track monthly attendance
-      monthlyAttendance: Record<string, {
-        present: number;
-        late: number;
-        absent: number;
-        workHours: number;
-      }>;
-      // Track records by date for detailed view
-      recordsByDate: Record<string, AttendanceRecord[]>;
-    }
-    
     const employeeStats: Record<string, EmployeeStat> = {};
     
     // Initialize stats for all employees
@@ -471,6 +570,9 @@ const AdminDashboard: React.FC = () => {
       case ReportFormat.MONTHLY:
         exportMonthlyReport(recordsToExport, employeeStats, employeeMap, reportType);
         break;
+      case ReportFormat.TIME_GRID:
+        exportTimeGridReport(recordsToExport, employeeStats, employeeMap, reportType);
+        break;
       case ReportFormat.DETAILED:
       default:
         exportDetailedReport(recordsToExport, employeeStats, employeeMap, reportType);
@@ -481,7 +583,7 @@ const AdminDashboard: React.FC = () => {
   // Export detailed report (all records)
   const exportDetailedReport = (
     recordsToExport: AttendanceRecord[],
-    employeeStats: Record<string, any>,
+    employeeStats: Record<string, EmployeeStat>,
     employeeMap: Record<string, Employee>,
     reportType?: ReportType
   ) => {
@@ -524,8 +626,9 @@ const AdminDashboard: React.FC = () => {
       const stats = employeeStats[empId];
       
       // Calculate rates
-      const attendanceRate = stats.attendanceDates.size > 0 
-        ? Math.round((stats.attendanceDates.size / 30) * 100) 
+      const workingDaysInPeriod = getWorkingDaysInPeriod(reportType);
+      const attendanceRate = workingDaysInPeriod > 0 
+        ? Math.round((stats.attendanceDates.size / workingDaysInPeriod) * 100) 
         : 0;
       
       const punctualityRate = stats.totalSignIns > 0 
@@ -554,25 +657,25 @@ const AdminDashboard: React.FC = () => {
       
       // Add row to CSV
       csvRows.push([
-        record.employeeId,
-        employee.name,
-        employee.email || 'Unknown',
-        employee.department || 'Unknown',
-        employee.position || 'Unknown',
-        dateStr,
-        record.type,
-        timeStr,
-        record.isLate && record.type === 'sign-in' ? 'Late' : (record.type === 'sign-in' ? 'On Time' : 'Sign Out'),
-        locationStr || 'No location',
-        (record.notes || '').replace(/,/g, ' '), // Remove commas to avoid CSV issues
-        record.ipAddress || 'Unknown',
-        record.verificationMethod || 'manual',
-        record.facialVerification ? 'Yes' : 'No',
-        stats.totalSignIns,
-        stats.onTime,
-        stats.late,
-        attendanceRate,
-        punctualityRate
+        escapeCsvValue(record.employeeId),
+        escapeCsvValue(employee.name),
+        escapeCsvValue(employee.email || 'Unknown'),
+        escapeCsvValue(employee.department || 'Unknown'),
+        escapeCsvValue(employee.position || 'Unknown'),
+        escapeCsvValue(dateStr),
+        escapeCsvValue(record.type),
+        escapeCsvValue(timeStr),
+        escapeCsvValue(record.isLate && record.type === 'sign-in' ? 'Late' : (record.type === 'sign-in' ? 'On Time' : 'Sign Out')),
+        escapeCsvValue(locationStr || 'No location'),
+        escapeCsvValue((record.notes || '').replace(/,/g, ' ')), // Remove commas to avoid CSV issues
+        escapeCsvValue(record.ipAddress || 'Unknown'),
+        escapeCsvValue(record.verificationMethod || 'manual'),
+        escapeCsvValue(record.facialVerification ? 'Yes' : 'No'),
+        escapeCsvValue(stats.totalSignIns),
+        escapeCsvValue(stats.onTime),
+        escapeCsvValue(stats.late),
+        escapeCsvValue(attendanceRate),
+        escapeCsvValue(punctualityRate)
       ].join(','));
     });
     
@@ -582,7 +685,7 @@ const AdminDashboard: React.FC = () => {
   // Export employee summary report (one row per employee)
   const exportEmployeeSummaryReport = (
     recordsToExport: AttendanceRecord[],
-    employeeStats: Record<string, any>,
+    employeeStats: Record<string, EmployeeStat>,
     employeeMap: Record<string, Employee>,
     reportType?: ReportType
   ) => {
@@ -618,8 +721,9 @@ const AdminDashboard: React.FC = () => {
       };
       
       // Calculate rates
-      const attendanceRate = stats.attendanceDates.size > 0 
-        ? Math.round((stats.attendanceDates.size / 30) * 100) 
+      const workingDaysInPeriod = getWorkingDaysInPeriod(reportType);
+      const attendanceRate = workingDaysInPeriod > 0 
+        ? Math.round((stats.attendanceDates.size / workingDaysInPeriod) * 100) 
         : 0;
       
       const punctualityRate = stats.totalSignIns > 0 
@@ -651,20 +755,20 @@ const AdminDashboard: React.FC = () => {
       
       // Add row to CSV
       csvRows.push([
-        empId,
-        employee.name,
-        employee.email || 'Unknown',
-        employee.department || 'Unknown',
-        employee.position || 'Unknown',
-        stats.attendanceDates.size,
-        stats.totalSignIns,
-        stats.onTime,
-        stats.late,
-        attendanceRate,
-        punctualityRate,
-        lastSignInDate,
-        lastSignInTime,
-        lastSignInStatus
+        escapeCsvValue(empId),
+        escapeCsvValue(employee.name),
+        escapeCsvValue(employee.email || 'Unknown'),
+        escapeCsvValue(employee.department || 'Unknown'),
+        escapeCsvValue(employee.position || 'Unknown'),
+        escapeCsvValue(stats.attendanceDates.size),
+        escapeCsvValue(stats.totalSignIns),
+        escapeCsvValue(stats.onTime),
+        escapeCsvValue(stats.late),
+        escapeCsvValue(attendanceRate),
+        escapeCsvValue(punctualityRate),
+        escapeCsvValue(lastSignInDate),
+        escapeCsvValue(lastSignInTime),
+        escapeCsvValue(lastSignInStatus)
       ].join(','));
     });
     
@@ -674,7 +778,7 @@ const AdminDashboard: React.FC = () => {
   // Export monthly report (grouped by month and employee)
   const exportMonthlyReport = (
     recordsToExport: AttendanceRecord[],
-    employeeStats: Record<string, any>,
+    employeeStats: Record<string, EmployeeStat>,
     employeeMap: Record<string, Employee>,
     reportType?: ReportType
   ) => {
@@ -726,11 +830,11 @@ const AdminDashboard: React.FC = () => {
       
       // Start with base employee info
       const row = [
-        empId,
-        employee.name,
-        employee.email || 'Unknown',
-        employee.department || 'Unknown',
-        employee.position || 'Unknown'
+        escapeCsvValue(empId),
+        escapeCsvValue(employee.name),
+        escapeCsvValue(employee.email || 'Unknown'),
+        escapeCsvValue(employee.department || 'Unknown'),
+        escapeCsvValue(employee.position || 'Unknown')
       ];
       
       // Add data for each month
@@ -747,8 +851,9 @@ const AdminDashboard: React.FC = () => {
       });
       
       // Add totals
-      const attendanceRate = stats.attendanceDates.size > 0 
-        ? Math.round((stats.attendanceDates.size / 30) * 100) 
+      const workingDaysInPeriod = getWorkingDaysInPeriod(reportType);
+      const attendanceRate = workingDaysInPeriod > 0 
+        ? Math.round((stats.attendanceDates.size / workingDaysInPeriod) * 100) 
         : 0;
       
       const punctualityRate = stats.totalSignIns > 0 
@@ -766,6 +871,106 @@ const AdminDashboard: React.FC = () => {
     });
     
     downloadCsv(csvRows, reportType, 'monthly');
+  };
+
+  // Export time grid report (employee × day matrix with times)
+  const exportTimeGridReport = (
+    recordsToExport: AttendanceRecord[],
+    employeeStats: Record<string, EmployeeStat>,
+    employeeMap: Record<string, Employee>,
+    reportType?: ReportType
+  ) => {
+    const startDate = new Date(gridStartDate);
+    const endDate = new Date(gridEndDate);
+    
+    // Generate date range (only workdays, plus days with attendance)
+    const dateRange: string[] = [];
+    const attendanceDates = new Set<string>();
+    
+    // Collect all dates that have attendance
+    recordsToExport.forEach(record => {
+      const dateStr = new Date(record.timestamp).toISOString().split('T')[0];
+      attendanceDates.add(dateStr);
+    });
+    
+    // Generate workday dates in range, plus any attendance dates
+    const current = new Date(startDate);
+    while (current <= endDate) {
+      const dateStr = current.toISOString().split('T')[0];
+      const dayOfWeek = current.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      // Include if it's a workday (Mon-Fri) OR if there's attendance on this date
+      if ((dayOfWeek >= 1 && dayOfWeek <= 5) || attendanceDates.has(dateStr)) {
+        dateRange.push(dateStr);
+      }
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    // Create CSV header
+    const headers = ['Employee Name', 'Employee ID', ...dateRange];
+    const csvRows = [headers.map(h => `"${h}"`).join(',')];
+    
+    // Process each employee
+    Object.keys(employeeMap).forEach(empId => {
+      const employee = employeeMap[empId];
+      const stats = employeeStats[empId];
+      
+      if (!employee || !stats) return;
+      
+      const row = [
+        escapeCsvValue(employee.name || 'Unknown'),
+        escapeCsvValue(employee.employeeId || empId)
+      ];
+      
+      // For each date in range, find attendance data
+      dateRange.forEach(dateStr => {
+        const dayRecords = stats.recordsByDate[dateStr] || [];
+        
+        if (dayRecords.length === 0) {
+          row.push(''); // No attendance
+          return;
+        }
+        
+        // Find sign-in and sign-out records
+        const signInRecord = dayRecords.find((r: AttendanceRecord) => r.type === 'sign-in');
+        const signOutRecord = dayRecords.find((r: AttendanceRecord) => r.type === 'sign-out');
+        
+        let cellValue = '';
+        
+        if (signInRecord) {
+          const signInTime = new Date(signInRecord.timestamp);
+          const timeStr = signInTime.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          
+          // Check if late (>= 09:06)
+          const isLate = signInTime.getHours() > 9 || 
+                        (signInTime.getHours() === 9 && signInTime.getMinutes() >= 6);
+          
+          cellValue = isLate ? `${timeStr}*` : timeStr; // Mark late with asterisk
+        }
+        
+        if (signOutRecord) {
+          const signOutTime = new Date(signOutRecord.timestamp);
+          const timeStr = signOutTime.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          
+          cellValue = cellValue ? `${cellValue}/${timeStr}` : `/${timeStr}`;
+        }
+        
+        row.push(escapeCsvValue(cellValue));
+      });
+      
+      csvRows.push(row.join(','));
+    });
+    
+    downloadCsv(csvRows, reportType, 'time_grid');
   };
   
   // Helper to download CSV
@@ -800,72 +1005,175 @@ const AdminDashboard: React.FC = () => {
         
       case DashboardTab.REPORTS:
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Attendance Reports</h2>
+          <div className="space-y-8">
+            {/* Reports Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-900 dark:from-white dark:via-neutral-200 dark:to-white bg-clip-text text-transparent">
+                  Attendance Reports
+                </h1>
+                <p className="text-neutral-600 dark:text-neutral-400 mt-2">
+                  Generate and export detailed attendance reports
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3">
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={refreshAttendanceRecords}
                   isLoading={loadingAttendance}
-                  className="ml-2 p-1 rounded-full"
+                  leftIcon={<RefreshCw size={16} />}
+                  className="rounded-xl"
                 >
-                  <RefreshCw size={16} />
+                  Refresh
                 </Button>
-                <span className="text-xs text-gray-500 ml-2">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    id="autoRefresh" 
-                    checked={autoRefresh} 
-                    onChange={(e) => setAutoRefresh(e.target.checked)}
-                    className="mr-2"
-                  />
-                  <label htmlFor="autoRefresh" className="text-sm text-gray-600 dark:text-gray-300">
-                    Auto-refresh
-                  </label>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-full">
+                  Updated: {lastUpdated.toLocaleTimeString()}
                 </div>
-                <Button 
-                  variant="primary" 
-                  leftIcon={<Download size={18} />}
-                  onClick={() => exportAttendanceData()}
-                  disabled={attendanceRecords.length === 0}
-                >
-                  Export All Data
-                </Button>
               </div>
             </div>
 
+            {/* Report Controls */}
+            <Card variant="elevated" className="overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                  Report Configuration
+                </h3>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label htmlFor="reportFormat" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Report Format
+                    </label>
+                    <select
+                      id="reportFormat"
+                      value={reportFormat}
+                      onChange={(e) => setReportFormat(e.target.value as ReportFormat)}
+                      className="w-full rounded-xl border-neutral-200 dark:border-neutral-700"
+                    >
+                      {Object.values(ReportFormat).map(format => (
+                        <option key={format} value={format}>{format}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {reportFormat === ReportFormat.TIME_GRID && (
+                    <>
+                      <div>
+                        <label htmlFor="gridStartDate" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                          Start Date
+                        </label>
+                        <input
+                          id="gridStartDate"
+                          type="date"
+                          value={gridStartDate}
+                          onChange={(e) => setGridStartDate(e.target.value)}
+                          className="w-full rounded-xl border-neutral-200 dark:border-neutral-700"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="gridEndDate" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                          End Date
+                        </label>
+                        <input
+                          id="gridEndDate"
+                          type="date"
+                          value={gridEndDate}
+                          onChange={(e) => setGridEndDate(e.target.value)}
+                          className="w-full rounded-xl border-neutral-200 dark:border-neutral-700"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  <div className="flex items-end">
+                    <Button 
+                      variant="primary" 
+                      leftIcon={<Download size={18} />}
+                      onClick={() => exportAttendanceData()}
+                      disabled={attendanceRecords.length === 0}
+                      className="w-full rounded-xl h-12"
+                    >
+                      Export Report
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="checkbox" 
+                      id="autoRefresh" 
+                      checked={autoRefresh} 
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                      className="rounded border-neutral-300"
+                    />
+                    <label htmlFor="autoRefresh" className="text-sm text-neutral-600 dark:text-neutral-300">
+                      Auto-refresh data
+                    </label>
+                  </div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {attendanceRecords.length} records available
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Report Generation */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.values(ReportType).map(period => (
-                <Card key={period}>
+              {reportFormat === ReportFormat.TIME_GRID ? (
+                <Card className="md:col-span-3">
                   <CardHeader className="pb-2">
                     <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
                       <Calendar size={18} className="mr-2" />
-                      {period} Report
+                      Time Grid Report
                     </h3>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      Attendance summary for {period.toLowerCase()} period
+                      Generate a time grid showing employee attendance times for the selected date range.
+                      Shows check-in/check-out times, excludes weekends unless attendance exists.
+                      Late times ({'>'}= 09:06) are marked with asterisk (*).
                     </p>
                     <Button 
                       variant="primary" 
-                      className="w-full"
-                      onClick={() => generateReport(period)}
-                      isLoading={exportingReport && selectedReportPeriod === period}
+                      onClick={generateTimeGridReport}
+                      isLoading={exportingReport}
                       leftIcon={<FileText size={16} />}
+                      disabled={!gridStartDate || !gridEndDate}
                     >
-                      Generate Report
+                      Generate Time Grid Report
                     </Button>
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                Object.values(ReportType).map(period => (
+                  <Card key={period}>
+                    <CardHeader className="pb-2">
+                      <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
+                        <Calendar size={18} className="mr-2" />
+                        {period} Report
+                      </h3>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-gray-600 dark:text-gray-300 mb-4">
+                        Attendance summary for {period.toLowerCase()} period
+                      </p>
+                      <Button 
+                        variant="primary" 
+                        className="w-full"
+                        onClick={() => generateReport(period)}
+                        isLoading={exportingReport && selectedReportPeriod === period}
+                        leftIcon={<FileText size={16} />}
+                      >
+                        Generate Report
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
 
             <AttendanceTable 
@@ -873,9 +1181,14 @@ const AdminDashboard: React.FC = () => {
               isAdmin={true}
               organizationId={organizationId || undefined}
               onRefresh={refreshAttendanceRecords}
+              allowPagination={true}
+              allowDateFilter={true}
             />
           </div>
         );
+        
+      case DashboardTab.ANALYTICS:
+        return <AnalyticsDashboard />;
         
       case DashboardTab.WORKERS:
         return (
@@ -918,59 +1231,79 @@ const AdminDashboard: React.FC = () => {
       
       default:
         return (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                Dashboard Overview
-              </h2>
-              <div className="flex items-center">
+          <div className="space-y-8">
+            {/* Overview Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-900 dark:from-white dark:via-neutral-200 dark:to-white bg-clip-text text-transparent">
+                  Dashboard Overview
+                </h1>
+                <p className="text-neutral-600 dark:text-neutral-400 mt-2 text-lg">
+                  Real-time insights into your organization's attendance
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3">
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   size="sm" 
                   onClick={refreshAttendanceRecords}
                   isLoading={loadingAttendance}
-                  className="mr-4"
+                  leftIcon={<RefreshCw size={16} />}
+                  className="rounded-xl"
                 >
-                  <RefreshCw size={16} className="mr-2" />
                   Refresh Data
                 </Button>
-                <div className="text-xs text-gray-500">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
+                <div className="text-xs text-neutral-500 dark:text-neutral-400 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-full">
+                  Updated: {lastUpdated.toLocaleTimeString()}
                 </div>
               </div>
             </div>
           
+            {/* Dashboard Stats */}
             <DashboardStats 
               employeeCount={employees.filter(emp => emp.isActive).length} 
-              attendanceRecords={attendanceRecords} 
-              organizationName={organizationName}
+              attendanceRecords={attendanceRecords}
             />
             
-            <div className="mt-8">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-                  Recent Attendance
-                </h3>
+            {/* Recent Attendance Section */}
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                    Recent Attendance
+                  </h2>
+                  <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+                    Latest check-ins and check-outs from your team
+                  </p>
+                </div>
+                
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center">
+                  <div className="flex items-center space-x-2">
                     <input 
                       type="checkbox" 
                       id="autoRefreshOverview" 
                       checked={autoRefresh} 
                       onChange={(e) => setAutoRefresh(e.target.checked)}
-                      className="mr-2"
+                      className="rounded border-neutral-300"
                     />
-                    <label htmlFor="autoRefreshOverview" className="text-sm text-gray-600 dark:text-gray-300">
+                    <label htmlFor="autoRefreshOverview" className="text-sm text-neutral-600 dark:text-neutral-300 font-medium">
                       Auto-refresh
                     </label>
+                  </div>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {attendanceRecords.length} total records
                   </div>
                 </div>
               </div>
             
               {loadingAttendance ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-gray-600 dark:text-gray-300">Loading attendance records...</p>
+                <Card variant="elevated">
+                  <CardContent className="py-12 text-center">
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
+                      <p className="text-neutral-600 dark:text-neutral-300 font-medium">Loading attendance records...</p>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (
@@ -982,70 +1315,141 @@ const AdminDashboard: React.FC = () => {
                 />
               )}
             </div>
-          </>
+          </div>
         );
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Sidebar */}
-        <div className="w-full md:w-64 flex-shrink-0">
-          <Card>
-            <CardContent className="p-4">
-              <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                  Organization
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {organizationName}
-                </p>
-              </div>
-            
-              <div className="space-y-2">
-                <Button
-                  variant={activeTab === DashboardTab.OVERVIEW ? 'primary' : 'ghost'}
-                  onClick={() => setActiveTab(DashboardTab.OVERVIEW)}
-                  leftIcon={<Layers size={18} />}
-                  className="w-full justify-start"
-                >
-                  Overview
-                </Button>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Modern Sidebar */}
+          <div className="w-full lg:w-80 flex-shrink-0">
+            <div className="sticky top-8 space-y-6">
+              {/* Organization Info Card */}
+              <Card variant="glass" className="border-primary-200 dark:border-primary-800">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center">
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">
+                      {organizationName}
+                    </h3>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Admin Dashboard
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Button
-                  variant={activeTab === DashboardTab.REPORTS ? 'primary' : 'ghost'}
-                  onClick={() => setActiveTab(DashboardTab.REPORTS)}
-                  leftIcon={<Clock size={18} />}
-                  className="w-full justify-start"
-                >
-                  Reports
-                </Button>
-                <Button
-                  variant={activeTab === DashboardTab.WORKERS ? 'primary' : 'ghost'}
-                  onClick={() => setActiveTab(DashboardTab.WORKERS)}
-                  leftIcon={<Users size={18} />}
-                  className="w-full justify-start"
-                >
-                  Employees
-                </Button>
-              </div>
+              {/* Navigation Card */}
+              <Card variant="elevated" className="overflow-hidden">
+                <CardContent className="p-2">
+                  <div className="space-y-1">
+                    <Button
+                      variant={activeTab === DashboardTab.OVERVIEW ? 'primary' : 'ghost'}
+                      onClick={() => setActiveTab(DashboardTab.OVERVIEW)}
+                      leftIcon={<Layers size={20} />}
+                      className="w-full justify-start h-12 rounded-xl font-medium"
+                      size="lg"
+                    >
+                      Overview & Analytics
+                    </Button>
 
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Quick Actions</h3>
-                <div className="space-y-2">
-                  <Button variant="ghost" leftIcon={<Settings size={18} />} className="w-full justify-start">
-                    Settings
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    <Button
+                      variant={activeTab === DashboardTab.REPORTS ? 'primary' : 'ghost'}
+                      onClick={() => setActiveTab(DashboardTab.REPORTS)}
+                      leftIcon={<FileText size={20} />}
+                      className="w-full justify-start h-12 rounded-xl font-medium"
+                      size="lg"
+                    >
+                      Reports & Data
+                    </Button>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          {renderTabContent()}
+                    <Button
+                      variant={activeTab === DashboardTab.ANALYTICS ? 'primary' : 'ghost'}
+                      onClick={() => setActiveTab(DashboardTab.ANALYTICS)}
+                      leftIcon={<BarChart3 size={20} />}
+                      className="w-full justify-start h-12 rounded-xl font-medium"
+                      size="lg"
+                    >
+                      Advanced Analytics
+                    </Button>
+
+                    <Button
+                      variant={activeTab === DashboardTab.WORKERS ? 'primary' : 'ghost'}
+                      onClick={() => setActiveTab(DashboardTab.WORKERS)}
+                      leftIcon={<Users size={20} />}
+                      className="w-full justify-start h-12 rounded-xl font-medium"
+                      size="lg"
+                    >
+                      Employee Management
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions Card */}
+              <Card variant="elevated">
+                <CardHeader className="pb-3">
+                  <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide">
+                    Quick Actions
+                  </h3>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    <Button 
+                      variant="ghost" 
+                      leftIcon={<RefreshCw size={18} />} 
+                      onClick={refreshAttendanceRecords}
+                      isLoading={loadingAttendance}
+                      className="w-full justify-start h-10 rounded-lg"
+                    >
+                      Refresh Data
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      leftIcon={<Download size={18} />} 
+                      className="w-full justify-start h-10 rounded-lg"
+                    >
+                      Export Report
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      leftIcon={<Settings size={18} />} 
+                      className="w-full justify-start h-10 rounded-lg"
+                    >
+                      Settings
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Status Indicator */}
+              <Card variant="glass" className="border-success-200 dark:border-success-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 rounded-full bg-success-500 animate-pulse"></div>
+                      <span className="text-sm font-medium text-success-700 dark:text-success-300">
+                        System Online
+                      </span>
+                    </div>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {lastUpdated.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
+            {renderTabContent()}
+          </div>
         </div>
       </div>
     </div>

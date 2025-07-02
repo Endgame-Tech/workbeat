@@ -2,323 +2,404 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Fingerprint, Clock, CheckCircle, Shield, Users, BarChart2 } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { Card, CardContent } from '../components/ui/Card';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Hero Section */}
-      <div className="relative bg-blue-600 dark:bg-blue-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700 opacity-90 dark:from-blue-800 dark:to-indigo-900"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-52 relative z-10">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 gradient-primary opacity-95"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600/20 via-transparent to-accent-600/20"></div>
+        
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-accent-400/10 animate-pulse-slow"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary-400/10 animate-bounce-slow"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40 relative z-10">
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
-              <span className="block">WorkBeat</span>
-              <span className="block text-blue-200">Biometric Attendance System</span>
+            <div className="flex justify-center mb-8">
+              <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
+                <Fingerprint className="h-16 w-16 text-white" />
+              </div>
+            </div>
+            
+            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+              <span className="block animate-slide-up">WorkBeat</span>
+              <span className="block text-primary-200 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                Biometric Attendance System
+              </span>
             </h1>
-            <p className="mt-6 max-w-lg mx-auto text-xl text-blue-100 sm:max-w-3xl">
+            
+            <p className="mt-8 max-w-2xl mx-auto text-xl text-primary-100 sm:text-2xl animate-slide-up" style={{ animationDelay: '0.4s' }}>
               Secure, reliable attendance tracking with dual-factor biometric authentication.
-              Boost productivity and eliminate time theft with our cutting-edge solution.
+              <span className="block mt-2 text-lg text-primary-200">
+                Boost productivity and eliminate time theft with our cutting-edge solution.
+              </span>
             </p>
-            <div className="mt-10 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center">
-              <div className="space-y-4 sm:space-y-0 sm:space-x-4">
+            
+            <div className="mt-12 max-w-md mx-auto sm:max-w-none sm:flex sm:justify-center animate-slide-up" style={{ animationDelay: '0.6s' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <Link to="/register">
-                  <Button variant="primary" className="w-full sm:w-auto px-8 py-3 text-base font-medium">
+                  <Button variant="secondary" size="lg" className="w-full bg-white text-primary-600 hover:bg-primary-50 shadow-xl hover:shadow-2xl">
                     Start Free Trial
                   </Button>
                 </Link>
                 <Link to="/demo">
-                  <Button variant="ghost" className="w-full sm:w-auto px-8 py-3 text-base font-medium text-white border-white bottom-2 hover:bg-white/10">
+                  <Button variant="outline" size="lg" className="w-full border-white/20 text-white hover:bg-white/10 backdrop-blur-sm">
                     View Demo
                   </Button>
                 </Link>
               </div>
             </div>
+            
+            <div className="mt-12 text-center animate-fade-in" style={{ animationDelay: '0.8s' }}>
+              <p className="text-primary-200 text-sm mb-4">Trusted by leading companies worldwide</p>
+              <div className="flex justify-center items-center space-x-8 opacity-60">
+                <div className="text-white font-semibold">TechCorp</div>
+                <div className="text-white font-semibold">InnovateCo</div>
+                <div className="text-white font-semibold">FutureSoft</div>
+              </div>
+            </div>
           </div>
         </div>
         
-        {/* Wave pattern divider */}
-        <div className="absolute bottom-[-10px] left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 0L48 8.3C96 17 192 33 288 53.3C384 73 480 93 576 93.3C672 93 768 73 864 58.3C960 43 1056 33 1152 38.3C1248 43 1344 63 1392 73.3L1440 83V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0V0Z" fill="white" className="dark:fill-gray-900"></path>
+        {/* Modern wave pattern divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+            <path d="M0 0L48 8.3C96 17 192 33 288 53.3C384 73 480 93 576 93.3C672 93 768 73 864 58.3C960 43 1056 33 1152 38.3C1248 43 1344 63 1392 73.3L1440 83V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0V0Z" fill="white" className="dark:fill-neutral-900"></path>
           </svg>
         </div>
       </div>
       
       {/* Features Section */}
-      <div className="py-16 sm:py-24 lg:py-32 bg-white dark:bg-gray-900">
+      <div className="py-20 sm:py-28 lg:py-32 bg-white dark:bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            {/* <h2 className="text-base font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Features</h2> */}
-            <p className="mt-1 text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl sm:tracking-tight">
-              Everything you need for attendance tracking
-            </p>
-            <p className="max-w-xl mt-5 mx-auto text-xl text-gray-500 dark:text-gray-300">
+          <div className="text-center mb-20">
+            <h2 className="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-4">
+              Powerful Features
+            </h2>
+            <h3 className="text-4xl font-extrabold text-neutral-900 dark:text-white sm:text-5xl lg:text-6xl">
+              Everything you need for
+              <span className="block text-gradient-primary">attendance tracking</span>
+            </h3>
+            <p className="max-w-2xl mt-6 mx-auto text-xl text-neutral-600 dark:text-neutral-300">
               Our solution combines cutting-edge biometric technology with powerful management tools
+              to deliver unparalleled accuracy and security.
             </p>
           </div>
 
-          <div className="mt-16">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 dark:bg-gray-800 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-blue-600 dark:bg-blue-500 rounded-md shadow-lg">
-                        <Fingerprint className="h-6 w-6 text-white" aria-hidden="true" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">Dual Biometric Authentication</h3>
-                    <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
-                      Combine fingerprint scanning and facial recognition for foolproof attendance verification.
-                    </p>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="group">
+              <div className="relative bg-white dark:bg-neutral-800 rounded-3xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-200/50 dark:border-neutral-700/50">
+                <div className="absolute -top-6 left-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 gradient-primary rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Fingerprint className="h-6 w-6 text-white" />
                   </div>
                 </div>
-              </div>
-
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 dark:bg-gray-800 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-blue-600 dark:bg-blue-500 rounded-md shadow-lg">
-                        <Clock className="h-6 w-6 text-white" aria-hidden="true" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">Real-time Tracking</h3>
-                    <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
-                      Monitor attendance in real-time with instant notifications for late arrivals and absences.
-                    </p>
-                  </div>
+                <div className="pt-6">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                    Dual Biometric Authentication
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                    Combine fingerprint scanning and facial recognition for foolproof attendance verification 
+                    with 99.9% accuracy.
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 dark:bg-gray-800 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-blue-600 dark:bg-blue-500 rounded-md shadow-lg">
-                        <Shield className="h-6 w-6 text-white" aria-hidden="true" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">Enterprise Security</h3>
-                    <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
-                      Bank-level encryption for biometric data and secure multi-tenant architecture.
-                    </p>
+            <div className="group">
+              <div className="relative bg-white dark:bg-neutral-800 rounded-3xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-200/50 dark:border-neutral-700/50">
+                <div className="absolute -top-6 left-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 gradient-accent rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="h-6 w-6 text-white" />
                   </div>
                 </div>
-              </div>
-
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 dark:bg-gray-800 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-blue-600 dark:bg-blue-500 rounded-md shadow-lg">
-                        <CheckCircle className="h-6 w-6 text-white" aria-hidden="true" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">Customizable Rules</h3>
-                    <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
-                      Set custom working hours, grace periods, and attendance policies by department.
-                    </p>
-                  </div>
+                <div className="pt-6">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                    Real-time Tracking
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                    Monitor attendance in real-time with instant notifications for late arrivals, absences, 
+                    and overtime alerts.
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 dark:bg-gray-800 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-blue-600 dark:bg-blue-500 rounded-md shadow-lg">
-                        <BarChart2 className="h-6 w-6 text-white" aria-hidden="true" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">Advanced Analytics</h3>
-                    <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
-                      Comprehensive reports and dashboards to analyze attendance patterns and productivity.
-                    </p>
+            <div className="group">
+              <div className="relative bg-white dark:bg-neutral-800 rounded-3xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-200/50 dark:border-neutral-700/50">
+                <div className="absolute -top-6 left-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 gradient-success rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Shield className="h-6 w-6 text-white" />
                   </div>
                 </div>
+                <div className="pt-6">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                    Enterprise Security
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                    Bank-level encryption and secure data storage ensure your sensitive attendance data 
+                    remains protected at all times.
+                  </p>
+                </div>
               </div>
+            </div>
 
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 dark:bg-gray-800 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-blue-600 dark:bg-blue-500 rounded-md shadow-lg">
-                        <Users className="h-6 w-6 text-white" aria-hidden="true" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">Team Management</h3>
-                    <p className="mt-5 text-base text-gray-500 dark:text-gray-300">
-                      Organize employees by department, track performance, and manage permissions.
-                    </p>
+            <div className="group">
+              <div className="relative bg-white dark:bg-neutral-800 rounded-3xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-200/50 dark:border-neutral-700/50">
+                <div className="absolute -top-6 left-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Users className="h-6 w-6 text-white" />
                   </div>
+                </div>
+                <div className="pt-6">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                    Team Management
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                    Organize employees by department, track performance metrics, and manage permissions 
+                    with intuitive admin tools.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <div className="relative bg-white dark:bg-neutral-800 rounded-3xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-200/50 dark:border-neutral-700/50">
+                <div className="absolute -top-6 left-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-accent-500 to-success-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <BarChart2 className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+                <div className="pt-6">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                    Advanced Analytics
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                    Generate comprehensive reports with detailed insights, attendance patterns, 
+                    and productivity metrics for informed decision-making.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <div className="relative bg-white dark:bg-neutral-800 rounded-3xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-200/50 dark:border-neutral-700/50">
+                <div className="absolute -top-6 left-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-success-500 to-primary-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+                <div className="pt-6">
+                  <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-4">
+                    Smart Automation
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                    Automated payroll integration, shift scheduling, and compliance reporting 
+                    save hours of manual work every week.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Pricing Section */}
-      <div className="bg-gray-50 dark:bg-gray-800 py-16 sm:py-24 lg:py-32">
+      <div className="bg-neutral-100 dark:bg-neutral-800 py-20 sm:py-28 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-base font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Pricing</h2>
-            <p className="mt-1 text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl sm:tracking-tight">
-              Plans for businesses of all sizes
-            </p>
-            <p className="max-w-xl mt-5 mx-auto text-xl text-gray-500 dark:text-gray-300">
-              Choose the plan that works best for your organization
+          <div className="text-center mb-20">
+            <h2 className="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-4">
+              Transparent Pricing
+            </h2>
+            <h3 className="text-4xl font-extrabold text-neutral-900 dark:text-white sm:text-5xl lg:text-6xl">
+              Plans for businesses of
+              <span className="block text-gradient-primary">all sizes</span>
+            </h3>
+            <p className="max-w-2xl mt-6 mx-auto text-xl text-neutral-600 dark:text-neutral-300">
+              Choose the plan that works best for your organization with flexible, scalable pricing.
             </p>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
             {/* Free Plan */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
-              <div className="px-6 py-8">
-                <h3 className="text-2xl font-medium text-gray-900 dark:text-white">Free Trial</h3>
-                <p className="mt-4 text-gray-500 dark:text-gray-300">Perfect for small teams looking to try our system</p>
-                <p className="mt-8">
-                  <span className="text-4xl font-bold text-gray-900 dark:text-white">$0</span>
-                  <span className="text-base font-medium text-gray-500 dark:text-gray-300">/month</span>
-                </p>
-                <ul className="mt-8 space-y-4">
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Up to 10 employees</span>
+            <Card variant="elevated" className="relative overflow-hidden group hover:scale-105 transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-neutral-500 to-neutral-600 rounded-2xl mb-6">
+                    <Clock className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
+                    Free Trial
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-400 mb-8">
+                    Perfect for small teams getting started
+                  </p>
+                  <div className="mb-8">
+                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">$0</span>
+                    <span className="text-lg text-neutral-600 dark:text-neutral-400">/month</span>
+                  </div>
+                </div>
+                
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Up to 10 employees</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Basic attendance tracking</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Basic attendance tracking</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Simple reports</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Simple reports</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Email support</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Email support</span>
                   </li>
                 </ul>
-              </div>
-              <div className="px-6 py-8 bg-gray-50 dark:bg-gray-800">
-                <Link to="/register">
-                  <Button variant="primary" className="w-full py-2">
+                
+                <Link to="/register" className="block">
+                  <Button variant="outline" className="w-full rounded-xl h-12 font-semibold">
                     Start Free Trial
                   </Button>
                 </Link>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* Professional Plan */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden ring-2 ring-blue-600/40 dark:ring-blue-500/40">
-              <div className="px-6 py-8">
-                <h3 className="text-2xl font-medium text-gray-900 dark:text-white">Professional</h3>
-                <p className="mt-4 text-gray-500 dark:text-gray-300">For growing businesses with more complex needs</p>
-                <p className="mt-8">
-                  <span className="text-4xl font-bold text-gray-900 dark:text-white">$19</span>
-                  <span className="text-base font-medium text-gray-500 dark:text-gray-300">/month</span>
-                </p>
-                <ul className="mt-8 space-y-4">
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Up to 50 employees</span>
+            {/* Professional Plan - Featured */}
+            <Card variant="elevated" className="relative overflow-hidden group hover:scale-105 transition-all duration-300 border-2 border-primary-500">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary-500 to-accent-500 text-white px-6 py-2 rounded-b-xl text-sm font-semibold">
+                Most Popular
+              </div>
+              <CardContent className="p-8 pt-12">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl mb-6">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
+                    Professional
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-400 mb-8">
+                    For growing businesses with complex needs
+                  </p>
+                  <div className="mb-8">
+                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">$19</span>
+                    <span className="text-lg text-neutral-600 dark:text-neutral-400">/month</span>
+                  </div>
+                </div>
+                
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Up to 50 employees</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Advanced biometric verification</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Advanced biometric verification</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Comprehensive analytics</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Comprehensive analytics</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Custom working hours</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Priority support</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Priority support</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">API access</span>
                   </li>
                 </ul>
-              </div>
-              <div className="px-6 py-8 bg-gray-50 dark:bg-gray-800">
-                <Link to="/register">
-                  <Button variant="primary" className="w-full py-2">
+                
+                <Link to="/register" className="block">
+                  <Button variant="primary" className="w-full rounded-xl h-12 font-semibold">
                     Get Started
                   </Button>
                 </Link>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Enterprise Plan */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
-              <div className="px-6 py-8">
-                <h3 className="text-2xl font-medium text-gray-900 dark:text-white">Enterprise</h3>
-                <p className="mt-4 text-gray-500 dark:text-gray-300">For large organizations with custom requirements</p>
-                <p className="mt-8">
-                  <span className="text-4xl font-bold text-gray-900 dark:text-white">$89</span>
-                  <span className="text-base font-medium text-gray-500 dark:text-gray-300">/month</span>
-                </p>
-                <ul className="mt-8 space-y-4">
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Unlimited employees</span>
+            <Card variant="elevated" className="relative overflow-hidden group hover:scale-105 transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-accent-500 to-success-500 rounded-2xl mb-6">
+                    <BarChart2 className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
+                    Enterprise
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-400 mb-8">
+                    For large organizations with custom requirements
+                  </p>
+                  <div className="mb-8">
+                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">$49</span>
+                    <span className="text-lg text-neutral-600 dark:text-neutral-400">/month</span>
+                  </div>
+                </div>
+                
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Unlimited employees</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Advanced security features</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Advanced security features</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Custom integrations</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Custom integrations</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">Dedicated account manager</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Dedicated support</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 text-green-500 dark:text-green-400">
-                      <CheckCircle size={16} />
-                    </span>
-                    <span className="ml-3 text-gray-500 dark:text-gray-300">24/7 premium support</span>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">On-premise deployment</span>
                   </li>
                 </ul>
-              </div>
-              <div className="px-6 py-8 bg-gray-50 dark:bg-gray-800">
-                <Link to="/contact">
-                  <Button variant="ghost" className="w-full py-2 border border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                    Contact Sales
-                  </Button>
-                </Link>
-              </div>
-            </div>
+                
+                <Button variant="outline" className="w-full rounded-xl h-12 font-semibold">
+                  Contact Sales
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

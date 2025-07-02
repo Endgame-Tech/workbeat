@@ -5,12 +5,23 @@ import TruncatedText from './TruncatedText';
 interface TableProps {
   children: React.ReactNode;
   className?: string;
+  variant?: 'default' | 'striped' | 'bordered';
 }
 
-const Table: React.FC<TableProps> = ({ children, className = '' }) => {
+const Table: React.FC<TableProps> = ({ children, variant = 'default', className = '' }) => {
+  const baseStyles = 'w-full border-collapse text-sm';
+  
+  const variantStyles = {
+    default: '',
+    striped: 'table-striped',
+    bordered: 'border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden'
+  };
+  
+  const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;
+  
   return (
-    <div className="w-full overflow-x-auto">
-      <table className={`w-full border-collapse text-sm ${className}`}>
+    <div className="w-full overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
+      <table className={combinedClassName}>
         {children}
       </table>
     </div>
@@ -24,7 +35,7 @@ interface TableHeadProps {
 
 const TableHead: React.FC<TableHeadProps> = ({ children, className = '' }) => {
   return (
-    <thead className={`bg-gray-50 dark:bg-gray-800 ${className}`}>
+    <thead className={`bg-neutral-50 dark:bg-neutral-800/50 ${className}`}>
       {children}
     </thead>
   );
@@ -43,16 +54,28 @@ interface TableRowProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+  variant?: 'default' | 'hover' | 'selected';
 }
 
 const TableRow: React.FC<TableRowProps> = ({ 
   children, 
   className = '',
-  onClick
+  onClick,
+  variant = 'default'
 }) => {
+  const baseStyles = 'border-b border-neutral-200 dark:border-neutral-700 transition-colors duration-150';
+  
+  const variantStyles = {
+    default: '',
+    hover: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50',
+    selected: 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
+  };
+  
+  const interactiveStyles = onClick ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50' : '';
+  
   return (
     <tr 
-      className={`border-b border-gray-200 dark:border-gray-700 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`${baseStyles} ${variantStyles[variant]} ${interactiveStyles} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -79,7 +102,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
 
   return (
     <th 
-      className={`px-4 py-3 font-medium text-gray-900 dark:text-white ${alignmentClasses[align]} ${className}`}
+      className={`px-6 py-4 font-semibold text-neutral-900 dark:text-white text-sm tracking-tight ${alignmentClasses[align]} ${className}`}
     >
       {children}
     </th>
@@ -109,18 +132,17 @@ const TableCell: React.FC<TableCellProps> = ({
     right: 'text-right'
   };
 
-
-    // If truncate is enabled and children is a string, wrap it in TruncatedText
+  // If truncate is enabled and children is a string, wrap it in TruncatedText
   const content = truncate && typeof children === 'string' 
     ? <TruncatedText text={children} maxWidth={maxWidth} />
     : children;
 
   return (
     <td 
-      className={`px-4 py-3 text-gray-700 dark:text-gray-300 ${alignmentClasses[align]} ${className}`}
+      className={`px-6 py-4 text-neutral-700 dark:text-neutral-300 text-sm ${alignmentClasses[align]} ${className}`}
       colSpan={colSpan}
     >
-      {children}
+      {content}
     </td>
   );
 };
@@ -132,7 +154,7 @@ interface TableFooterProps {
 
 const TableFooter: React.FC<TableFooterProps> = ({ children, className = '' }) => {
   return (
-    <tfoot className={`bg-gray-50 dark:bg-gray-800 ${className}`}>
+    <tfoot className={`bg-neutral-50 dark:bg-neutral-800/50 ${className}`}>
       {children}
     </tfoot>
   );
@@ -164,25 +186,25 @@ const TableSortableHeader: React.FC<TableSortableHeaderProps> = ({
 
   return (
     <th
-      className={`px-4 py-3 font-medium text-gray-900 dark:text-white ${alignmentClasses[align]} ${sortable ? 'cursor-pointer select-none' : ''} ${className}`}
+      className={`px-6 py-4 font-semibold text-neutral-900 dark:text-white text-sm tracking-tight ${alignmentClasses[align]} ${sortable ? 'cursor-pointer select-none hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors duration-150' : ''} ${className}`}
       onClick={sortable ? onSort : undefined}
     >
       <div className="flex items-center justify-between">
         <span>{children}</span>
         {sortable && (
-          <span className="ml-1">
+          <span className="ml-2 flex-shrink-0">
             {sorted === 'asc' && (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
               </svg>
             )}
             {sorted === 'desc' && (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             )}
             {sorted === null && (
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
               </svg>
             )}
@@ -235,31 +257,31 @@ const TablePagination: React.FC<TablePaginationProps> = ({
   };
   
   return (
-    <div className={`flex items-center justify-between px-4 py-3 ${className}`}>
+    <div className={`flex items-center justify-between px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/30 ${className}`}>
       <button
-        className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-sm font-medium rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-150"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
         Previous
       </button>
       
-      <div className="hidden sm:flex space-x-1">
+      <div className="hidden sm:flex space-x-2">
         {getVisiblePages().map((page, index) => (
           page === '...' ? (
             <span 
               key={`ellipsis-${index}`} 
-              className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400"
+              className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400"
             >
               ...
             </span>
           ) : (
             <button
               key={`page-${page}`}
-              className={`px-3 py-1 text-sm rounded-md ${
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
                 page === currentPage
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700'
               }`}
               onClick={() => typeof page === 'number' && onPageChange(page)}
             >
@@ -270,13 +292,13 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       </div>
       
       <div className="sm:hidden">
-        <span className="text-sm text-gray-700 dark:text-gray-300">
+        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Page {currentPage} of {totalPages}
         </span>
       </div>
       
       <button
-        className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-sm font-medium rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-150"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >

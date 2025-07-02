@@ -111,45 +111,82 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     {
       title: 'Total Employees',
       value: stats.totalEmployees,
-      icon: <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
-      color: 'bg-blue-50 dark:bg-blue-900/20'
+      icon: <Users className="w-6 h-6" />,
+      color: 'bg-gradient-to-br from-primary-500 to-primary-600',
+      iconBg: 'bg-primary-100 dark:bg-primary-900/30',
+      iconColor: 'text-primary-600 dark:text-primary-400',
+      change: null,
+      trend: 'neutral'
     },
     {
       title: 'Present Today',
       value: stats.presentEmployees,
-      icon: <UserCheck className="w-6 h-6 text-green-600 dark:text-green-400" />,
-      color: 'bg-green-50 dark:bg-green-900/20'
+      icon: <UserCheck className="w-6 h-6" />,
+      color: 'bg-gradient-to-br from-success-500 to-success-600',
+      iconBg: 'bg-success-100 dark:bg-success-900/30',
+      iconColor: 'text-success-600 dark:text-success-400',
+      change: stats.totalEmployees > 0 ? `${Math.round((stats.presentEmployees / stats.totalEmployees) * 100)}%` : null,
+      trend: 'positive'
     },
     {
       title: 'Late Today',
       value: stats.lateEmployees,
-      icon: <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
-      color: 'bg-amber-50 dark:bg-amber-900/20'
+      icon: <Clock className="w-6 h-6" />,
+      color: 'bg-gradient-to-br from-warning-500 to-warning-600',
+      iconBg: 'bg-warning-100 dark:bg-warning-900/30',
+      iconColor: 'text-warning-600 dark:text-warning-400',
+      change: stats.presentEmployees > 0 ? `${Math.round((stats.lateEmployees / stats.presentEmployees) * 100)}%` : null,
+      trend: 'negative'
     },
     {
       title: 'Absent Today',
       value: stats.absentEmployees,
-      icon: <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />,
-      color: 'bg-red-50 dark:bg-red-900/20'
+      icon: <AlertCircle className="w-6 h-6" />,
+      color: 'bg-gradient-to-br from-danger-500 to-danger-600',
+      iconBg: 'bg-danger-100 dark:bg-danger-900/30',
+      iconColor: 'text-danger-600 dark:text-danger-400',
+      change: stats.totalEmployees > 0 ? `${Math.round((stats.absentEmployees / stats.totalEmployees) * 100)}%` : null,
+      trend: 'negative'
     }
   ];
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-        Today's Overview
-      </h2>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-900 dark:from-white dark:via-neutral-200 dark:to-white bg-clip-text text-transparent">
+            Today's Overview
+          </h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mt-2 font-medium">
+            {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 px-3 py-2 rounded-full bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800">
+            <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse"></div>
+            <span className="text-sm font-medium text-success-700 dark:text-success-300">Live updates</span>
+          </div>
+        </div>
+      </div>
       
+      {/* Loading State */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(index => (
-            <Card key={index}>
-              <CardContent className="p-4">
+            <Card key={index} variant="elevated" className="overflow-hidden">
+              <CardContent className="p-6">
                 <div className="flex items-center animate-pulse">
-                  <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded-lg mr-4 h-12 w-12"></div>
+                  <div className="bg-neutral-200 dark:bg-neutral-700 p-4 rounded-xl mr-4 h-14 w-14"></div>
                   <div className="flex-1">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded-lg w-3/4 mb-3"></div>
+                    <div className="h-7 bg-neutral-200 dark:bg-neutral-700 rounded-lg w-1/2"></div>
                   </div>
                 </div>
               </CardContent>
@@ -157,21 +194,46 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        /* Stats Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statItems.map((stat, index) => (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className={`p-3 rounded-lg mr-4 ${stat.color}`}>
-                    {stat.icon}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {stat.title}
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {stat.value}
-                    </p>
+            <Card 
+              key={index} 
+              variant="elevated" 
+              className="group overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer border-0 shadow-lg hover:shadow-xl"
+            >
+              <CardContent className="p-6 relative">
+                {/* Background Gradient */}
+                <div className={`absolute top-0 right-0 w-20 h-20 ${stat.color} opacity-10 rounded-full blur-xl group-hover:opacity-20 transition-opacity duration-300`}></div>
+                
+                <div className="flex items-center justify-between relative">
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
+                      <div className={stat.iconColor}>
+                        {stat.icon}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
+                        {stat.title}
+                      </p>
+                      <p className="text-3xl font-bold text-neutral-900 dark:text-white mt-1">
+                        {stat.value}
+                      </p>
+                      {stat.change && (
+                        <div className="flex items-center mt-2">
+                          <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                            stat.trend === 'positive' 
+                              ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300'
+                              : stat.trend === 'negative'
+                              ? 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-300'
+                              : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
+                          }`}>
+                            {stat.change}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -180,55 +242,85 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-              Attendance Rate
-            </h3>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex items-center gap-4">
-              <div className="relative h-24 w-24">
-                <svg className="w-full h-full" viewBox="0 0 100 100">
-                  <circle
-                    className="text-gray-200 dark:text-gray-700"
-                    strokeWidth="10"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="40"
-                    cx="50"
-                    cy="50"
-                  />
-                  <circle
-                    className="text-green-500 dark:text-green-400"
-                    strokeWidth="10"
-                    strokeDasharray={`${stats.attendanceRate * 2.51} 251`}
-                    strokeLinecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="40"
-                    cx="50"
-                    cy="50"
-                    transform="rotate(-90 50 50)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-800 dark:text-white">{stats.attendanceRate}%</span>
-                </div>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Attendance Rate Chart */}
+        <Card variant="elevated" className="overflow-hidden">
+          <CardHeader className="pb-4 bg-gradient-to-r from-success-50 to-success-100 dark:from-success-900/20 dark:to-success-800/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-success-500 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="flex items-center mb-1">
-                  <CheckCircle size={16} className="text-green-500 mr-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {stats.presentEmployees} of {stats.totalEmployees} employees present
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  Attendance Rate
+                </h3>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                  Overall employee presence today
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="relative">
+                <div className="relative h-32 w-32">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      className="text-neutral-200 dark:text-neutral-700"
+                      strokeWidth="8"
+                      stroke="currentColor"
+                      fill="transparent"
+                      r="42"
+                      cx="50"
+                      cy="50"
+                    />
+                    <circle
+                      className="text-success-500 dark:text-success-400"
+                      strokeWidth="8"
+                      strokeDasharray={`${stats.attendanceRate * 2.64} 264`}
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="transparent"
+                      r="42"
+                      cx="50"
+                      cy="50"
+                      style={{
+                        animation: 'drawCircle 1.5s ease-out forwards',
+                        strokeDashoffset: 264
+                      }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-3xl font-bold text-neutral-900 dark:text-white">{stats.attendanceRate}</span>
+                      <span className="text-lg font-semibold text-neutral-600 dark:text-neutral-400">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 ml-6 space-y-4">
+                <div className="flex items-center justify-between p-3 bg-success-50 dark:bg-success-900/20 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle size={18} className="text-success-500" />
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Present
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-success-600 dark:text-success-400">
+                    {stats.presentEmployees} of {stats.totalEmployees}
                   </span>
                 </div>
-                <div className="flex items-center">
-                  <CalendarClock size={16} className="text-blue-500 mr-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CalendarClock size={18} className="text-primary-500" />
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Today
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
                     {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long', 
+                      weekday: 'short', 
                       month: 'short', 
                       day: 'numeric' 
                     })}
@@ -239,53 +331,82 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-              Punctuality Rate
-            </h3>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex items-center gap-4">
-              <div className="relative h-24 w-24">
-                <svg className="w-full h-full" viewBox="0 0 100 100">
-                  <circle
-                    className="text-gray-200 dark:text-gray-700"
-                    strokeWidth="10"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="40"
-                    cx="50"
-                    cy="50"
-                  />
-                  <circle
-                    className="text-blue-500 dark:text-blue-400"
-                    strokeWidth="10"
-                    strokeDasharray={`${stats.punctualityRate * 2.51} 251`}
-                    strokeLinecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="40"
-                    cx="50"
-                    cy="50"
-                    transform="rotate(-90 50 50)"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-800 dark:text-white">{stats.punctualityRate}%</span>
-                </div>
+        {/* Punctuality Rate Chart */}
+        <Card variant="elevated" className="overflow-hidden">
+          <CardHeader className="pb-4 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary-500 rounded-lg">
+                <Clock className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="flex items-center mb-1">
-                  <AlertCircle size={16} className="text-amber-500 mr-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {stats.lateEmployees} employees were late today
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  Punctuality Rate
+                </h3>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                  On-time arrival performance
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="relative">
+                <div className="relative h-32 w-32">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      className="text-neutral-200 dark:text-neutral-700"
+                      strokeWidth="8"
+                      stroke="currentColor"
+                      fill="transparent"
+                      r="42"
+                      cx="50"
+                      cy="50"
+                    />
+                    <circle
+                      className="text-primary-500 dark:text-primary-400"
+                      strokeWidth="8"
+                      strokeDasharray={`${stats.punctualityRate * 2.64} 264`}
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="transparent"
+                      r="42"
+                      cx="50"
+                      cy="50"
+                      style={{
+                        animation: 'drawCircle 1.5s ease-out forwards 0.3s',
+                        strokeDashoffset: 264
+                      }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-3xl font-bold text-neutral-900 dark:text-white">{stats.punctualityRate}</span>
+                      <span className="text-lg font-semibold text-neutral-600 dark:text-neutral-400">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 ml-6 space-y-4">
+                <div className="flex items-center justify-between p-3 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle size={18} className="text-warning-500" />
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Late arrivals
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-warning-600 dark:text-warning-400">
+                    {stats.lateEmployees} employees
                   </span>
                 </div>
-                <div className="flex items-center">
-                  <Clock size={16} className="text-blue-500 mr-2" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    Standard arrival based on schedule
+                <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Clock size={18} className="text-primary-500" />
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Schedule
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
+                    Standard policy
                   </span>
                 </div>
               </div>

@@ -151,6 +151,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose, isOpen }) => 
           </CardContent>
 
           <CardFooter className="text-center">
+            Email: admin@workbeat.com
+            Password: admin123
             <button
               type="button"
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"

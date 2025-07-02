@@ -3,26 +3,31 @@ import React, { useState, useEffect } from 'react';
 import { AttendanceRecord, Employee } from '../types';
 import { formatTime, formatDate } from '../utils/attendanceUtils';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Clock, MapPin, ArrowDown, ArrowUp, Search, RefreshCw } from 'lucide-react';
+import { Clock, MapPin, ArrowDown, ArrowUp, Search, RefreshCw, Filter, Calendar, ChevronDown } from 'lucide-react';
 import Input from './ui/Input';
 import Button from './ui/Button';
 import { employeeService } from '../services/employeeService';
 import { attendanceService } from '../services/attendanceService';
 import { toast } from 'react-hot-toast';
 import Badge from './ui/Badge';
+import EmployeeStatsModal from './EmployeeStatsModal';
 
 interface AttendanceTableProps {
   records?: AttendanceRecord[];
   isAdmin?: boolean;
   organizationId?: string; // Optional prop to override the organization ID
   onRefresh?: () => void; // Optional callback for when the refresh button is clicked
+  allowPagination?: boolean; // Enable load more functionality
+  allowDateFilter?: boolean; // Enable date range filtering
 }
 
 const AttendanceTable: React.FC<AttendanceTableProps> = ({ 
   records: initialRecords, 
   isAdmin = false,
   organizationId: propOrgId,
-  onRefresh
+  onRefresh,
+  allowPagination = false,
+  allowDateFilter = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<'timestamp' | 'employeeId'>('timestamp');
@@ -34,6 +39,22 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(propOrgId || null);
   const [organizationName, setOrganizationName] = useState<string>('');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreRecords, setHasMoreRecords] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const recordsPerPage = 30;
+  
+  // Date filtering state
+  const [dateFilterEnabled, setDateFilterEnabled] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  
+  // Employee stats modal state
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [showEmployeeStats, setShowEmployeeStats] = useState(false);
 
   // Get the organization ID on mount if not provided as a prop
   useEffect(() => {
@@ -78,22 +99,62 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   }, [initialRecords, organizationId]);
 
   // Function to fetch attendance records for the current organization
-  const fetchAttendanceRecords = async () => {
+  const fetchAttendanceRecords = async (loadMore = false, filterStartDate?: string, filterEndDate?: string) => {
     if (!organizationId) {
       console.warn('Cannot fetch attendance records: No organization ID available');
       return;
     }
     
-    setLoading(true);
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setCurrentPage(1);
+    }
+    
     try {
-      const data = await attendanceService.getAllAttendanceRecords(100);
+      let data: AttendanceRecord[] = [];
+      
+      if (allowPagination && !initialRecords) {
+        // Use pagination if enabled and not using initial records
+        const page = loadMore ? currentPage + 1 : 1;
+        
+        if (filterStartDate && filterEndDate) {
+          // Use date-filtered API call
+          data = await attendanceService.getAttendanceReport(filterStartDate, filterEndDate);
+        } else {
+          // Use regular paginated API call
+          data = await attendanceService.getAllAttendanceRecords(recordsPerPage);
+        }
+        
+        if (loadMore) {
+          // Append new records to existing ones
+          setRecords(prev => [...prev, ...data]);
+          setCurrentPage(prev => prev + 1);
+        } else {
+          // Replace records
+          setRecords(data);
+        }
+        
+        // Check if there are more records
+        setHasMoreRecords(data.length === recordsPerPage);
+      } else {
+        // Regular fetch without pagination
+        if (filterStartDate && filterEndDate) {
+          data = await attendanceService.getAttendanceReport(filterStartDate, filterEndDate);
+        } else {
+          data = await attendanceService.getAllAttendanceRecords(100);
+        }
+        setRecords(data);
+      }
+      
       console.log(`Fetched ${data.length} attendance records for organization ${organizationId}`);
-      setRecords(data);
     } catch (err) {
       console.error('Error fetching attendance records:', err);
       toast.error('Failed to load attendance records');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
@@ -135,8 +196,65 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setTimeout(() => setRefreshing(false), 500); // ensure the refresh icon spins for at least 500ms
     } else {
       // Otherwise, do our own refresh
-      fetchAttendanceRecords();
+      const filterStart = dateFilterEnabled ? startDate : undefined;
+      const filterEnd = dateFilterEnabled ? endDate : undefined;
+      fetchAttendanceRecords(false, filterStart, filterEnd);
       fetchEmployees();
+    }
+  };
+
+  // Load more records function
+  const handleLoadMore = () => {
+    const filterStart = dateFilterEnabled ? startDate : undefined;
+    const filterEnd = dateFilterEnabled ? endDate : undefined;
+    fetchAttendanceRecords(true, filterStart, filterEnd);
+  };
+
+  // Handle date filter changes
+  const handleDateFilterApply = () => {
+    if (!startDate || !endDate) {
+      toast.error('Please select both start and end dates');
+      return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error('Start date must be before end date');
+      return;
+    }
+    
+    setDateFilterEnabled(true);
+    fetchAttendanceRecords(false, startDate, endDate);
+    setShowDateFilter(false);
+  };
+
+  // Clear date filter
+  const handleDateFilterClear = () => {
+    setDateFilterEnabled(false);
+    setStartDate('');
+    setEndDate('');
+    fetchAttendanceRecords(false);
+    setShowDateFilter(false);
+  };
+
+  // Quick date filter presets
+  const handleQuickDateFilter = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+    setDateFilterEnabled(true);
+    fetchAttendanceRecords(false, start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
+    setShowDateFilter(false);
+  };
+
+  // Handle employee click to show stats
+  const handleEmployeeClick = (employeeId: string) => {
+    const employee = employees[employeeId];
+    if (employee) {
+      setSelectedEmployee(employee);
+      setShowEmployeeStats(true);
     }
   };
   
@@ -235,16 +353,6 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     
     return null;
   };
-  
-  const getStatusClass = (record: AttendanceRecord): string => {
-    if (record.type === 'sign-in') {
-      return record.isLate 
-        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200' 
-        : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200';
-    } else {
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200';
-    }
-  };
 
   // Get badge type based on attendance status
   const getStatusBadgeType = (record: AttendanceRecord): 'primary' | 'success' | 'warning' => {
@@ -272,7 +380,8 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   }
 
   return (
-    <Card className="overflow-hidden">
+    <>
+      <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center">
@@ -327,8 +436,103 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               >
                 Sign Out
               </Button>
+              
+              {allowDateFilter && (
+                <div className="relative">
+                  <Button
+                    variant={dateFilterEnabled ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setShowDateFilter(!showDateFilter)}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar size={16} />
+                    Date Filter
+                    <ChevronDown size={14} className={`transition-transform ${showDateFilter ? 'rotate-180' : ''}`} />
+                  </Button>
+                  
+                  {showDateFilter && (
+                    <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 w-80 z-50">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Filters</h4>
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(7)}>
+                              Last 7 days
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(30)}>
+                              Last 30 days
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(90)}>
+                              Last 90 days
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Range</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start Date</label>
+                              <Input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-full"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">End Date</label>
+                              <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="w-full"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={handleDateFilterApply}
+                                className="flex-1"
+                              >
+                                Apply Filter
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleDateFilterClear}
+                                className="flex-1"
+                              >
+                                Clear
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+          
+          {dateFilterEnabled && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <Filter size={14} className="text-blue-600 dark:text-blue-400" />
+              <span className="text-sm text-blue-700 dark:text-blue-300">
+                Showing records from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDateFilterClear}
+                className="ml-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+              >
+                Clear filter
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       
@@ -376,7 +580,11 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               {filteredRecords.length > 0 ? (
                 filteredRecords.map((record) => (
                   <tr key={record._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td 
+                      className="px-4 py-4 whitespace-nowrap cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" 
+                      onClick={() => handleEmployeeClick(record.employeeId)}
+                      title="Click to view employee statistics"
+                    >
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0">
                           {/* Improved image handling with better priority system */}
@@ -491,8 +699,52 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
             </tbody>
           </table>
         </div>
+        
+        {/* Load More Button */}
+        {allowPagination && hasMoreRecords && filteredRecords.length > 0 && (
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                onClick={handleLoadMore}
+                isLoading={loadingMore}
+                disabled={loadingMore}
+                className="px-6 py-2"
+              >
+                {loadingMore ? 'Loading more records...' : 'See More Records'}
+              </Button>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Showing {filteredRecords.length} records
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* No more records indicator */}
+        {allowPagination && !hasMoreRecords && filteredRecords.length > 0 && (
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
+            <div className="text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                All records loaded ({filteredRecords.length} total)
+              </p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
+    
+    {/* Employee Stats Modal */}
+    {selectedEmployee && (
+      <EmployeeStatsModal
+        employee={selectedEmployee}
+        isOpen={showEmployeeStats}
+        onClose={() => {
+          setShowEmployeeStats(false);
+          setSelectedEmployee(null);
+        }}
+      />
+    )}
+  </>
   );
 };
 

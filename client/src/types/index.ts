@@ -144,3 +144,90 @@ export interface AttendanceFormData {
   type: 'sign-in' | 'sign-out';
   notes?: string;
 }
+
+/**
+ * Analytics data interface
+ */
+export interface AnalyticsData {
+  departmentStats: {
+    department: string;
+    totalEmployees: number;
+    avgAttendanceRate: number;
+    avgPunctualityRate: number;
+    totalHours: number;
+    lateArrivals: number;
+  }[];
+  timePatterns: {
+    hour: number;
+    checkIns: number;
+    checkOuts: number;
+    avgEmployees: number;
+  }[];
+  lateArrivalTrends: {
+    date: string;
+    lateCount: number;
+    totalCheckIns: number;
+    percentage: number;
+  }[];
+  topPerformers: {
+    employee: Employee;
+    attendanceRate: number;
+    punctualityRate: number;
+    totalHours: number;
+  }[];
+  weeklyTrends: {
+    week: string;
+    attendance: number;
+    punctuality: number;
+    avgHours: number;
+  }[];
+}
+
+/**
+ * Advanced analytics interfaces
+ */
+export interface DetailedAttendanceStats extends AttendanceStats {
+  lateArrivalStats: {
+    under15Mins: number;
+    under30Mins: number;
+    over30Mins: number;
+  };
+  departmentBreakdown: {
+    [department: string]: {
+      attendanceRate: number;
+      punctualityRate: number;
+      averageArrivalTime: string;
+    };
+  };
+  trends: {
+    daily: {
+      date: string;
+      attendanceRate: number;
+      punctualityRate: number;
+    }[];
+    weekly: {
+      weekStartDate: string;
+      attendanceRate: number;
+      punctualityRate: number;
+      avgDailyAttendance: number;
+    }[];
+    monthly: {
+      month: string;
+      attendanceRate: number;
+      punctualityRate: number;
+      trendDirection: 'up' | 'down' | 'stable';
+    }[];
+  };
+  employeePerformance: {
+    topAttendance: {
+      employeeId: string;
+      employeeName: string;
+      rate: number;
+    }[];
+    mostPunctual: {
+      employeeId: string;
+      employeeName: string;
+      rate: number;
+    }[];
+  };
+}

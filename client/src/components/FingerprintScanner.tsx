@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import FingerprintScanner from './FingerprintScanner';
+// import FingerprintScanner from './FingerprintScanner';
 import AttendanceSuccess from './AttendanceSuccess';
 import { Card, CardContent } from './ui/Card';
 import { Clock, CalendarDays, Fingerprint, Camera } from 'lucide-react';
@@ -29,19 +29,20 @@ const EmployeeView: React.FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
   
-  // Check fingerprint support and set default attendance type
+  // Check fingerprint support and default type
   useEffect(() => {
-    // Check fingerprint support
     const checkFingerprintSupport = async () => {
       try {
         const isSupported = await fingerprintService.checkFingerprintSupport();
         setIsFingerprintSupported(isSupported);
+        if (isSupported) {
+          // Keep initial step; user starts scan
+        }
       } catch (error) {
         console.error('Error checking fingerprint support:', error);
         setIsFingerprintSupported(false);
       }
     };
-    
     checkFingerprintSupport();
     
     // Determine default attendance type based on time of day
@@ -49,40 +50,45 @@ const EmployeeView: React.FC = () => {
     setAttendanceType(currentHour < 12 ? 'sign-in' : 'sign-out');
   }, []);
   
+  // Auto-trigger fingerprint scan when user enters the scan step
+  useEffect(() => {
+    if (currentStep === AttendanceStep.FINGERPRINT_SCAN) {
+      const scan = async () => {
+        setIsCapturing(true);
+        try {
+          const result = await fingerprintService.verifyFingerprint(employeeData?._id!);
+          if (result.verified && result.employeeId) {
+            await handleFingerprintVerify(result.employeeId);
+          } else {
+            throw new Error('Fingerprint not recognized');
+          }
+        } catch (err: any) {
+          console.error('Scan error:', err);
+          toast.error(err.message || 'Fingerprint scan failed');
+          setCurrentStep(AttendanceStep.INITIAL);
+        } finally {
+          setIsCapturing(false);
+        }
+      };
+      scan();
+    }
+  }, [currentStep]);
+  
   // Handle fingerprint verification
   const handleFingerprintVerify = async (employeeId?: string) => {
     try {
-      // For testing purposes - if no employeeId is returned, use a mock employee
       if (!employeeId) {
-        // In a real implementation, this would fail
-        // But for testing without an actual fingerprint scanner, we'll use a mock
-        toast.warning('Using mock employee data for testing. In production, fingerprint verification would be required.');
-        
-        // Mock employee data for testing
-        const mockEmployee = {
-          _id: 'test-employee-id',
-          name: 'Test Employee',
-          department: 'Testing Department',
-          position: 'Tester',
-          isActive: true
-        };
-        
-        setEmployeeData(mockEmployee);
-        setCurrentStep(AttendanceStep.FACE_CAPTURE);
-        startFaceCapture();
-        return;
+        throw new Error('Fingerprint verification failed: no credential ID');
       }
-      
-      // Get employee data using fingerprint verification
+
       const employee = await employeeAuthService.getEmployeeByFingerprint(employeeId);
-      
+
       if (employee) {
         setEmployeeData(employee);
         // Move to face capture step
         setCurrentStep(AttendanceStep.FACE_CAPTURE);
         startFaceCapture();
       } else {
-        console.error('Employee not found');
         toast.error('Employee not found. Please check with your administrator.');
         setCurrentStep(AttendanceStep.INITIAL);
       }
@@ -232,15 +238,19 @@ const EmployeeView: React.FC = () => {
     switch (currentStep) {
       case AttendanceStep.FINGERPRINT_SCAN:
         return (
-          <FingerprintScanner 
-            onSuccess={handleFingerprintVerify}
-            onError={(error) => {
-              console.error('Fingerprint error:', error);
-              toast.error(`Fingerprint error: ${error}`);
-              setCurrentStep(AttendanceStep.INITIAL);
-            }}
-            onCancel={handleCancel}
-          />
+          <Card className="max-w-md mx-auto">
+            <CardContent className="p-6 text-center">
+              <h2 className="text-xl font-bold mb-4">Scan Your Fingerprint</h2>
+              {isCapturing ? (
+                <p>Scanning... please hold your finger steady.</p>
+              ) : (
+                <p>Initializing scanner...</p>
+              )}
+              <div className="mt-4">
+                <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
         );
         
       case AttendanceStep.FACE_CAPTURE:
@@ -302,9 +312,9 @@ const EmployeeView: React.FC = () => {
         return (
           <AttendanceSuccess 
             type={record.type}
-            timestamp={record.timestamp}
+            timestamp={String(record.timestamp)}
             employeeName={record.employeeName || 'Employee'}
-            isLate={record.isLate}
+            isLate={Boolean(record.isLate)}
             onDone={handleDone}
           />
         );
@@ -312,84 +322,17 @@ const EmployeeView: React.FC = () => {
       default:
         return (
           <Card className="max-w-md mx-auto">
-            <CardContent className="p-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                  Welcome to Attendance Tracker
-                </h2>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Use biometric verification to sign in or out
-                </p>
-              </div>
-              
-              <div className="mb-6">
-                <h3 className="text-center text-base font-medium text-gray-800 dark:text-white mb-2">
-                  Select Attendance Type
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    type="button"
-                    variant={attendanceType === 'sign-in' ? 'primary' : 'ghost'}
-                    onClick={() => setAttendanceType('sign-in')}
-                    className="justify-center"
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={attendanceType === 'sign-out' ? 'primary' : 'ghost'}
-                    onClick={() => setAttendanceType('sign-out')}
-                    className="justify-center"
-                  >
-                    Sign Out
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <Button 
-                  variant="primary" 
-                  onClick={() => setCurrentStep(AttendanceStep.FINGERPRINT_SCAN)}
-                  leftIcon={<Fingerprint size={18} />}
-                  className="w-full"
-                  disabled={isFingerprintSupported === false}
-                >
-                  Start Fingerprint Verification
-                </Button>
-                
-                {isFingerprintSupported === false && (
-                  <div className="text-center text-sm text-amber-600 dark:text-amber-400 mt-2">
-                    Fingerprint scanning is not supported on this device. For testing purposes, the scanner will use mock data.
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 gap-4 mt-8">
-                  <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3" />
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">Current Time</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {new Date().toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <CalendarDays className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3" />
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">Today's Date</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {new Date().toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <CardContent className="p-6 text-center">
+              <h2 className="text-xl font-bold mb-4">Welcome to Attendance Tracker</h2>
+              <p className="text-gray-600 mb-4">Sign in or out using your fingerprint</p>
+              <Button
+                variant="primary"
+                onClick={() => setCurrentStep(AttendanceStep.FINGERPRINT_SCAN)}
+                leftIcon={<Fingerprint size={18} />}
+                className="w-full"
+              >
+                Scan Fingerprint
+              </Button>
             </CardContent>
           </Card>
         );

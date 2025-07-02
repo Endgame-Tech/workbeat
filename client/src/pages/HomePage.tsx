@@ -238,27 +238,29 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800 flex flex-col">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <span className="text-blue-600 dark:text-blue-400">
-                <Fingerprint size={28} />
-              </span>
-              <h1 className="ml-2 text-xl font-bold text-gray-900 dark:text-white">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
+                <Fingerprint className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="ml-3 text-2xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-white dark:to-neutral-200 bg-clip-text text-transparent">
                 WorkBeat
               </h1>
             </div>
             
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsLoginModalOpen(true)}
-              className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+              leftIcon={<User size={16} />}
+              className="rounded-xl"
             >
-              <User size={16} className="mr-1" />
               Admin Login
-            </button>
+            </Button>
           </div>
         </div>
       </header>

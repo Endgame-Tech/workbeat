@@ -672,12 +672,18 @@ const getAttendanceReport = async (req, res) => {
     startDateObj.setHours(0, 0, 0, 0);
     endDateObj.setHours(23, 59, 59, 999);
     
-    console.log(`Generating attendance report from ${startDateObj} to ${endDateObj}`);
+    console.log(`Generating attendance report from ${startDateObj} to ${endDateObj} for organization ${organizationId}`);
     
-    // Get attendance data using Prisma
-    const attendanceData = await prisma.dailyAttendance.findMany({
+    // Debug: Check total attendance records for this organization
+    const totalAttendanceCount = await prisma.attendance.count({
+      where: { organizationId }
+    });
+    console.log(`Total attendance records for organization ${organizationId}: ${totalAttendanceCount}`);
+    
+    // Get attendance data using Prisma - Query the attendance table instead of dailyAttendance
+    const attendanceData = await prisma.attendance.findMany({
       where: {
-        date: {
+        timestamp: {
           gte: startDateObj,
           lte: endDateObj
         },
@@ -693,60 +699,49 @@ const getAttendanceReport = async (req, res) => {
           select: {
             id: true,
             name: true,
-            department: true
+            department: true,
+            position: true,
+            employeeId: true
           }
         }
       },
       orderBy: {
-        date: 'asc'
+        timestamp: 'asc'
       }
     });
 
-    // Process the data into the required format
-    const reportByDate = {};
-    attendanceData.forEach(record => {
-      const dateStr = record.date.toISOString().split('T')[0];
-      if (!reportByDate[dateStr]) {
-        reportByDate[dateStr] = {
-          date: dateStr,
-          stats: []
-        };
-      }
+    console.log(`Found ${attendanceData.length} attendance records`);
 
-      const statusData = reportByDate[dateStr].stats.find(s => s.status === record.status);
-      if (statusData) {
-        statusData.count += 1;
-        statusData.employees.push({
-          id: record.employee.id,
-          name: record.employee.name,
-          department: record.employee.department,
-          signInTime: record.signInTime,
-          signOutTime: record.signOutTime,
-          workDuration: record.workDuration
-        });
-      } else {
-        reportByDate[dateStr].stats.push({
-          status: record.status,
-          count: 1,
-          employees: [{
-            id: record.employee.id,
-            name: record.employee.name,
-            department: record.employee.department,
-            signInTime: record.signInTime,
-            signOutTime: record.signOutTime,
-            workDuration: record.workDuration
-          }]
-        });
+    // Convert attendance records to the format expected by the frontend
+    const records = attendanceData.map(record => ({
+      id: record.id,
+      employeeId: record.employee.employeeId || record.employeeId.toString(),
+      employeeName: record.employee.name,
+      organizationId: record.organizationId,
+      type: record.type,
+      timestamp: record.timestamp.toISOString(),
+      location: record.location,
+      ipAddress: record.ipAddress,
+      isLate: record.isLate,
+      notes: record.notes,
+      verificationMethod: record.verificationMethod,
+      facialVerification: record.facialVerification,
+      facialCapture: record.facialCapture,
+      fingerprintVerification: record.fingerprintVerification,
+      employee: {
+        id: record.employee.id,
+        name: record.employee.name,
+        department: record.employee.department,
+        position: record.employee.position,
+        employeeId: record.employee.employeeId
       }
-    });
-
-    const report = Object.values(reportByDate);
+    }));
     
-    console.log(`Report generated with ${report.length} days of data`);
+    console.log(`Report generated with ${records.length} attendance records`);
     
     res.status(200).json({
       success: true,
-      data: report
+      data: records
     });
   } catch (error) {
     console.error('Error generating attendance report:', error);
