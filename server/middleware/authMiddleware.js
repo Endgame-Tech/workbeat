@@ -6,12 +6,16 @@ const { prisma } = require('../config/db');
 const protect = async (req, res, next) => {
   let token;
 
-  // Check for token in headers
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+  // Check for token in cookies first (secure httpOnly), then fallback to headers for backward compatibility
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    // Fallback to header for backward compatibility
+    token = req.headers.authorization.split(' ')[1];
+  }
 
+  if (token) {
+    try {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -42,21 +46,26 @@ const protect = async (req, res, next) => {
       if (!user.organizationId) {
         console.warn(`User ${user.id} (${user.email}) has no organizationId`);
         
-        // Try to find organization for this user
-        const organization = await Organization.findOne({
-          $or: [
-            { adminUsers: user._id },
-            { owner: user._id }
-          ]
+        // Try to find organization for this user using Prisma
+        const organization = await prisma.organization.findFirst({
+          where: {
+            OR: [
+              { ownerId: user.id },
+              { adminUserIds: { has: user.id } }
+            ]
+          }
         });
         
         if (organization) {
-          // Update user with organizationId
-          user.organizationId = organization._id;
-          await user.save();
-          console.log(`Updated user ${user._id} with organizationId ${organization._id}`);
+          // Update user with organizationId using Prisma
+          const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { organizationId: organization.id }
+          });
+          user.organizationId = organization.id;
+          console.log(`Updated user ${user.id} with organizationId ${organization.id}`);
         } else {
-          console.warn(`No organization found for user ${user._id}`);
+          console.warn(`No organization found for user ${user.id}`);
         }
       }
 

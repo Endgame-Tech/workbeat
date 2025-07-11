@@ -2,6 +2,14 @@ const { prisma } = require('../config/db');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { 
+  asyncHandler, 
+  AuthenticationError, 
+  ValidationError, 
+  NotFoundError,
+  successResponse,
+  dbOperation 
+} = require('../utils/errorHandler');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -94,47 +102,42 @@ const registerUser = async (req, res) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-// Fixed loginUser function with corrected organization variable name
-const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    // Check for user with email
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
+  // Check for user with email
+  const user = await dbOperation(
+    () => prisma.user.findUnique({ where: { email } }),
+    'Failed to find user'
+  );
+  
+  if (!user) {
+    throw new AuthenticationError('Invalid credentials');
+  }
 
-    // Check if account is locked
-    if (user.isLocked) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account locked due to multiple failed login attempts. Please contact administrator.'
-      });
-    }
+  // Check if account is locked
+  if (user.isLocked) {
+    throw new AuthenticationError('Account locked due to multiple failed login attempts. Please contact administrator.');
+  }
 
-    // Check if password matches
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      // Increment failed login attempts
-      const failedLoginAttempts = user.failedLoginAttempts + 1;
-      let isLocked = user.isLocked;
-      if (failedLoginAttempts >= 5) {
-        isLocked = true;
-      }
-      await prisma.user.update({
+  // Check if password matches
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
+  if (!isMatch) {
+    // Increment failed login attempts
+    const failedLoginAttempts = user.failedLoginAttempts + 1;
+    const isLocked = failedLoginAttempts >= 5;
+    
+    await dbOperation(
+      () => prisma.user.update({
         where: { id: user.id },
-        data: {
-          failedLoginAttempts,
-          isLocked
-        }
-      });
+        data: { failedLoginAttempts, isLocked }
+      }),
+      'Failed to update user login attempts'
+    );
 
-      // Log failed login attempt
-      await prisma.auditLog.create({
+    // Log failed login attempt
+    await dbOperation(
+      () => prisma.auditLog.create({
         data: {
           action: 'login_failed',
           details: `Failed login attempt for user: ${email}`,
@@ -142,26 +145,29 @@ const loginUser = async (req, res) => {
           resourceType: 'user',
           resourceId: String(user.id)
         }
-      });
+      }),
+      'Failed to log login attempt'
+    );
 
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
+    throw new AuthenticationError('Invalid credentials');
+  }
 
-    // Reset failed login attempts on successful login
-    await prisma.user.update({
+  // Reset failed login attempts on successful login
+  await dbOperation(
+    () => prisma.user.update({
       where: { id: user.id },
       data: {
         failedLoginAttempts: 0,
         lastLogin: new Date(),
         isLocked: false
       }
-    });
+    }),
+    'Failed to update user login status'
+  );
 
-    // Log successful login
-    await prisma.auditLog.create({
+  // Log successful login
+  await dbOperation(
+    () => prisma.auditLog.create({
       data: {
         userId: user.id,
         action: 'login',
@@ -170,34 +176,30 @@ const loginUser = async (req, res) => {
         resourceType: 'user',
         resourceId: String(user.id)
       }
-    });
+    }),
+    'Failed to log successful login'
+  );
 
-    // Find organization ID for this user
-    let organizationId = user.organizationId || null;
+  // Generate token
+  const token = generateToken(user.id);
 
-    // Generate token
-    const token = generateToken(user.id);
+  // Set secure httpOnly cookie
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/'
+  });
 
-    res.status(200).json({
-      success: true,
-      token,
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        organizationId
-      }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to login',
-      error: error.message
-    });
-  }
-};
+  res.json(successResponse({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    organizationId: user.organizationId
+  }, 'Login successful'));
+});
 
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
@@ -556,6 +558,47 @@ const updateDetails = async (req, res) => {
   }
 };
 
+// @desc    Logout user and clear cookie
+// @route   POST /api/auth/logout
+// @access  Private
+const logoutUser = async (req, res) => {
+  try {
+    // Clear the httpOnly cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
+
+    // Log the logout event
+    if (req.user) {
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user.id,
+          action: 'logout',
+          details: `User logged out: ${req.user.name}`,
+          ipAddress: req.ip,
+          resourceType: 'user',
+          resourceId: String(req.user.id)
+        }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to logout',
+      error: error.message
+    });
+  }
+};
+
 
 module.exports = {
   registerUser,
@@ -564,4 +607,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   updateDetails,
+  logoutUser,
 };

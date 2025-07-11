@@ -1,137 +1,306 @@
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
-generator client {
-  provider = "prisma-client-js"
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Organization {
-  id            Int      @id @default(autoincrement())
-  name          String
-  industry      String
-  contactEmail  String   @unique
-  contactPhone  String
-  address       String?
-  settings      String?
-  subscription  String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  users         User[]
-  employees     Employee[]
-  attendances   Attendance[]
-  dailyAttendances DailyAttendance[]
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(200)
+  industry         String             @db.VarChar(100)
+  contactEmail     String             @unique @db.VarChar(255)
+  contactPhone     String             @db.VarChar(20)
+  address          String?
+  settings            String?
+  subscription        String?
+  subscriptionStatus  String?            @default("trial") @db.VarChar(20)
+  isActive            Boolean            @default(true)
+  createdAt        DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  attendances      Attendance[]
+  dailyAttendances dailyAttendances[]
+  employees        Employee[]
+  users            User[]
+  departments      Department[]
+  paymentSessions  PaymentSession[]
+  shiftTemplates   ShiftTemplate[]
+  scheduledShifts  ScheduledShift[]
+
+  @@map("organizations")
 }
 
 model User {
-  id                  Int       @id @default(autoincrement())
+  id                  Int          @id @default(autoincrement())
   organizationId      Int
-  organization        Organization @relation(fields: [organizationId], references: [id])
-  email              String    @unique
-  passwordHash        String
-  name               String
-  role               String    @default("employee")
-  organizationRole    String?
-  employeeId         Int?
-  lastLogin          DateTime?
-  failedLoginAttempts Int      @default(0)
-  isLocked           Boolean   @default(false)
-  resetPasswordToken  String?
-  resetPasswordExpire DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  auditLogs          AuditLog[]
+  email               String       @unique @db.VarChar(255)
+  passwordHash        String       @db.VarChar(255)
+  name                String       @db.VarChar(100)
+  role                String       @default("admin") @db.VarChar(50)
+  organizationRole    String?      @db.VarChar(50)
+  employeeId          Int?
+  isActive            Boolean      @default(true)
+  lastLogin           DateTime?    @db.Timestamptz(6)
+  failedLoginAttempts Int          @default(0)
+  isLocked            Boolean      @default(false)
+  resetPasswordToken  String?      @db.VarChar(255)
+  resetPasswordExpire DateTime?    @db.Timestamptz(6)
+  createdAt           DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  
+  // Relations
+  auditLogs           AuditLog[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([organizationId], map: "idx_users_organizationId")
+  @@map("users")
 }
 
 model Employee {
-  id              Int       @id @default(autoincrement())
-  organizationId  Int
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  name            String
-  email           String    @unique
-  department      String
-  position        String
-  profileImage    String?
-  employeeId      String    @unique
-  phone           String?
-  workSchedule    String?
-  startDate       DateTime  @default(now())
-  employmentStatus String   @default("full-time")
-  accessLevel     String    @default("employee")
-  isActive        Boolean   @default(true)
-  faceRecognition String?
-  biometrics      String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now())
-  attendances     Attendance[]
-  dailyAttendances DailyAttendance[]
-  biometricData   BiometricData[]
+  id               Int                @id @default(autoincrement())
+  organizationId   Int
+  employeeId       String             @db.VarChar(50)
+  // Add name field for controller compatibility
+  name             String             @db.VarChar(200)
+  firstName        String             @db.VarChar(100)
+  lastName         String             @db.VarChar(100)
+  
+  email            String?            @unique @db.VarChar(255)
+  phone            String?            @db.VarChar(20)
+  position         String?            @db.VarChar(100)
+  
+  // Department fields (add string field back for compatibility)
+  department       String?            @db.VarChar(100)
+  departmentId     Int?
+  departmentObj    Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  
+  // Date fields (add startDate for frontend compatibility)
+  hireDate         DateTime?          @db.Date
+  startDate        DateTime?          @db.Date
+  
+  // Add missing JSON fields that controllers expect
+  workSchedule     String?            @db.Text
+  workingHours     String?            @db.Text
+  faceRecognition  String?            @db.Text
+  biometrics       String?            @db.Text
+  
+  salary           Decimal?           @db.Decimal(10, 2)
+  isActive         Boolean            @default(true)
+  biometricData    String?
+  createdAt        DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime           @default(now()) @db.Timestamptz(6)
+  attendances      Attendance[]
+  dailyAttendances dailyAttendances[]
+  scheduledShifts  ScheduledShift[]
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([organizationId, employeeId])
+  @@index([employeeId], map: "idx_employees_employeeId")
+  @@index([organizationId], map: "idx_employees_organizationId")
+  @@index([departmentId], map: "idx_employees_departmentId")
+  @@map("employees")
 }
 
 model Attendance {
-  id                  Int       @id @default(autoincrement())
-  employeeId          Int
-  employee            Employee  @relation(fields: [employeeId], references: [id])
-  employeeName         String?
-  organizationId      Int
-  organization        Organization @relation(fields: [organizationId], references: [id])
-  type               String    // 'sign-in' or 'sign-out'
-  timestamp          DateTime  @default(now())
-  location           String?
-  ipAddress          String?
-  isLate             Boolean   @default(false)
-  notes              String?
-  verificationMethod String    @default("manual")
-  facialVerification Boolean   @default(false)
-  facialCapture      String?
-  fingerprintVerification Boolean @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @default(now())
+  id                     Int          @id @default(autoincrement())
+  organizationId         Int
+  employeeId             Int
+  employeeName           String       @db.VarChar(200)
+  
+  // Add type field for sign-in/sign-out tracking
+  type                   String       @db.VarChar(20)  // 'sign-in' or 'sign-out'
+  
+  // Keep existing date fields and add timestamp for controller compatibility
+  date                   DateTime     @db.Date
+  timestamp              DateTime     @default(now()) @db.Timestamptz(6)
+  checkIn                DateTime?    @db.Timestamptz(6)
+  checkOut               DateTime?    @db.Timestamptz(6)
+  
+  // Add missing fields controllers expect
+  isLate                 Boolean      @default(false)
+  verificationMethod     String       @default("manual") @db.VarChar(50)
+  facialVerification     Boolean      @default(false)
+  fingerprintVerification Boolean     @default(false)
+  facialCapture          String?      @db.Text
+  
+  status                 String       @default("present") @db.VarChar(20)
+  ipAddress              String?      @db.VarChar(45)
+  location               String?      @db.VarChar(200)
+  notes                  String?
+  createdAt              DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime     @default(now()) @db.Timestamptz(6)
+  employee               Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([date], map: "idx_attendances_date")
+  @@index([employeeId], map: "idx_attendances_employeeId")
+  @@index([organizationId], map: "idx_attendances_organizationId")
+  @@index([type], map: "idx_attendances_type")
+  @@index([timestamp], map: "idx_attendances_timestamp")
+  @@map("attendances")
 }
 
-model DailyAttendance {
-  id              Int       @id @default(autoincrement())
-  employeeId      Int
-  employee        Employee  @relation(fields: [employeeId], references: [id])
-  organizationId  Int
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  date            DateTime
-  status          String    @default("absent")
-  signInTime      DateTime?
-  signOutTime     DateTime?
-  workDuration    Int?      // in minutes
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now())
+model dailyAttendances {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  employeeId     Int
+  date           DateTime     @db.Date
+  
+  // Add missing time tracking fields
+  signInTime     DateTime?    @db.Timestamptz(6)
+  signOutTime    DateTime?    @db.Timestamptz(6)
+  workDuration   Int?         // Duration in minutes
+  
+  hoursWorked    Decimal      @default(0.00) @db.Decimal(5, 2)
+  overtimeHours  Decimal      @default(0.00) @db.Decimal(5, 2)
+  status         String       @default("present") @db.VarChar(20)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @default(now()) @db.Timestamptz(6)
+  employees      Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([employeeId, date, organizationId])
-}
-
-model BiometricData {
-  id          Int       @id @default(autoincrement())
-  employeeId  Int
-  employee    Employee  @relation(fields: [employeeId], references: [id])
-  type        String    // 'fingerprint' or 'face'
-  credentials String?
-  faceData    String?
-  status      String    @default("active")
-  metadata    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  @@unique([organizationId, employeeId, date])
+  @@index([date], map: "idx_dailyAttendances_date")
+  @@index([employeeId], map: "idx_dailyAttendances_employeeId")
+  @@index([organizationId], map: "idx_dailyAttendances_organizationId")
 }
 
 model AuditLog {
-  id            Int       @id @default(autoincrement())
-  userId        Int?
-  user          User?     @relation(fields: [userId], references: [id])
-  action        String
-  details       String?
-  ipAddress     String?
-  resourceType  String    @default("system")
-  resourceId    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now())
+  id           Int       @id @default(autoincrement())
+  userId       Int?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String    @db.VarChar(100)
+  details      String?   @db.Text
+  ipAddress    String?   @db.VarChar(45)
+  resourceType String    @default("system") @db.VarChar(50)
+  resourceId   String?   @db.VarChar(100)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([userId], map: "idx_audit_logs_userId")
+  @@index([action], map: "idx_audit_logs_action")
+  @@index([createdAt], map: "idx_audit_logs_createdAt")
+  @@map("audit_logs")
 }
 
+model Department {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String       @db.VarChar(100)
+  description    String?      @db.Text
+  parentId       Int?
+  parent         Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Department[] @relation("DepartmentHierarchy")
+  headId         Int?
+  workingHours   String?      @db.Text
+  isActive       Boolean      @default(true)
+  deletedAt      DateTime?    @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+  employees      Employee[]
+  
+  @@index([organizationId], map: "idx_departments_organizationId")
+  @@index([parentId], map: "idx_departments_parentId")
+  @@map("departments")
+}
+
+model PaymentSession {
+  id                     Int           @id @default(autoincrement())
+  reference              String        @unique @db.VarChar(100)
+  sessionId              String        @unique @db.VarChar(100)
+  organizationId         Int
+  organization           Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planId                 String        @db.VarChar(50)
+  amount                 Float
+  currency               String        @default("NGN") @db.VarChar(3)
+  billingCycle           String        @default("monthly") @db.VarChar(20)
+  status                 String        @default("pending") @db.VarChar(20) // pending, completed, failed, expired
+  paymentUrl             String        @db.Text
+  paystackData           String?       @db.Text // JSON data from Paystack
+  paystackVerification   String?       @db.Text // Verification response from Paystack
+  expiresAt              DateTime      @db.Timestamptz(6)
+  completedAt            DateTime?     @db.Timestamptz(6)
+  createdAt              DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime      @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([organizationId], map: "idx_payment_sessions_organizationId")
+  @@index([reference], map: "idx_payment_sessions_reference")
+  @@index([status], map: "idx_payment_sessions_status")
+  @@index([createdAt], map: "idx_payment_sessions_createdAt")
+  @@map("payment_sessions")
+}
+
+model WebhookLog {
+  id           Int       @id @default(autoincrement())
+  provider     String    @db.VarChar(50) // paystack, stripe, etc.
+  event        String    @db.VarChar(100)
+  data         String    @db.Text // Raw webhook data
+  signature    String?   @db.VarChar(500)
+  processed    Boolean   @default(false)
+  error        String?   @db.Text
+  processedAt  DateTime? @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([provider], map: "idx_webhook_logs_provider")
+  @@index([event], map: "idx_webhook_logs_event")
+  @@index([processed], map: "idx_webhook_logs_processed")
+  @@index([createdAt], map: "idx_webhook_logs_createdAt")
+  @@map("webhook_logs")
+}
+
+model ShiftTemplate {
+  id               Int                @id @default(autoincrement())
+  organizationId   Int
+  name             String             @db.VarChar(200)
+  startTime        String             @db.VarChar(10) // HH:MM format
+  endTime          String             @db.VarChar(10) // HH:MM format
+  breakDuration    Int                @default(0)     // Break duration in minutes
+  daysOfWeek       String             @db.Text        // JSON array of day names
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scheduledShifts  ScheduledShift[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId], map: "idx_shift_templates_organizationId")
+  @@index([isActive], map: "idx_shift_templates_isActive")
+  @@map("shift_templates")
+}
+
+model ScheduledShift {
+  id               Int                @id @default(autoincrement())
+  employeeId       Int
+  organizationId   Int
+  shiftTemplateId  Int?               // Optional reference to template
+  date             DateTime           @db.Date
+  startTime        String             @db.VarChar(10) // HH:MM format
+  endTime          String             @db.VarChar(10) // HH:MM format
+  status           String             @default("scheduled") @db.VarChar(20) // scheduled, completed, missed, cancelled
+  notes            String?            @db.Text
+  createdAt        DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  employee         Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  organization     Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  shiftTemplate    ShiftTemplate?     @relation(fields: [shiftTemplateId], references: [id], onDelete: SetNull)
+
+  @@unique([employeeId, date, startTime]) // Prevent double-booking
+  @@index([employeeId], map: "idx_scheduled_shifts_employeeId")
+  @@index([organizationId], map: "idx_scheduled_shifts_organizationId")
+  @@index([date], map: "idx_scheduled_shifts_date")
+  @@index([status], map: "idx_scheduled_shifts_status")
+  @@index([shiftTemplateId], map: "idx_scheduled_shifts_shiftTemplateId")
+  @@map("scheduled_shifts")
+}

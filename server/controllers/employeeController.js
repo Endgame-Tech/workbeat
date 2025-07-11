@@ -1,4 +1,5 @@
 const { prisma } = require('../config/db');
+const queryOptimizer = require('../utils/queryOptimizer');
 
 // Helper function to parse JSON fields
 const parseEmployeeJsonFields = (employee) => {
@@ -45,10 +46,20 @@ const getEmployees = async (req, res) => {
         department: req.query.department
       }),
       ...(req.query.name && {
-        name: {
-          contains: req.query.name,
-          mode: 'insensitive'
-        }
+        OR: [
+          {
+            firstName: {
+              contains: req.query.name,
+              mode: 'insensitive'
+            }
+          },
+          {
+            lastName: {
+              contains: req.query.name,
+              mode: 'insensitive'
+            }
+          }
+        ]
       })
     };
     if (req.query.email) {
@@ -58,16 +69,15 @@ const getEmployees = async (req, res) => {
       };
     }
     
-    console.log('Applying employee filter:', where);
-      // Get filtered employees and sort by name using Prisma
-    const employees = await prisma.employee.findMany({
-      where,
-      orderBy: {
-        name: 'asc'
-      }
-    });
-      // Parse JSON fields for each employee
+    console.log('🚀 Applying optimized employee filter:', where);
+    
+    // Use optimized query with attendance stats
+    const employees = await queryOptimizer.getOptimizedEmployeeList(organizationId, where);
+    
+    // Parse JSON fields for each employee
     const parsedEmployees = employees.map(parseEmployeeJsonFields);
+
+    console.log(`✅ Optimized employee query returned ${parsedEmployees.length} employees with attendance stats`);
 
     res.status(200).json({
       success: true,
@@ -154,22 +164,38 @@ const createEmployee = async (req, res) => {
       });
     }
     
+    // Handle name field splitting for firstName/lastName
+    const fullName = req.body.name || '';
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     // Create employee using Prisma
     const employee = await prisma.employee.create({
       data: {
         organizationId: parseInt(organizationId),
-        name: req.body.name,
+        name: fullName,
+        firstName: firstName,
+        lastName: lastName,
         email: req.body.email,
         department: req.body.department,
-        position: req.body.position,        employeeId: req.body.employeeId,
+        position: req.body.position,
+        employeeId: req.body.employeeId,
         phone: req.body.phone,
-        workSchedule: JSON.stringify({
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        hireDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        
+        // Handle JSON fields from frontend
+        workSchedule: req.body.workSchedule ? JSON.stringify(req.body.workSchedule) : JSON.stringify({
           monday: { start: '09:00', end: '17:00' },
           tuesday: { start: '09:00', end: '17:00' },
           wednesday: { start: '09:00', end: '17:00' },
           thursday: { start: '09:00', end: '17:00' },
           friday: { start: '09:00', end: '17:00' }
-        })
+        }),
+        workingHours: req.body.workingHours ? JSON.stringify(req.body.workingHours) : null,
+        faceRecognition: req.body.faceRecognition ? JSON.stringify(req.body.faceRecognition) : null,
+        biometrics: req.body.biometrics ? JSON.stringify(req.body.biometrics) : null
       }
     });
 

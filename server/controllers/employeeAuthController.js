@@ -293,6 +293,7 @@ const recordAttendanceWithFace = async (req, res) => {
       organizationId: parseInt(organizationId),
       type,
       timestamp,
+      date: new Date(timestamp), // Add the required date field
       location: locationString, // This is now a string
       notes: notes || "",
       isLate, // IMPORTANT: Including the lateness flag

@@ -10,6 +10,7 @@ const {
 } = require('../controllers/employeeController.js');
 
 const { protect, authorize } = require('../middleware/authMiddleware.js');
+const { validate, validateQuery, validateParams, schemas, querySchemas, paramSchemas } = require('../middleware/validation.js');
 
 const router = express.Router();
 
@@ -21,15 +22,15 @@ router.get('/stats/departments', authorize('admin', 'manager'), getDepartmentSta
 
 // Standard CRUD routes
 router.route('/')
-  .get(getEmployees)
-  .post(authorize('admin'), createEmployee);
+  .get(validateQuery(querySchemas.pagination), getEmployees)
+  .post(authorize('admin'), validate('employee'), createEmployee);
 
 router.route('/:id')
-  .get(getEmployee)
-  .put(authorize('admin'), updateEmployee)
-  .delete(authorize('admin'), deleteEmployee);
+  .get(validateParams(paramSchemas.id), getEmployee)
+  .put(authorize('admin'), validateParams(paramSchemas.id), validate('employee'), updateEmployee)
+  .delete(authorize('admin'), validateParams(paramSchemas.id), deleteEmployee);
 
 // Hard delete route - use with caution
-router.delete('/:id/hard', authorize('admin'), hardDeleteEmployee);
+router.delete('/:id/hard', authorize('admin'), validateParams(paramSchemas.id), hardDeleteEmployee);
 
 module.exports = router;

@@ -1,6 +1,8 @@
 // Complete attendanceController.js with all required functions
 
 const { prisma } = require('../config/db');
+const queryOptimizer = require('../utils/queryOptimizer');
+const webSocketService = require('../services/websocketService');
 
 // FIXED: Improved checkIfLate function
 const checkIfLate = (currentTime, workScheduleData) => {
@@ -107,69 +109,58 @@ const getAttendanceRecords = async (req, res) => {
       });
     }
     
-    // Build where clause for Prisma query
-    let where = { organizationId };
+    // Build filters object
+    const filters = { organizationId };
     
     // Date filtering
     if (req.query.startDate && req.query.endDate) {
-      where.timestamp = {
+      filters.timestamp = {
         gte: new Date(req.query.startDate),
         lte: new Date(req.query.endDate)
       };
     } else if (req.query.startDate) {
-      where.timestamp = { gte: new Date(req.query.startDate) };
+      filters.timestamp = { gte: new Date(req.query.startDate) };
     } else if (req.query.endDate) {
-      where.timestamp = { lte: new Date(req.query.endDate) };
+      filters.timestamp = { lte: new Date(req.query.endDate) };
     }
     
     // Employee filtering
     if (req.query.employeeId) {
-      where.employeeId = parseInt(req.query.employeeId);
+      filters.employeeId = parseInt(req.query.employeeId);
     }
     
     // Type filtering
     if (req.query.type && ['sign-in', 'sign-out'].includes(req.query.type)) {
-      where.type = req.query.type;
+      filters.type = req.query.type;
     }
     
-    console.log('Fetching attendance records with filter:', where);
-    
     // Get pagination parameters
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 100; // Default to 100 records per page
-    const skip = (page - 1) * limit;
+    filters.page = parseInt(req.query.page) || 1;
+    filters.limit = parseInt(req.query.limit) || 100;
     
-    // Get records with pagination using Prisma
-    const records = await prisma.attendance.findMany({
-      where,
-      orderBy: {
-        timestamp: 'desc'
-      },
-      skip,
-      take: limit,
-      include: {
-        employee: {
-          select: {
-            name: true,
-            employeeId: true
-          }
-        }
-      }
-    });
+    console.log('🚀 Fetching optimized attendance records with filters:', filters);
     
-    // Count total records for pagination info
-    const total = await prisma.attendance.count({ where });
+    // Use optimized query
+    const result = await queryOptimizer.getOptimizedAttendanceRecords(filters);
+    
+    console.log(`✅ Optimized query returned ${result.records.length} records out of ${result.pagination.total} total`);
+    if (result.records.length > 0) {
+      console.log('Sample optimized record:', {
+        _id: result.records[0]._id,
+        employeeId: result.records[0].employeeId,
+        employeeName: result.records[0].employee?.name,
+        organizationId: result.records[0].organizationId,
+        type: result.records[0].type,
+        timestamp: result.records[0].timestamp,
+        hasEmployee: !!result.records[0].employee
+      });
+    }
     
     res.status(200).json({
       success: true,
-      count: records.length,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      },
-      data: records
+      count: result.records.length,
+      pagination: result.pagination,
+      data: result.records
     });
   } catch (error) {
     console.error('Error fetching attendance records:', error);
@@ -319,6 +310,7 @@ const createAttendanceRecord = async (req, res) => {
         employeeId: parseInt(employeeId),
         type,
         timestamp,
+        date: new Date(timestamp), // Add the required date field
         location,
         ipAddress,
         notes,
@@ -333,7 +325,7 @@ const createAttendanceRecord = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let dailyAttendance = await prisma.dailyAttendance.findFirst({
+    let dailyAttendance = await prisma.dailyAttendances.findFirst({
       where: {
         employeeId: parseInt(employeeId),
         date: today,
@@ -344,7 +336,7 @@ const createAttendanceRecord = async (req, res) => {
     if (type === 'sign-in') {
       if (!dailyAttendance) {
         console.log('Creating new daily attendance record');
-        dailyAttendance = await prisma.dailyAttendance.create({
+        dailyAttendance = await prisma.dailyAttendances.create({
           data: {
             employeeId: parseInt(employeeId),
             date: today,
@@ -357,7 +349,7 @@ const createAttendanceRecord = async (req, res) => {
         console.log(`Created daily attendance record: ${dailyAttendance.id}`);
       } else {
         console.log(`Updating existing daily attendance record: ${dailyAttendance.id}`);
-        dailyAttendance = await prisma.dailyAttendance.update({
+        dailyAttendance = await prisma.dailyAttendances.update({
           where: { id: dailyAttendance.id },
           data: {
             signInTime: timestamp,
@@ -375,7 +367,7 @@ const createAttendanceRecord = async (req, res) => {
           ? Math.round((timestamp.getTime() - dailyAttendance.signInTime.getTime()) / (1000 * 60))
           : null;
         
-        dailyAttendance = await prisma.dailyAttendance.update({
+        dailyAttendance = await prisma.dailyAttendances.update({
           where: { id: dailyAttendance.id },
           data: {
             signOutTime: timestamp,
@@ -391,7 +383,7 @@ const createAttendanceRecord = async (req, res) => {
       } else {
         console.log('Creating new daily attendance record for sign-out only');
 
-        dailyAttendance = await prisma.dailyAttendance.create({
+        dailyAttendance = await prisma.dailyAttendances.create({
           data: {
             employeeId: parseInt(employeeId),
             date: today,
@@ -423,6 +415,24 @@ const createAttendanceRecord = async (req, res) => {
       // Continue even if audit log fails
     }
     
+    // Broadcast real-time attendance update via WebSocket
+    const attendanceData = {
+      id: attendanceRecord.id,
+      employeeId: attendanceRecord.employeeId,
+      employeeName: employee.name,
+      type: attendanceRecord.type,
+      timestamp: attendanceRecord.timestamp,
+      isLate: isLate,
+      location: attendanceRecord.location,
+      organizationId: recordOrganizationId
+    };
+
+    webSocketService.broadcastToOrganization(recordOrganizationId, 'attendance_updated', attendanceData);
+    webSocketService.broadcastToDashboard(recordOrganizationId, 'overview', 'stats_updated', { 
+      trigger: 'attendance_created',
+      timestamp: new Date().toISOString() 
+    });
+
     // IMPORTANT: Make sure isLate is included in the response
     res.status(201).json({
       success: true,
@@ -498,6 +508,7 @@ const createAttendanceWithFace = async (req, res) => {
         employeeId: parseInt(employeeId),
         type,
         timestamp,
+        date: new Date(timestamp), // Add the required date field
         facialVerification: true,
         location,
         notes,
@@ -513,6 +524,25 @@ const createAttendanceWithFace = async (req, res) => {
     // Update daily attendance similar to createAttendanceRecord
     // (code omitted for brevity, but would follow the same pattern)
     
+    // Broadcast real-time facial attendance update via WebSocket
+    const attendanceData = {
+      id: attendanceRecord.id,
+      employeeId: attendanceRecord.employeeId,
+      employeeName: employee.name,
+      type: attendanceRecord.type,
+      timestamp: attendanceRecord.timestamp,
+      isLate: isLate,
+      location: attendanceRecord.location,
+      organizationId: recordOrganizationId,
+      verificationMethod: 'face-recognition'
+    };
+
+    webSocketService.broadcastToOrganization(recordOrganizationId, 'attendance_updated', attendanceData);
+    webSocketService.broadcastToDashboard(recordOrganizationId, 'overview', 'stats_updated', { 
+      trigger: 'facial_attendance_created',
+      timestamp: new Date().toISOString() 
+    });
+
     // IMPORTANT: Make sure isLate is included in the response
     res.status(201).json({
       success: true,
