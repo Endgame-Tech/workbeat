@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
-const { prisma } = require('../config/db.js');
+const { prisma } = require('../config/db-simple.js');
 
 // Load env vars
 dotenv.config();

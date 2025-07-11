@@ -1,5 +1,5 @@
 // Complete employeeAuthController.js with all required functions
-const { prisma } = require('../config/db');
+const { prisma } = require('../config/db-simple');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path'); 

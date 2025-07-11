@@ -1,6 +1,6 @@
 // Updated authMiddleware.js with Prisma
 const jwt = require('jsonwebtoken');
-const { prisma } = require('../config/db');
+const { prisma } = require('../config/db-simple');
 
 // Protect routes
 const protect = async (req, res, next) => {

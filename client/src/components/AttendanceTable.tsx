@@ -1,5 +1,5 @@
 // Updated AttendanceTable.tsx with improved image handling and department fix (continued)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AttendanceRecord, Employee } from '../types';
 import { formatTime, formatDate } from '../utils/attendanceUtils';
 import { Card, CardHeader, CardContent } from './ui/Card';
@@ -96,10 +96,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     if (organizationId) {
       fetchEmployees();
     }
-  }, [initialRecords, organizationId]);
+  }, [initialRecords, organizationId, fetchAttendanceRecords, fetchEmployees]);
 
   // Function to fetch attendance records for the current organization
-  const fetchAttendanceRecords = async (loadMore = false, filterStartDate?: string, filterEndDate?: string) => {
+  const fetchAttendanceRecords = useCallback(async (loadMore = false, filterStartDate?: string, filterEndDate?: string) => {
     if (!organizationId) {
       console.warn('Cannot fetch attendance records: No organization ID available');
       return;
@@ -117,7 +117,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       
       if (allowPagination && !initialRecords) {
         // Use pagination if enabled and not using initial records
-        const page = loadMore ? currentPage + 1 : 1;
+        const currentPageValue = loadMore ? currentPage + 1 : 1;
         
         if (filterStartDate && filterEndDate) {
           // Use date-filtered API call
@@ -157,10 +157,10 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setLoadingMore(false);
       setRefreshing(false);
     }
-  };
+  }, [organizationId, allowPagination, currentPage, initialRecords]);
 
   // Function to fetch employees for the current organization
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     if (!organizationId) {
       console.warn('Cannot fetch employees: No organization ID available');
       return;
@@ -184,7 +184,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       console.error('Error fetching employees:', err);
       toast.error('Failed to load employee data');
     }
-  };
+  }, [organizationId]);
 
   // Manual refresh function
   const handleRefresh = () => {

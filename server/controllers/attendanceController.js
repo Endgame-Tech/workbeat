@@ -1,6 +1,6 @@
 // Complete attendanceController.js with all required functions
 
-const { prisma } = require('../config/db');
+const { prisma } = require('../config/db-simple');
 
 // FIXED: Improved checkIfLate function
 const checkIfLate = (currentTime, workScheduleData) => {
