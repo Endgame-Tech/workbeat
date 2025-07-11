@@ -71,7 +71,7 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
       try {
         const location = await attendanceService.getClientLocation();
         setLocationStatus(location ? 'granted' : 'denied');
-      } catch (error) {
+      } catch {
         setLocationStatus('denied');
       }
     };

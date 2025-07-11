@@ -327,7 +327,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     const endDate = new Date(); // Today
     endDate.setHours(23, 59, 59, 999); // End of today
     
-    let startDate = new Date();
+    const startDate = new Date();
     
     switch (reportType) {
       case ReportType.DAILY:
@@ -658,7 +658,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
             locationStr = `${record.location.latitude.toFixed(4)}, ${record.location.longitude.toFixed(4)}`;
           }
         }
-      } catch (e) {
+      } catch {
         locationStr = 'Invalid location format';
       }
       
@@ -1204,19 +1204,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       case DashboardTab.WORKERS:
         return (
           <div className="space-y-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
                 {organizationName} Employees
               </h2>
-              {!showEmployeeForm && (
-                <Button 
-                  variant="primary"
-                  leftIcon={<PlusCircle size={18} />}
-                  onClick={() => setShowEmployeeForm(true)}
-                >
-                  Add Employee
-                </Button>
-              )}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Search employees..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+                {!showEmployeeForm && (
+                  <Button 
+                    variant="primary"
+                    leftIcon={<PlusCircle size={18} />}
+                    onClick={() => setShowEmployeeForm(true)}
+                  >
+                    Add Employee
+                  </Button>
+                )}
+              </div>
             </div>
 
             {showEmployeeForm ? (
@@ -1229,7 +1238,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
               />
             ) : (
               <EmployeeTable
-                employees={employees}
+                employees={filteredEmployees}
                 onEdit={handleEditEmployee}
                 onDelete={handleDeleteEmployee}
                 onAdd={() => setShowEmployeeForm(true)}
