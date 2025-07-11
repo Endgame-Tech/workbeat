@@ -5,78 +5,15 @@ const { prisma } = require('../config/db.js');
 // Load env vars
 dotenv.config();
 
-// Sample data
+// Sample data - Remove or replace with environment-specific data for production
 const users = [
-  {
-    name: 'Admin User',
-    email: 'admin@workbeat.com',
-    password: 'admin123',
-    role: 'admin'
-  },
-  {
-    name: 'Test Employee',
-    email: 'employee@workbeat.com',
-    password: 'employee123',
-    role: 'employee'
-  }
+  // Add admin user creation logic here or use environment variables
+  // Example: Process.env.ADMIN_EMAIL, Process.env.ADMIN_PASSWORD
 ];
 
 const employees = [
-  {
-    name: 'John Doe',
-    email: 'john@workbeat.com',
-    department: 'Engineering',
-    position: 'Software Developer',
-    isActive: true,
-    employeeId: 'EMP-001',
-    phone: '+1234567890',
-    workSchedule: {
-      days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      hours: {
-        start: '09:00',
-        end: '17:00'
-      }
-    },
-    startDate: '2023-01-15',
-    employmentStatus: 'full-time',
-    accessLevel: 'employee'
-  },
-  {    name: 'Jane Smith',
-    email: 'jane@workbeat.com',
-    department: 'Marketing',
-    position: 'Marketing Specialist',
-    isActive: true,
-    employeeId: 'EMP-002',
-    phone: '+1987654321',
-    workSchedule: {
-      days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      hours: {
-        start: '09:30',
-        end: '17:30'
-      }
-    },
-    startDate: '2023-02-01',
-    employmentStatus: 'full-time',
-    accessLevel: 'employee'
-  },
-  {    name: 'Bob Johnson',
-    email: 'bob@workbeat.com',
-    department: 'Finance',
-    position: 'Financial Analyst',
-    isActive: true,
-    employeeId: 'EMP-003',
-    phone: '+1122334455',
-    workSchedule: {
-      days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      hours: {
-        start: '08:00',
-        end: '16:00'
-      }
-    },
-    startDate: '2023-03-15',
-    employmentStatus: 'full-time',
-    accessLevel: 'employee'
-  }
+  // Add sample employee data here for development only
+  // Consider using environment variables or separate dev/prod configs
 ];
 
 // Import data to database
@@ -92,8 +29,8 @@ const importData = async () => {
         data: {
           name: 'Default Organization',
           industry: 'Technology',
-          contactEmail: 'admin@workbeat.com',
-          contactPhone: '+1234567890',
+          contactEmail: process.env.ADMIN_EMAIL || 'admin@example.com',
+          contactPhone: process.env.ADMIN_PHONE || '+1234567890',
           settings: JSON.stringify({
             workingHours: {
               default: {

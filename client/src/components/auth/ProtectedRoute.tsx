@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { authService } from '../../services/authService';
-import { toast } from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,33 +9,8 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check if user is authenticated
-        const isAuth = await authService.checkAuth();
-        setIsAuthenticated(isAuth);
-        
-        if (isAuth) {
-          // Get user data to check role
-          const user = await authService.getCurrentUser();
-          setUserRole(user?.role || null);
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
+  const { isAuthenticated, user, loading } = useAuth();
+  
   // Show loading state
   if (loading) {
     return (
@@ -48,13 +22,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
-    toast.error('Please login to access this page');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if user has required role (if specified)
-  if (role && userRole !== role) {
-    toast.error(`Access denied. You need ${role} privileges.`);
+  if (role && user?.role !== role) {
     return <Navigate to="/dashboard" replace />;
   }
 

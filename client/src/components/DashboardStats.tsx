@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardContent } from './ui/Card';
 import { 
   Clock, 
@@ -6,10 +6,13 @@ import {
   AlertCircle, 
   CheckCircle,
   UserCheck,
-  CalendarClock
+  CalendarClock,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { AttendanceRecord, AttendanceStats } from '../types';
 import { attendanceService } from '../services/attendanceService';
+import { useWebSocket } from './context/WebSocketProvider';
 
 interface DashboardStatsProps {
   employeeCount?: number;
@@ -20,7 +23,16 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   employeeCount,
   attendanceRecords = []
 }) => {
+  const { 
+    isConnected, 
+    lastAttendanceUpdate, 
+    lastStatsUpdate,
+    onAttendanceUpdate,
+    onStatsUpdate 
+  } = useWebSocket();
+  
   const [loading, setLoading] = useState(true);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
   const [stats, setStats] = useState<AttendanceStats>({
     totalEmployees: 0,
     presentEmployees: 0,
@@ -42,18 +54,45 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     }
   }, [employeeCount, attendanceRecords]);
 
-  const fetchAttendanceStats = async () => {
+  const fetchAttendanceStats = useCallback(async () => {
     setLoading(true);
     try {
       // Get today's attendance stats from API
       const todayStats = await attendanceService.getTodayStats();
       setStats(todayStats);
+      setLastUpdateTime(new Date());
     } catch (error) {
       console.error('Error fetching attendance stats:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Handle real-time attendance updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const handleAttendanceUpdate = (attendanceData: any) => {
+      console.log('📊 Real-time attendance update received:', attendanceData);
+      // Refresh stats when attendance changes
+      fetchAttendanceStats();
+    };
+
+    const handleStatsUpdate = (statsData: any) => {
+      console.log('📈 Real-time stats update received:', statsData);
+      // Refresh stats when stats trigger is received
+      fetchAttendanceStats();
+    };
+
+    // Subscribe to real-time updates
+    const unsubscribeAttendance = onAttendanceUpdate(handleAttendanceUpdate);
+    const unsubscribeStats = onStatsUpdate(handleStatsUpdate);
+
+    return () => {
+      unsubscribeAttendance();
+      unsubscribeStats();
+    };
+  }, [isConnected, onAttendanceUpdate, onStatsUpdate, fetchAttendanceStats]);
   
   // If we have props, use them to calculate stats
   const updateStatsFromProps = (totalActive: number, records: AttendanceRecord[]) => {
@@ -169,10 +208,29 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
         </div>
         
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 px-3 py-2 rounded-full bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800">
-            <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse"></div>
-            <span className="text-sm font-medium text-success-700 dark:text-success-300">Live updates</span>
+          <div className={`flex items-center space-x-2 px-3 py-2 rounded-full border ${
+            isConnected
+              ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800'
+              : 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800'
+          }`}>
+            {isConnected ? (
+              <>
+                <Wifi className="w-3 h-3 text-success-500" />
+                <div className="w-2 h-2 rounded-full bg-success-500 animate-pulse"></div>
+                <span className="text-sm font-medium text-success-700 dark:text-success-300">Live updates</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3 h-3 text-warning-500" />
+                <span className="text-sm font-medium text-warning-700 dark:text-warning-300">Offline mode</span>
+              </>
+            )}
           </div>
+          {lastUpdateTime && (
+            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+              Last updated: {lastUpdateTime.toLocaleTimeString()}
+            </div>
+          )}
         </div>
       </div>
       

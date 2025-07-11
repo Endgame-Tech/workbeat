@@ -1,5 +1,5 @@
 import { ChartData } from 'chart.js';
-import { AnalyticsData, AttendanceRecord } from '../types';
+import { AnalyticsData, AttendanceRecord, Employee } from '../types';
 
 export interface AttendancePatternData {
   lateArrivals: number[];
@@ -138,8 +138,17 @@ export const analyzeAttendancePatterns = (records: AttendanceRecord[]): Attendan
 
 export const analyzeDepartmentAttendance = (
   records: AttendanceRecord[],
-  departments: string[]
+  employees: Employee[]
 ): DepartmentAnalytics[] => {
+  // Create employee lookup map for department assignment
+  const employeeDeptMap = employees.reduce((acc, emp) => {
+    acc[emp.id.toString()] = emp.department;
+    return acc;
+  }, {} as Record<string, string>);
+
+  // Get unique departments from employees
+  const departments = [...new Set(employees.map(emp => emp.department).filter(dept => dept && dept.trim() !== ''))];
+
   const departmentData: { [key: string]: {
     totalDays: number;
     presentDays: number;
@@ -163,10 +172,19 @@ export const analyzeDepartmentAttendance = (
       const date = new Date(record.timestamp);
       const minutes = date.getHours() * 60 + date.getMinutes();
 
-      // We'll need to lookup the employee's department through a service call in practice
-      // For now, we'll use a placeholder department based on employeeId
-      const deptIndex = parseInt(record.employeeId) % departments.length;
-      const dept = departments[deptIndex];
+      // Get employee's actual department from the lookup map
+      const dept = employeeDeptMap[record.employeeId] || 'Unknown';
+      
+      // Add Unknown department if it doesn't exist
+      if (dept === 'Unknown' && !departmentData[dept]) {
+        departmentData[dept] = {
+          totalDays: 0,
+          presentDays: 0,
+          lateDays: 0,
+          totalMinutes: 0,
+          count: 0
+        };
+      }
       
       if (departmentData[dept]) {
         departmentData[dept].totalDays++;
@@ -178,13 +196,16 @@ export const analyzeDepartmentAttendance = (
     }
   });
 
-  return departments.map(dept => ({
+  // Include all departments that have data (including Unknown)
+  const allDepartments = Object.keys(departmentData).filter(dept => departmentData[dept].count > 0);
+  
+  return allDepartments.map(dept => ({
     departmentName: dept,
-    attendanceRate: (departmentData[dept].presentDays / departmentData[dept].totalDays) * 100,
-    lateArrivalRate: (departmentData[dept].lateDays / departmentData[dept].totalDays) * 100,
-    averageArrivalTime: formatAverageTime(
+    attendanceRate: departmentData[dept].totalDays > 0 ? (departmentData[dept].presentDays / departmentData[dept].totalDays) * 100 : 0,
+    lateArrivalRate: departmentData[dept].totalDays > 0 ? (departmentData[dept].lateDays / departmentData[dept].totalDays) * 100 : 0,
+    averageArrivalTime: departmentData[dept].count > 0 ? formatAverageTime(
       departmentData[dept].totalMinutes / departmentData[dept].count
-    )
+    ) : '00:00'
   }));
 };
 
@@ -211,6 +232,9 @@ export const createAttendancePatternChart = (data: AttendancePatternData): Chart
 };
 
 const formatAverageTime = (totalMinutes: number): string => {
+  if (isNaN(totalMinutes) || totalMinutes < 0) {
+    return '00:00';
+  }
   const hours = Math.floor(totalMinutes / 60);
   const minutes = Math.round(totalMinutes % 60);
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;

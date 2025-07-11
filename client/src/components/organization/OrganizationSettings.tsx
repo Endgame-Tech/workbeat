@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Card, CardHeader, CardContent, CardFooter } from '../ui/Card';
 import Input from '../ui/Input';
@@ -7,10 +8,12 @@ import Button from '../ui/Button';
 import { organizationService } from '../../services/organizationService';
 
 interface OrganizationSettingsProps {
-  organizationId: string;
+  organizationId?: string;
 }
 
-const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizationId }) => {
+const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizationId: propOrganizationId }) => {
+  const { organizationId: paramOrganizationId } = useParams<{ organizationId: string }>();
+  const organizationId = propOrganizationId || paramOrganizationId;
   const [organization, setOrganization] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,6 +22,12 @@ const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizatio
   // Fetch organization data
   useEffect(() => {
     const fetchOrganization = async () => {
+      if (!organizationId) {
+        console.warn('No organization ID available');
+        setLoading(false);
+        return;
+      }
+      
       try {
         const data = await organizationService.getOrganization(organizationId);
         setOrganization(data);
@@ -79,6 +88,12 @@ const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizatio
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!organizationId) {
+      toast.error('Organization ID not found');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -97,6 +112,14 @@ const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizatio
     return (
       <div className="flex justify-center items-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!organizationId) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-red-500">Organization ID not found. Please check the URL.</p>
       </div>
     );
   }

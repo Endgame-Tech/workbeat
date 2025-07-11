@@ -6,8 +6,10 @@ import DashboardStats from './DashboardStats';
 import AttendanceTable from './AttendanceTable';
 import EmployeeForm from './admin/EmployeeForm';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import LeaveManagementDashboard from './leave/LeaveManagementDashboard';
+import { ShiftManagementDashboard } from './shift/ShiftManagementDashboard';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Layers, Settings, Calendar, Download, Users, PlusCircle, RefreshCw, FileText, BarChart3 } from 'lucide-react';
+import { Layers, Settings, Calendar, Download, Users, PlusCircle, RefreshCw, FileText, BarChart3, Clock } from 'lucide-react';
 import Button from './ui/Button';
 import { Employee, AttendanceRecord } from '../types';
 import { employeeService } from '../services/employeeService';
@@ -17,7 +19,9 @@ import EmployeeTable from './admin/EmployeeTable';
 
 enum DashboardTab {
   OVERVIEW,
-  REPORTS,
+  LEAVE,
+  SHIFTS,
+  REPORTS,  
   ANALYTICS,
   WORKERS
 }
@@ -154,7 +158,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     } catch (error) {
       console.error('Error fetching attendance records:', error);
       if (!startDate && !endDate) {
-        toast.error('Failed to load attendance records');
+        // Only show toast for server errors, not expected empty states
+        if (error.isServerError) {
+          toast.error('Failed to load attendance records');
+        }
         setAttendanceRecords([]);
       }
       return [];
@@ -187,7 +194,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       return data || [];
     } catch (err) {
       console.error('Error in fetch operation:', err);
-      toast.error('Failed to load employees');
+      // Only show toast for server errors, not expected empty states
+      if (err.isServerError) {
+        toast.error('Failed to load employees');
+      }
       setEmployees([]);
       return [];
     } finally {
@@ -1201,6 +1211,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       case DashboardTab.ANALYTICS:
         return <AnalyticsDashboard />;
         
+      case DashboardTab.LEAVE:
+        return (
+          <LeaveManagementDashboard
+            currentUser={{
+              id: 1, // This should be the actual user ID from context
+              name: 'Admin User', // This should be the actual user name
+              email: 'admin@example.com', // This should be the actual email
+              role: 'admin'
+            }}
+            isAdmin={true}
+          />
+        );
+        
       case DashboardTab.WORKERS:
         return (
           <div className="space-y-8">
@@ -1239,6 +1262,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
             )}
           </div>
         );
+      
+      case DashboardTab.SHIFTS:
+        return <ShiftManagementDashboard />;
       
       default:
         return (
@@ -1355,144 +1381,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
                 </CardContent>
               </Card>
 
-              {/* Navigation Card */}
-              <Card variant="elevated" className="overflow-hidden">
-                <CardContent className="p-2">
-                  <div className="space-y-1">
-                    <Button
-                      variant={activeTab === DashboardTab.OVERVIEW ? 'primary' : 'ghost'}
-                      onClick={() => setActiveTab(DashboardTab.OVERVIEW)}
-                      leftIcon={<Layers size={20} />}
-                      className="w-full justify-start h-12 rounded-xl font-medium"
-                      size="lg"
-                    >
-                      Overview & Analytics
-                    </Button>
 
-                    <Button
-                      variant={activeTab === DashboardTab.REPORTS ? 'primary' : 'ghost'}
-                      onClick={() => setActiveTab(DashboardTab.REPORTS)}
-                      leftIcon={<FileText size={20} />}
-                      className="w-full justify-start h-12 rounded-xl font-medium"
-                      size="lg"
-                    >
-                      Reports & Data
-                    </Button>
-
-                    <Button
-                      variant={activeTab === DashboardTab.ANALYTICS ? 'primary' : 'ghost'}
-                      onClick={() => setActiveTab(DashboardTab.ANALYTICS)}
-                      leftIcon={<BarChart3 size={20} />}
-                      className="w-full justify-start h-12 rounded-xl font-medium"
-                      size="lg"
-                    >
-                      Advanced Analytics
-                    </Button>
-
-                    <Button
-                      variant={activeTab === DashboardTab.WORKERS ? 'primary' : 'ghost'}
-                      onClick={() => setActiveTab(DashboardTab.WORKERS)}
-                      leftIcon={<Users size={20} />}
-                      className="w-full justify-start h-12 rounded-xl font-medium"
-                      size="lg"
-                    >
-                      Employee Management
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions Card */}
-              <Card variant="elevated">
-                <CardHeader className="pb-3">
-                  <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide">
-                    Quick Actions
-                  </h3>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    <Button 
-                      variant="ghost" 
-                      leftIcon={<RefreshCw size={18} />} 
-                      onClick={refreshAttendanceRecords}
-                      isLoading={loadingAttendance}
-                      className="w-full justify-start h-10 rounded-lg"
-                    >
-                      Refresh Data
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      leftIcon={<Download size={18} />} 
-                      onClick={() => exportAttendanceData()}
-                      disabled={attendanceRecords.length === 0}
-                      className="w-full justify-start h-10 rounded-lg"
-                    >
-                      Export Report
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      leftIcon={<Settings size={18} />} 
-                      onClick={() => {
-                        // Try multiple ways to get the organization ID
-                        let orgId = organizationId;
-                        
-                        if (!orgId) {
-                          // Try to get it directly from localStorage
-                          try {
-                            const userString = localStorage.getItem('user');
-                            if (userString) {
-                              const userData = JSON.parse(userString);
-                              orgId = userData.organizationId || userData.organization?.id;
-                            }
-                          } catch (err) {
-                            console.error('Error getting org ID from localStorage:', err);
-                          }
-                        }
-                        
-                        if (!orgId) {
-                          // Try organization localStorage entry
-                          try {
-                            const orgString = localStorage.getItem('organization');
-                            if (orgString) {
-                              const orgData = JSON.parse(orgString);
-                              orgId = orgData.id;
-                            }
-                          } catch (err) {
-                            console.error('Error getting org ID from organization localStorage:', err);
-                          }
-                        }
-                        
-                        if (orgId) {
-                          navigate(`/organization/${orgId}/settings`);
-                        } else {
-                          toast.error('Organization ID not found. Please try refreshing the page.');
-                          console.error('Organization ID not available. Current organizationId state:', organizationId);
-                        }
-                      }}
-                      className="w-full justify-start h-10 rounded-lg"
-                    >
-                      Settings
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Status Indicator */}
-              <Card variant="glass" className="border-success-200 dark:border-success-800">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 rounded-full bg-success-500 animate-pulse"></div>
-                      <span className="text-sm font-medium text-success-700 dark:text-success-300">
-                        System Online
-                      </span>
-                    </div>
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {lastUpdated.toLocaleTimeString()}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
 

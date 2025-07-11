@@ -42,12 +42,11 @@ export const authService = {
       
       // Log the full response for debugging
       console.log('Login response:', response.data);
+      console.log('User data from response:', response.data.data);
       
       if (response.data && response.data.success) {
-        // Store token in localStorage
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
+        // Note: Token is now stored as secure httpOnly cookie by the server
+        // No need to store token in localStorage anymore
         
         // Store user data
         if (response.data.data) {
@@ -61,10 +60,7 @@ export const authService = {
           }
           
           localStorage.setItem('user', JSON.stringify(userData));
-          return {
-            ...userData,
-            token: response.data.token
-          };
+          return userData;
         }
       }
       
@@ -252,15 +248,15 @@ export const authService = {
    */
   async logout() {
     try {
-      // Call logout endpoint if available (optional)
-      // await api.post('/api/auth/logout');
+      // Call logout endpoint to clear httpOnly cookie
+      await api.post('/api/auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
+      // Continue with cleanup even if API call fails
     } finally {
-      // Always clear local storage
-      localStorage.removeItem('token');
+      // Clear local storage (no need to remove token since it's in httpOnly cookie)
       localStorage.removeItem('user');
-      localStorage.removeItem('organization'); // Also clear organization
+      localStorage.removeItem('organization');
     }
   },
   

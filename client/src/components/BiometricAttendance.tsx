@@ -9,6 +9,8 @@ import { employeeService } from '../services/employeeService';
 import { attendanceService } from '../services/attendanceService';
 import { toast } from 'react-hot-toast';
 import AttendanceSuccess from './AttendanceSuccess';
+import { useSubscription } from '../hooks/useSubscription';
+import { FeatureGate } from './subscription/FeatureGate';
 
 enum AttendanceStep {
   INITIAL,
@@ -28,6 +30,7 @@ const BiometricAttendance: React.FC<BiometricAttendanceProps> = ({ onComplete })
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [faceImage, setFaceImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { hasFeature } = useSubscription();
   const [attendanceRecord, setAttendanceRecord] = useState<AttendanceRecord | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -325,14 +328,43 @@ const handleSubmitAttendance = async () => {
                 Use fingerprint and face verification to record your attendance
               </p>
               
-              <Button
-                variant="primary"
-                className="w-full py-3"
-                leftIcon={<Fingerprint size={20} />}
-                onClick={() => setCurrentStep(AttendanceStep.FINGERPRINT_SCAN)}
+              <FeatureGate 
+                feature="biometricFingerprint"
+                requiredPlan="professional"
+                fallbackMessage="Biometric authentication requires a Professional or Enterprise plan."
+                showUpgrade={true}
               >
-                Start Biometric Verification
-              </Button>
+                <Button
+                  variant="primary"
+                  className="w-full py-3"
+                  leftIcon={<Fingerprint size={20} />}
+                  onClick={() => setCurrentStep(AttendanceStep.FINGERPRINT_SCAN)}
+                >
+                  Start Biometric Verification
+                </Button>
+              </FeatureGate>
+              
+              {/* Basic attendance fallback for non-biometric plans */}
+              {!hasFeature('biometricFingerprint') && (
+                <Button
+                  variant="outline"
+                  className="w-full py-3 mt-3"
+                  leftIcon={<UserCheck size={20} />}
+                  onClick={() => {
+                    // Skip to confirmation with manual entry
+                    setCurrentStep(AttendanceStep.CONFIRMATION);
+                    // Set a placeholder employee - in real implementation, this would be from login context
+                    setEmployee({
+                      id: 'manual',
+                      name: 'Manual Entry',
+                      department: 'General',
+                      position: 'Employee'
+                    } as Employee);
+                  }}
+                >
+                  Manual Check-in
+                </Button>
+              )}
             </CardContent>
             
             <CardFooter className="text-center text-gray-500 dark:text-gray-400 text-xs">

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 interface RuntimeConfig {
   VITE_APP_API_URL?: string;
@@ -13,7 +14,7 @@ const getApiUrl = () => {
   }
   
   // Fall back to hardcoded default
-  return 'http://localhost:5000';
+  return 'http://localhost:3001';
 };
 
 // Create axios instance with default config
@@ -22,53 +23,67 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Include cookies in requests
 });
 
-// Request interceptor for adding auth token
+// Request interceptor (no need to add token manually since we're using httpOnly cookies)
 api.interceptors.request.use(
   (config) => {
+    // With httpOnly cookies, the token is automatically included by the browser
+    // Keep fallback for Authorization header for backward compatibility
     const token = localStorage.getItem('token');
     
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log('API Request:', {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL
-    });
-    
     return config;
   },
   (error) => {
+    // Log error but don't show toast - let components handle their own error messages
+    console.error('Request Error:', error.message);
     return Promise.reject(error);
   }
 );
 
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response Status:', response.status);
+    // You can add a global success toast here if desired,
+    // but it's often better to handle success messages in the specific service call.
     return response;
   },
   (error) => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
+    // Enhanced error handling with better categorization
+    const status = error.response?.status;
+    const message = error.response?.data?.message || error.message;
     
-    // Handle unauthorized errors (401)
-    if (error.response && error.response.status === 401) {
-      // Clear local storage
-      localStorage.removeItem('token');
+    // Log error for debugging but categorize appropriately
+    if (status === 404) {
+      console.log('Resource not found (expected for new users/organizations):', message);
+    } else if (status >= 500) {
+      console.error('Server Error:', message);
+    } else if (status === 400) {
+      console.warn('Client Error:', message);
+    } else {
+      console.error('API Response Error:', message);
+    }
+    
+    // Handle unauthorized errors (401) - this is important for security
+    if (status === 401) {
+      // Clear local storage (token is httpOnly cookie, cleared by server)
       localStorage.removeItem('user');
+      localStorage.removeItem('organization');
       
       // Redirect to home/login if not already there
       if (window.location.pathname !== '/') {
         window.location.href = '/';
       }
     }
+    
+    // Add error metadata to help components handle errors appropriately
+    error.isExpectedEmpty = status === 404;
+    error.isServerError = status >= 500;
+    error.isClientError = status >= 400 && status < 500;
     
     return Promise.reject(error);
   }

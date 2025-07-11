@@ -46,7 +46,10 @@ const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ organizat
       } catch (err) {
         console.error('Error fetching organization data:', err);
         setError('Failed to load organization data');
-        toast.error('Failed to load organization dashboard');
+        // Only show toast for server errors, not expected empty states
+        if (err.isServerError) {
+          toast.error('Failed to load organization dashboard');
+        }
       } finally {
         setLoading(false);
       }

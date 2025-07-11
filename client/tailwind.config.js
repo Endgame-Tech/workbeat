@@ -5,19 +5,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Modern purple-blue gradient brand colors
+        // Dynamic brand colors using CSS variables
         primary: {
-          50: '#f0f5ff',
-          100: '#e0ebff',
-          200: '#c7d6fe',
-          300: '#a4bcfd',
-          400: '#7f97fa',
-          500: '#6366f1', // Main brand color
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+          25: 'var(--primary-25)',
+          50: 'var(--primary-50)',
+          100: 'var(--primary-100)',
+          150: 'var(--primary-150)',
+          200: 'var(--primary-200)',
+          300: 'var(--primary-300)',
+          400: 'var(--primary-400)',
+          500: 'var(--primary-500)', // Main brand color
+          600: 'var(--primary-600)',
+          700: 'var(--primary-700)',
+          750: 'var(--primary-750)',
+          800: 'var(--primary-800)',
+          900: 'var(--primary-900)',
+          950: 'var(--primary-950)',
+        },
+        secondary: {
+          25: 'var(--secondary-25)',
+          50: 'var(--secondary-50)',
+          100: 'var(--secondary-100)',
+          150: 'var(--secondary-150)',
+          200: 'var(--secondary-200)',
+          300: 'var(--secondary-300)',
+          400: 'var(--secondary-400)',
+          500: 'var(--secondary-500)', // Secondary brand color
+          600: 'var(--secondary-600)',
+          700: 'var(--secondary-700)',
+          750: 'var(--secondary-750)',
+          800: 'var(--secondary-800)',
+          900: 'var(--secondary-900)',
+          950: 'var(--secondary-950)',
         },
         accent: {
           50: '#fdf2f8',
@@ -83,6 +102,53 @@ export default {
           800: '#1e293b',
           900: '#0f172a',
           950: '#020617',
+        },
+        // UI element colors using CSS variables
+        ui: {
+          // Navigation 
+          navBg: 'var(--color-nav-bg)',
+          navBorder: 'var(--color-nav-border)',
+          navItemHover: 'var(--color-nav-item-hover)',
+          navItemActive: 'var(--color-nav-item-active)',
+          navText: 'var(--color-nav-text)',
+          navTextActive: 'var(--color-nav-text-active)',
+          
+          // Sidebar
+          sidebarBg: 'var(--color-sidebar-bg)',
+          sidebarBorder: 'var(--color-sidebar-border)',
+          sidebarItemHover: 'var(--color-sidebar-item-hover)',
+          sidebarItemActive: 'var(--color-sidebar-item-active)',
+          sidebarText: 'var(--color-sidebar-text)',
+          sidebarTextActive: 'var(--color-sidebar-text-active)',
+          
+          // Card and surface
+          cardBg: 'var(--color-card-bg)',
+          cardBorder: 'var(--color-card-border)',
+          cardHover: 'var(--color-card-hover)',
+          surface: 'var(--color-surface)',
+          surfaceSecondary: 'var(--color-surface-secondary)',
+          
+          // Interactive elements
+          buttonPrimary: 'var(--color-button-primary)',
+          buttonPrimaryHover: 'var(--color-button-primary-hover)',
+          buttonPrimaryActive: 'var(--color-button-primary-active)',
+          buttonSecondary: 'var(--color-button-secondary)',
+          buttonSecondaryHover: 'var(--color-button-secondary-hover)',
+          
+          // Form elements
+          inputBorder: 'var(--color-input-border)',
+          inputBorderFocus: 'var(--color-input-border-focus)',
+          inputBg: 'var(--color-input-bg)',
+          inputText: 'var(--color-input-text)',
+          
+          // Focus and ring
+          focusRing: 'var(--color-focus-ring)',
+          focusRingOffset: 'var(--color-focus-ring-offset)',
+          
+          // Border and divider
+          border: 'var(--color-border)',
+          borderLight: 'var(--color-border-light)',
+          divider: 'var(--color-divider)',
         }
       },
       fontFamily: {
@@ -114,7 +180,13 @@ export default {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'large': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 4px 25px -5px rgba(0, 0, 0, 0.1)',
-      }
+      },
+      // Add gradient background variables
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-secondary': 'var(--gradient-secondary)',
+        'gradient-surface': 'var(--gradient-surface)',
+      },
     },
   },
   plugins: [],

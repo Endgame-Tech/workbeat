@@ -1,33 +1,102 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const { connectDB } = require('./config/db.js');
+const cookieParser = require('cookie-parser');
+const config = require('./config/environment.js');
+const { connectDB } = require('./config/database.js');
+
+// Security middleware
+const { securityConfig, additionalSecurity, securityLogger, sanitizeInput, requestSizeLimit } = require('./middleware/security.js');
+const { generalLimiter } = require('./middleware/rateLimiter.js');
+const { enhancedCSRFProtection } = require('./middleware/csrfProtection.js');
+const performanceMonitor = require('./middleware/performanceMonitor.js');
+const { globalErrorHandler, notFoundHandler, handleUnhandledRejection, handleUncaughtException } = require('./utils/errorHandler.js');
+const webSocketService = require('./services/websocketService.js');
 const employeeRoutes = require('./routes/employeeRoutes.js');
 const attendanceRoutes = require('./routes/attendanceRoutes.js');
 const authRoutes = require('./routes/authRoutes.js');
 const biometricRoutes = require('./routes/biometricRoutes.js');
 const organizationRoutes = require('./routes/organizationRoutes.js');
 const employeeAuthRoutes = require('./routes/employeeAuthRoutes.js');
+const departmentRoutes = require('./routes/departmentRoutes.js');
+const subscriptionRoutes = require('./routes/subscriptionRoutes.js');
+const webhookRoutes = require('./routes/webhookRoutes.js');
+
+// New feature routes
+const leaveTypeRoutes = require('./routes/leaveTypeRoutes.js');
+const leaveRequestRoutes = require('./routes/leaveRequestRoutes.js');
+const leaveBalanceRoutes = require('./routes/leaveBalanceRoutes.js');
+const shiftTemplateRoutes = require('./routes/shiftTemplateRoutes.js');
+const scheduledShiftRoutes = require('./routes/scheduledShiftRoutes.js');
+const notificationTemplateRoutes = require('./routes/notificationTemplateRoutes.js');
+const notificationPreferenceRoutes = require('./routes/notificationPreferenceRoutes.js');
+const notificationQueueRoutes = require('./routes/notificationQueueRoutes.js');
+
 const path = require('path');
 
+// Initialize Express app and HTTP server
+const app = express();
+const server = http.createServer(app);
 
-// Load environment variables
-dotenv.config();
-
-// Connect to SQLite database
+// Connect to database
 connectDB();
 
-const app = express();
+// Security middleware (order matters!)
+app.use(securityConfig.helmet); // Security headers
+app.use(additionalSecurity); // Custom security headers
+app.use(securityLogger); // Security event logging
+app.use(requestSizeLimit); // Request size validation
+app.use(performanceMonitor.requestMonitor()); // Performance monitoring
+app.use(generalLimiter); // General rate limiting
+app.use(enhancedCSRFProtection()); // CSRF protection
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-
-// Middleware
-app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true
-}));
+// Data parsing and sanitization
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+app.use(cookieParser()); // Parse cookies for secure authentication
+app.use(securityConfig.mongoSanitize); // NoSQL injection protection
+app.use(securityConfig.xss); // XSS protection
+app.use(sanitizeInput); // Additional input sanitization
+
+// CORS configuration
+const allowedOrigins = [
+  config.app.frontendUrl,
+  'http://localhost:5173', // Vite dev server
+  'http://localhost:3000', // React dev server
+  'http://localhost:4173', // Vite preview
+  'http://127.0.0.1:5173', // Alternative localhost
+  'http://127.0.0.1:3000', // Alternative localhost
+];
+
+// In production, only allow the configured frontend URL
+const corsOrigins = config.app.env === 'production' 
+  ? [config.app.frontendUrl]
+  : allowedOrigins;
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development, log the origin and allow it anyway
+    if (config.app.env !== 'production') {
+      console.warn(`⚠️  CORS: Unknown origin allowed in development: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // In production, reject unknown origins
+    console.error(`🚫 CORS: Origin not allowed: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-CSRF-Token'],
+  exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'X-CSRF-Token']
+}));
 
 // Serve static files from the uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -38,25 +107,125 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/employee-auth', employeeAuthRoutes);
 app.use('/api/biometrics', biometricRoutes);
-app.use('/api/organization', organizationRoutes);
+app.use('/api/organizations', organizationRoutes);
+app.use('/api/organizations', departmentRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
-// Default route
+// New feature routes
+app.use('/api/leave-types', leaveTypeRoutes);
+app.use('/api/leave-requests', leaveRequestRoutes);
+app.use('/api/leave-balances', leaveBalanceRoutes);
+app.use('/api/shift-templates', shiftTemplateRoutes);
+app.use('/api/scheduled-shifts', scheduledShiftRoutes);
+app.use('/api/notification-templates', notificationTemplateRoutes);
+app.use('/api/notification-preferences', notificationPreferenceRoutes);
+app.use('/api/notification-queue', notificationQueueRoutes);
+
+// Webhook routes (should be before other middleware that might interfere)
+app.use('/api/webhooks', webhookRoutes);
+
+// Default route with health check
 app.get('/', (req, res) => {
-  res.send('WorkBeat API is running');
+  res.json({
+    message: 'WorkBeat API is running',
+    version: config.app.version,
+    environment: config.app.env,
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Server error',
-    error: process.env.NODE_ENV === 'production' ? null : err.message
+// Performance monitoring endpoint (admin only)
+app.get('/api/performance', (req, res) => {
+  // Simple IP-based admin check for demo (in production, use proper auth)
+  const adminIPs = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+  if (!adminIPs.includes(req.ip) && !req.headers.authorization) {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+  
+  return performanceMonitor.getReportEndpoint()(req, res);
+});
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    const { getDatabaseStats, performHealthCheck } = require('./config/database.js');
+    
+    await performHealthCheck();
+    const dbStats = await getDatabaseStats();
+    
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.app.env,
+      database: dbStats,
+      features: config.features
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
+// API Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const { getDatabaseStats, performHealthCheck } = require('./config/database.js');
+    
+    await performHealthCheck();
+    const dbStats = await getDatabaseStats();
+    
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.app.env,
+      database: dbStats,
+      features: config.features
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
+// Error handling middleware (must be last)
+app.use(notFoundHandler); // Handle 404 errors
+app.use(globalErrorHandler); // Handle all other errors
+
+// Setup process error handlers
+handleUnhandledRejection();
+handleUncaughtException();
+
+// Initialize WebSocket service
+webSocketService.initialize(server);
+
+// Add WebSocket statistics endpoint
+app.get('/api/websocket/stats', (req, res) => {
+  // Simple admin check
+  if (!req.headers.authorization && !['127.0.0.1', '::1'].includes(req.ip)) {
+    return res.status(403).json({ success: false, message: 'Unauthorized' });
+  }
+  
+  res.json({
+    success: true,
+    websocket: webSocketService.getStats()
   });
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const PORT = config.app.port;
+server.listen(PORT, () => {
+  console.log(`🚀 WorkBeat API v${config.app.version} running on port ${PORT}`);
+  console.log(`🌍 Environment: ${config.app.env}`);
+  console.log(`🔗 Frontend URL: ${config.app.frontendUrl}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`⚡ Performance monitoring: http://localhost:${PORT}/api/performance`);
+  console.log(`🔌 WebSocket statistics: http://localhost:${PORT}/api/websocket/stats`);
 });

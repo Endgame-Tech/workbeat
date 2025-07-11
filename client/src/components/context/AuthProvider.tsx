@@ -7,6 +7,9 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Derived state: isAuthenticated is true when user exists
+  const isAuthenticated = !!user;
+
   // Check for existing token and get user data on mount
   useEffect(() => {
     const initAuth = async () => {
@@ -67,6 +70,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     <AuthContext.Provider
       value={{
         user,
+        isAuthenticated,
         loading,
         login,
         logout,

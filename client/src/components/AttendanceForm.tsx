@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { 
   isEmployeeLate,
   formatTime 
@@ -11,6 +12,8 @@ import Textarea from './ui/Textarea';
 import { CheckCircle, Clock, MapPin, UserCheck, AlertCircle } from 'lucide-react';
 import { employeeService } from '../services/employeeService';
 import { attendanceService } from '../services/attendanceService';
+import offlineAttendanceService from '../services/offlineAttendanceService';
+import { useOffline } from './context/OfflineContext';
 
 interface AttendanceFormProps {
   qrValue: string;
@@ -34,6 +37,8 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [lateWarning, setLateWarning] = useState<boolean>(false);
 
+  const { isOnline, offlineMode } = useOffline();
+
   // Fetch employees from API
   useEffect(() => {
     async function fetchEmployees() {
@@ -46,53 +51,49 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
         setLoading(false);
       }
     }
-    
+
     fetchEmployees();
   }, []);
 
-  // Update the current time every second
+  // Update clock every second
   useEffect(() => {
     const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now);
-      
-      // Check if employee is late (only for sign-in)
-      if (selectedEmployee && attendanceType === 'sign-in') {
-        setLateWarning(isEmployeeLate(now, selectedEmployee.workingHours));
-      }
+      setCurrentTime(new Date());
     }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [selectedEmployee, attendanceType]);
 
-  // Check location permission
+    return () => clearInterval(timer);
+  }, []);
+
+  // Request location permission
   useEffect(() => {
-    const checkLocationPermission = async () => {
-      try {
-        const location = await attendanceService.getClientLocation();
-        setLocationStatus(location ? 'granted' : 'denied');
-      } catch (error) {
+    const requestLocation = async () => {
+      if ('geolocation' in navigator) {
+        try {
+          await navigator.geolocation.getCurrentPosition(
+            () => setLocationStatus('granted'),
+            () => setLocationStatus('denied')
+          );
+        } catch {
+          setLocationStatus('denied');
+        }
+      } else {
         setLocationStatus('denied');
       }
     };
-    
-    checkLocationPermission();
+
+    requestLocation();
   }, []);
 
-  // Update selected employee when ID changes
+  // Check if employee is late when selection changes
   useEffect(() => {
-    if (selectedEmployeeId) {
-      const employee = employees.find(emp => emp._id === selectedEmployeeId) || null;
-      setSelectedEmployee(employee);
-      
-      // Check late status when selecting an employee for sign-in
-      if (employee && attendanceType === 'sign-in') {
-        setLateWarning(isEmployeeLate(new Date(), employee.workingHours));
-      } else {
-        setLateWarning(false);
+    if (selectedEmployeeId && attendanceType === 'sign-in') {
+      const employee = employees.find(emp => emp._id === selectedEmployeeId);
+      if (employee) {
+        setSelectedEmployee(employee);
+        const isLate = isEmployeeLate(new Date(), employee.workingHours);
+        setLateWarning(isLate);
       }
     } else {
-      setSelectedEmployee(null);
       setLateWarning(false);
     }
   }, [selectedEmployeeId, employees, attendanceType]);
@@ -101,7 +102,7 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const employeeOptions = employees
     .filter(emp => emp.isActive)
     .map(emp => ({
-      value: emp._id,
+      value: emp._id || '',
       label: `${emp.name} (${emp.department})`
     }));
 
@@ -109,20 +110,37 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
     e.preventDefault();
     
     if (!selectedEmployeeId) {
+      toast.error('Please select an employee.');
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      // Get client IP address
-      const ipAddress = await attendanceService.getClientIpAddress();
+      // Get IP address and location
+      let ipAddress = null;
+      let location = null;
       
-      // Get location (if permission is granted)
-      const location = await attendanceService.getClientLocation();
+      try {
+        // Get client IP from API if online
+        if (isOnline && !offlineMode) {
+          // Note: We'll need to add this method to attendanceService
+          ipAddress = 'online'; // Placeholder - implement IP detection
+        } else {
+          ipAddress = 'offline'; // Placeholder for offline mode
+        }
+        
+        // Get location if permission was granted
+        if (locationStatus === 'granted') {
+          location = await attendanceService.getClientLocation();
+        }
+      } catch (error) {
+        console.warn('Failed to get IP or location:', error);
+        // Continue without IP/location
+      }
       
-      // Create attendance record using the service
-      const record = await attendanceService.recordAttendance(
+      // Use offline service that will handle both online and offline scenarios
+      const record = await offlineAttendanceService.recordAttendance(
         selectedEmployeeId,
         selectedEmployee?.name || 'Unknown Employee',
         attendanceType,
@@ -132,9 +150,20 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
         qrValue
       );
       
+      // Check if the record has an offline flag
+      const isOfflineRecord = 'offline' in record && record.offline;
+      
+      // Show appropriate toast message
+      if (isOfflineRecord) {
+        toast.success(`${attendanceType === 'sign-in' ? 'Signed in' : 'Signed out'} in offline mode. Will sync when online.`);
+      } else {
+        toast.success(`Successfully ${attendanceType === 'sign-in' ? 'signed in' : 'signed out'}!`);
+      }
+      
       onSubmit(record);
     } catch (error) {
       console.error('Error creating attendance record:', error);
+      toast.error('Failed to record attendance.');
     } finally {
       setIsSubmitting(false);
     }
@@ -157,22 +186,34 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             {attendanceType === 'sign-in' ? 'Sign In' : 'Sign Out'}
           </h2>
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-            <Clock size={16} className="mr-1" />
-            {formatTime(currentTime)}
-          </div>
+          {!isOnline && (
+            <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+              <AlertCircle size={16} />
+              <span className="text-sm">Offline Mode</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <Clock size={16} />
+          <span>{formatTime(currentTime)}</span>
+          <MapPin size={16} />
+          <span className={locationStatus === 'granted' ? 'text-green-600' : 'text-red-600'}>
+            {locationStatus === 'granted' ? 'Location Available' : 'Location Unavailable'}
+          </span>
         </div>
       </CardHeader>
       
       <CardContent>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <div className="flex justify-center space-x-4 mb-6">
+            {/* Attendance Type Toggle */}
+            <div className="flex gap-2">
               <Button
                 type="button"
                 variant={attendanceType === 'sign-in' ? 'primary' : 'ghost'}
+                size="sm"
                 onClick={() => setAttendanceType('sign-in')}
-                leftIcon={<UserCheck size={18} />}
                 className="flex-1"
               >
                 Sign In
@@ -180,66 +221,90 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({
               <Button
                 type="button"
                 variant={attendanceType === 'sign-out' ? 'primary' : 'ghost'}
+                size="sm"
                 onClick={() => setAttendanceType('sign-out')}
-                leftIcon={<CheckCircle size={18} />}
                 className="flex-1"
               >
                 Sign Out
               </Button>
             </div>
-            
-            <Select
-              label="Select Employee"
-              options={employeeOptions}
-              value={selectedEmployeeId}
-              onChange={setSelectedEmployeeId}
-              required
-            />
-            
-            {selectedEmployee && lateWarning && attendanceType === 'sign-in' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start space-x-2">
-                <AlertCircle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-amber-800">
-                  <p className="font-medium">Late Sign-In</p>
-                  <p>You are signing in after your scheduled start time ({selectedEmployee.workingHours.start}).</p>
+
+            {/* Employee Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Employee
+              </label>
+              <Select
+                value={selectedEmployeeId}
+                onChange={(value) => setSelectedEmployeeId(value)}
+                options={employeeOptions}
+                required
+              />
+            </div>
+
+            {/* Late Warning */}
+            {lateWarning && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <AlertCircle className="text-amber-600" size={16} />
+                <span className="text-sm text-amber-800 dark:text-amber-200">
+                  This employee appears to be late for their shift.
+                </span>
+              </div>
+            )}
+
+            {/* Selected Employee Info */}
+            {selectedEmployee && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <div className="flex items-center gap-2 mb-2">
+                  <UserCheck className="text-blue-600" size={16} />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">
+                    {selectedEmployee.name}
+                  </span>
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  <div>Department: {selectedEmployee.department}</div>
+                  <div>Position: {selectedEmployee.position}</div>
                 </div>
               </div>
             )}
-            
-            <Textarea
-              label="Notes (Optional)"
-              placeholder="Any additional details for today..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-            
-            <div className="flex items-center mt-2">
-              <MapPin size={16} className={`mr-2 ${locationStatus === 'granted' ? 'text-green-500' : 'text-amber-500'}`} />
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {locationStatus === 'granted' 
-                  ? 'Location access granted' 
-                  : 'Location permission required for attendance'}
-              </span>
+
+            {/* Notes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notes (Optional)
+              </label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any additional notes..."
+                rows={3}
+              />
             </div>
           </div>
         </form>
       </CardContent>
       
-      <CardFooter className="flex justify-between border-t border-gray-200 dark:border-gray-700">
-        <Button 
-          variant="ghost" 
+      <CardFooter className="flex gap-2">
+        <Button
+          variant="ghost"
           onClick={onCancel}
+          className="flex-1"
+          disabled={isSubmitting}
         >
           Cancel
         </Button>
-        
-        <Button 
+        <Button
           variant="primary"
           onClick={handleSubmit}
+          disabled={!selectedEmployeeId || isSubmitting}
           isLoading={isSubmitting}
-          disabled={!selectedEmployeeId || locationStatus !== 'granted'}
+          leftIcon={<CheckCircle size={16} />}
+          className="flex-1"
         >
-          {attendanceType === 'sign-in' ? 'Sign In' : 'Sign Out'}
+          {isSubmitting 
+            ? 'Recording...' 
+            : `${attendanceType === 'sign-in' ? 'Sign In' : 'Sign Out'}`
+          }
         </Button>
       </CardFooter>
     </Card>

@@ -13,22 +13,25 @@ export const attendanceService = {
    */
   async getAllAttendanceRecords(limit = 100): Promise<AttendanceRecord[]> {
     try {
-      // Get organization ID for filtering
-      const organizationId = employeeService.getCurrentOrganizationId();
+      console.log(`Fetching attendance records with limit: ${limit}`);
       
-      if (!organizationId) {
-        console.warn('No organization ID found for fetching attendance records');
+      // Make request without organizationId in URL - let backend get it from authenticated user
+      const response = await api.get(`/api/attendance?limit=${limit}`);
+      console.log('Attendance API response:', response.data);
+      
+      if (response.data.success && response.data.data) {
+        console.log(`Received ${response.data.data.length} attendance records`);
+        return response.data.data;
+      } else {
+        console.warn('No attendance data in response or unsuccessful response');
         return [];
       }
-      
-      console.log(`Fetching attendance records for organization: ${organizationId}`);
-      
-      const response = await api.get(`/api/attendance?limit=${limit}&organizationId=${organizationId}`);
-      console.log(`Received ${response.data.count} attendance records`);
-      
-      return response.data.data || [];
     } catch (error) {
       console.error('Error fetching attendance records:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      }
       return [];
     }
   },
@@ -297,6 +300,57 @@ export const attendanceService = {
       punctualityRate,
       date: today.toISOString()
     };
+  },
+
+  /**
+   * Get attendance records for a specific date range
+   * @param startDate Start date (YYYY-MM-DD format)
+   * @param endDate End date (YYYY-MM-DD format)
+   * @returns Array of attendance records within the date range
+   */
+  async getAttendanceInRange(startDate: string, endDate: string): Promise<AttendanceRecord[]> {
+    try {
+      console.log(`Fetching attendance records from ${startDate} to ${endDate}`);
+      
+      // Use the main attendance endpoint with date range parameters
+      const response = await api.get(`/api/attendance`, {
+        params: {
+          startDate: `${startDate}T00:00:00.000Z`,
+          endDate: `${endDate}T23:59:59.999Z`,
+          limit: 1000 // Get up to 1000 records
+        }
+      });
+      
+      if (response.data.success && response.data.data) {
+        console.log(`Received ${response.data.data.length} attendance records for date range`);
+        return response.data.data;
+      } else {
+        console.warn('No attendance data in range response');
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching attendance records in range:', error);
+      // Fallback to regular attendance fetch if date filtering fails
+      try {
+        console.log('Falling back to regular attendance fetch...');
+        const allRecords = await this.getAllAttendanceRecords(1000);
+        
+        // Filter records by date range
+        const filteredRecords = allRecords.filter(record => {
+          const recordDate = record.date || record.timestamp;
+          if (!recordDate) return false;
+          
+          const date = new Date(recordDate).toISOString().split('T')[0];
+          return date >= startDate && date <= endDate;
+        });
+        
+        console.log(`Filtered ${filteredRecords.length} records from ${allRecords.length} total records`);
+        return filteredRecords;
+      } catch (fallbackError) {
+        console.error('Fallback fetch also failed:', fallbackError);
+        return [];
+      }
+    }
   },
   
   /**

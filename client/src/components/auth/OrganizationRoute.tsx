@@ -16,7 +16,10 @@ const OrganizationRoute: React.FC<OrganizationRouteProps> = ({ children, adminOn
 
   useEffect(() => {
     const checkOrganizationAccess = async () => {
+      console.log('OrganizationRoute: Checking access for organizationId:', organizationId);
+      
       if (!organizationId) {
+        console.log('OrganizationRoute: No organizationId provided');
         setHasAccess(false);
         setLoading(false);
         return;
@@ -35,12 +38,17 @@ const OrganizationRoute: React.FC<OrganizationRouteProps> = ({ children, adminOn
         const user = JSON.parse(userString);
         
         // Check if the user belongs to this organization
-        if (user.organizationId !== organizationId) {
+        // Convert both to strings for comparison to handle number/string mismatch
+        const userOrgId = user.organizationId?.toString() || user.organization?.id?.toString();
+        
+        if (userOrgId !== organizationId) {
+          console.log('Organization ID mismatch:', { userOrgId, routeOrgId: organizationId });
           // Try to get the organization to verify the user has access
           try {
             await organizationService.getOrganization(organizationId);
             setHasAccess(true);
           } catch (error) {
+            console.error('Failed to verify organization access:', error);
             setHasAccess(false);
           }
         } else {
@@ -48,7 +56,7 @@ const OrganizationRoute: React.FC<OrganizationRouteProps> = ({ children, adminOn
         }
         
         // Check if the user is an admin if adminOnly is true
-        setIsAdmin(['admin', 'owner'].includes(user.organizationRole));
+        setIsAdmin(['admin', 'owner'].includes(user.role || user.organizationRole));
       } catch (error) {
         console.error('Organization access check error:', error);
         setHasAccess(false);
@@ -71,13 +79,13 @@ const OrganizationRoute: React.FC<OrganizationRouteProps> = ({ children, adminOn
 
   // Redirect if no access to this organization
   if (!hasAccess) {
-    toast.error('You do not have access to this organization');
+    // Don't show error toast - just redirect quietly
     return <Navigate to="/dashboard" replace />;
   }
 
   // Check if admin access is required but user is not an admin
   if (adminOnly && !isAdmin) {
-    toast.error('Admin access required');
+    // Don't show error toast - just redirect quietly
     return <Navigate to={`/organization/${organizationId}`} replace />;
   }
 

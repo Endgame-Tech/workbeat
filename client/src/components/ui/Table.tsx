@@ -14,13 +14,13 @@ const Table: React.FC<TableProps> = ({ children, variant = 'default', className 
   const variantStyles = {
     default: '',
     striped: 'table-striped',
-    bordered: 'border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden'
+    bordered: 'border border-ui-borderLight dark:border-ui-border rounded-xl overflow-hidden'
   };
   
   const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;
   
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
+    <div className="w-full overflow-x-auto rounded-xl border border-ui-borderLight dark:border-ui-border">
       <table className={combinedClassName}>
         {children}
       </table>
@@ -35,7 +35,7 @@ interface TableHeadProps {
 
 const TableHead: React.FC<TableHeadProps> = ({ children, className = '' }) => {
   return (
-    <thead className={`bg-neutral-50 dark:bg-neutral-800/50 ${className}`}>
+    <thead className={`bg-ui-surfaceSecondary dark:bg-ui-surface/50 ${className}`}>
       {children}
     </thead>
   );
@@ -63,15 +63,15 @@ const TableRow: React.FC<TableRowProps> = ({
   onClick,
   variant = 'default'
 }) => {
-  const baseStyles = 'border-b border-neutral-200 dark:border-neutral-700 transition-colors duration-150';
+  const baseStyles = 'border-b border-ui-borderLight dark:border-ui-border transition-colors duration-150';
   
   const variantStyles = {
     default: '',
-    hover: 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50',
+    hover: 'hover:bg-ui-cardHover dark:hover:bg-ui-surface/50',
     selected: 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
   };
   
-  const interactiveStyles = onClick ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50' : '';
+  const interactiveStyles = onClick ? 'cursor-pointer hover:bg-ui-cardHover dark:hover:bg-ui-surface/50' : '';
   
   return (
     <tr 
@@ -154,7 +154,7 @@ interface TableFooterProps {
 
 const TableFooter: React.FC<TableFooterProps> = ({ children, className = '' }) => {
   return (
-    <tfoot className={`bg-neutral-50 dark:bg-neutral-800/50 ${className}`}>
+    <tfoot className={`bg-ui-surfaceSecondary dark:bg-ui-surface/50 ${className}`}>
       {children}
     </tfoot>
   );
@@ -186,7 +186,7 @@ const TableSortableHeader: React.FC<TableSortableHeaderProps> = ({
 
   return (
     <th
-      className={`px-6 py-4 font-semibold text-neutral-900 dark:text-white text-sm tracking-tight ${alignmentClasses[align]} ${sortable ? 'cursor-pointer select-none hover:bg-neutral-100 dark:hover:bg-neutral-700/50 transition-colors duration-150' : ''} ${className}`}
+      className={`px-6 py-4 font-semibold text-neutral-900 dark:text-white text-sm tracking-tight ${alignmentClasses[align]} ${sortable ? 'cursor-pointer select-none hover:bg-ui-cardHover dark:hover:bg-ui-surface/70 transition-colors duration-150' : ''} ${className}`}
       onClick={sortable ? onSort : undefined}
     >
       <div className="flex items-center justify-between">
@@ -257,9 +257,9 @@ const TablePagination: React.FC<TablePaginationProps> = ({
   };
   
   return (
-    <div className={`flex items-center justify-between px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/30 ${className}`}>
+    <div className={`flex items-center justify-between px-6 py-4 border-t border-ui-borderLight dark:border-ui-border bg-ui-surfaceSecondary/50 dark:bg-ui-surface/30 ${className}`}>
       <button
-        className="px-4 py-2 text-sm font-medium rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-150"
+        className="px-4 py-2 text-sm font-medium rounded-xl border border-ui-borderLight dark:border-ui-border bg-white dark:bg-ui-surface text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ui-cardHover dark:hover:bg-ui-surface/70 transition-colors duration-150"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
@@ -281,7 +281,7 @@ const TablePagination: React.FC<TablePaginationProps> = ({
               className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${
                 page === currentPage
                   ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                  : 'bg-white dark:bg-ui-surface text-neutral-700 dark:text-neutral-300 border border-ui-borderLight dark:border-ui-border hover:bg-ui-cardHover dark:hover:bg-ui-surface/70'
               }`}
               onClick={() => typeof page === 'number' && onPageChange(page)}
             >
@@ -298,7 +298,7 @@ const TablePagination: React.FC<TablePaginationProps> = ({
       </div>
       
       <button
-        className="px-4 py-2 text-sm font-medium rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-150"
+        className="px-4 py-2 text-sm font-medium rounded-xl border border-ui-borderLight dark:border-ui-border bg-white dark:bg-ui-surface text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ui-cardHover dark:hover:bg-ui-surface/70 transition-colors duration-150"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >

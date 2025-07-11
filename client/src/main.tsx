@@ -5,7 +5,11 @@ import './index.css';
 import AppRoutes from './Routes';
 import { ThemeProvider } from './components/context/ThemeProvider';
 import AuthProvider from './components/context/AuthProvider';
-import { AuthContext } from './components/context/AuthContext';
+import { WebSocketProvider } from './components/context/WebSocketProvider';
+import { NotificationProvider } from './components/context/NotificationProvider';
+import { OfflineProvider } from './components/context/OfflineContext';
+import { OfflineDataCacheProvider } from './components/context/OfflineDataCacheProvider';
+import { PWAProvider } from './components/context/PWAProvider';
 import { Toaster } from 'react-hot-toast';
 
 const root = ReactDOM.createRoot(
@@ -14,11 +18,21 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster position="top-right" />
-      </AuthProvider>
-    </ThemeProvider>
+    <PWAProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <OfflineDataCacheProvider>
+            <OfflineProvider>
+              <WebSocketProvider>
+                <NotificationProvider>
+                  <AppRoutes />
+                  <Toaster position="top-right" />
+                </NotificationProvider>
+              </WebSocketProvider>
+            </OfflineProvider>
+          </OfflineDataCacheProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </PWAProvider>
   </React.StrictMode>
 );

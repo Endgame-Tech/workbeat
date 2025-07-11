@@ -57,7 +57,10 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
       setFilteredEmployees(activeEmployees);
     } catch (error) {
       console.error('Error fetching employees:', error);
-      toast.error('Failed to load employee list');
+      // Only show toast for server errors, not expected empty states
+      if (error.isServerError) {
+        toast.error('Failed to load employee list');
+      }
     } finally {
       setIsLoading(false);
     }

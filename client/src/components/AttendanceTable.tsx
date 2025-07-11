@@ -1,16 +1,18 @@
-// Updated AttendanceTable.tsx with improved image handling and department fix (continued)
-import React, { useState, useEffect } from 'react';
+// Updated AttendanceTable.tsx with improved UI arrangement for icons
+import React, { useState, useEffect, useCallback } from 'react';
 import { AttendanceRecord, Employee } from '../types';
 import { formatTime, formatDate } from '../utils/attendanceUtils';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Clock, MapPin, ArrowDown, ArrowUp, Search, RefreshCw, Filter, Calendar, ChevronDown } from 'lucide-react';
+import { Clock, MapPin, ArrowDown, ArrowUp, Search, RefreshCw, Filter, Calendar, ChevronDown, Download, CheckCircle, Wifi, WifiOff } from 'lucide-react';
 import Input from './ui/Input';
 import Button from './ui/Button';
 import { employeeService } from '../services/employeeService';
 import { attendanceService } from '../services/attendanceService';
+import { exportService } from '../services/exportService';
 import { toast } from 'react-hot-toast';
 import Badge from './ui/Badge';
 import EmployeeStatsModal from './EmployeeStatsModal';
+import { useWebSocket } from './context/WebSocketProvider';
 
 interface AttendanceTableProps {
   records?: AttendanceRecord[];
@@ -21,14 +23,20 @@ interface AttendanceTableProps {
   allowDateFilter?: boolean; // Enable date range filtering
 }
 
-const AttendanceTable: React.FC<AttendanceTableProps> = ({ 
-  records: initialRecords, 
+const AttendanceTable: React.FC<AttendanceTableProps> = ({
+  records: initialRecords,
   isAdmin = false,
   organizationId: propOrgId,
   onRefresh,
   allowPagination = false,
   allowDateFilter = false
 }) => {
+  const { 
+    isConnected, 
+    lastAttendanceUpdate, 
+    onAttendanceUpdate 
+  } = useWebSocket();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<'timestamp' | 'employeeId'>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -39,19 +47,20 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(propOrgId || null);
   const [organizationName, setOrganizationName] = useState<string>('');
-  
+  const [newRecordAlert, setNewRecordAlert] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreRecords, setHasMoreRecords] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const recordsPerPage = 30;
-  
+
   // Date filtering state
   const [dateFilterEnabled, setDateFilterEnabled] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showDateFilter, setShowDateFilter] = useState(false);
-  
+
   // Employee stats modal state
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showEmployeeStats, setShowEmployeeStats] = useState(false);
@@ -61,7 +70,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     if (!organizationId) {
       const orgId = employeeService.getCurrentOrganizationId();
       setOrganizationId(orgId);
-      
+
       // Try to get organization name from localStorage
       try {
         const userString = localStorage.getItem('user');
@@ -91,34 +100,76 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       // Only fetch records if we have an organization ID and no initial records
       fetchAttendanceRecords();
     }
-    
+
     // Only fetch employees if we have an organization ID
     if (organizationId) {
       fetchEmployees();
     }
   }, [initialRecords, organizationId]);
 
+  // Real-time attendance updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const handleAttendanceUpdate = (attendanceData: any) => {
+      console.log('📊 Real-time attendance update received in table:', attendanceData);
+      
+      // Show notification for new attendance record
+      const employeeName = attendanceData.employeeName || 'Employee';
+      const action = attendanceData.type === 'sign-in' ? 'checked in' : 'checked out';
+      const message = `${employeeName} ${action}${attendanceData.isLate ? ' (Late)' : ''}`;
+      
+      setNewRecordAlert(message);
+      setTimeout(() => setNewRecordAlert(null), 5000); // Clear after 5 seconds
+      
+      // Add the new record to the top of the list if it matches current organization
+      if (attendanceData.organizationId === parseInt(organizationId || '0')) {
+        const newRecord: AttendanceRecord = {
+          id: attendanceData.id,
+          _id: attendanceData.id.toString(),
+          employeeId: attendanceData.employeeId,
+          employeeName: attendanceData.employeeName,
+          type: attendanceData.type,
+          timestamp: attendanceData.timestamp,
+          isLate: attendanceData.isLate,
+          location: attendanceData.location,
+          organizationId: attendanceData.organizationId,
+          verificationMethod: attendanceData.verificationMethod
+        };
+        
+        setRecords(prev => [newRecord, ...prev]);
+      }
+    };
+
+    // Subscribe to real-time updates
+    const unsubscribe = onAttendanceUpdate(handleAttendanceUpdate);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isConnected, onAttendanceUpdate, organizationId]);
+
   // Function to fetch attendance records for the current organization
-  const fetchAttendanceRecords = async (loadMore = false, filterStartDate?: string, filterEndDate?: string) => {
+  const fetchAttendanceRecords = useCallback(async (loadMore = false, filterStartDate?: string, filterEndDate?: string) => {
     if (!organizationId) {
       console.warn('Cannot fetch attendance records: No organization ID available');
       return;
     }
-    
+
     if (loadMore) {
       setLoadingMore(true);
     } else {
       setLoading(true);
       setCurrentPage(1);
     }
-    
+
     try {
       let data: AttendanceRecord[] = [];
-      
+
       if (allowPagination && !initialRecords) {
         // Use pagination if enabled and not using initial records
         const page = loadMore ? currentPage + 1 : 1;
-        
+
         if (filterStartDate && filterEndDate) {
           // Use date-filtered API call
           data = await attendanceService.getAttendanceReport(filterStartDate, filterEndDate);
@@ -126,7 +177,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           // Use regular paginated API call
           data = await attendanceService.getAllAttendanceRecords(recordsPerPage);
         }
-        
+
         if (loadMore) {
           // Append new records to existing ones
           setRecords(prev => [...prev, ...data]);
@@ -135,7 +186,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           // Replace records
           setRecords(data);
         }
-        
+
         // Check if there are more records
         setHasMoreRecords(data.length === recordsPerPage);
       } else {
@@ -145,30 +196,41 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         } else {
           data = await attendanceService.getAllAttendanceRecords(100);
         }
+        console.log('Received attendance data:', {
+          count: data.length,
+          organizationId: organizationId,
+          sampleRecord: data[0] ? {
+            id: data[0]._id || data[0].id,
+            employeeId: data[0].employeeId,
+            organizationId: data[0].organizationId,
+            type: data[0].type,
+            timestamp: data[0].timestamp
+          } : null
+        });
         setRecords(data);
       }
-      
+
       console.log(`Fetched ${data.length} attendance records for organization ${organizationId}`);
     } catch (err) {
       console.error('Error fetching attendance records:', err);
-      toast.error('Failed to load attendance records');
+      // Don't show toast for data loading errors - let the UI handle empty states gracefully
     } finally {
       setLoading(false);
       setLoadingMore(false);
       setRefreshing(false);
     }
-  };
+  }, [organizationId, allowPagination, initialRecords, currentPage, recordsPerPage, dateFilterEnabled, startDate, endDate]);
 
   // Function to fetch employees for the current organization
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     if (!organizationId) {
       console.warn('Cannot fetch employees: No organization ID available');
       return;
     }
-    
+
     try {
       const data = await employeeService.getAllEmployees();
-      
+
       // Transform into a lookup map for easier access by ID
       const employeeMap: Record<string, Employee> = {};
       data.forEach(employee => {
@@ -177,19 +239,19 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         if (employee._id) employeeMap[employee._id] = employee;
         if (employee.employeeId) employeeMap[employee.employeeId] = employee;
       });
-      
+
       console.log(`Loaded ${data.length} employees for organization ${organizationId}`);
       setEmployees(employeeMap);
     } catch (err) {
       console.error('Error fetching employees:', err);
-      toast.error('Failed to load employee data');
+      // Don't show toast for data loading errors - log for debugging only
     }
-  };
+  }, [organizationId]);
 
   // Manual refresh function
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    
+
     // If parent component provided an onRefresh callback, use it
     if (onRefresh) {
       onRefresh();
@@ -200,6 +262,49 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       const filterEnd = dateFilterEnabled ? endDate : undefined;
       fetchAttendanceRecords(false, filterStart, filterEnd);
       fetchEmployees();
+    }
+  }, [onRefresh, dateFilterEnabled, startDate, endDate, fetchAttendanceRecords, fetchEmployees]);
+
+  // Export functions
+  const handleExportCSV = async () => {
+    try {
+      const dateRange = dateFilterEnabled && startDate && endDate
+        ? { start: startDate, end: endDate }
+        : undefined;
+
+      await exportService.exportAttendanceToCSV(filteredRecords, dateRange);
+      toast.success('Attendance records exported to CSV successfully');
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      toast.error('Failed to export attendance records to CSV');
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const dateRange = dateFilterEnabled && startDate && endDate
+        ? { start: startDate, end: endDate }
+        : undefined;
+
+      await exportService.exportAttendanceToExcel(filteredRecords, dateRange);
+      toast.success('Attendance records exported to Excel successfully');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Failed to export attendance records to Excel');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const dateRange = dateFilterEnabled && startDate && endDate
+        ? { start: startDate, end: endDate }
+        : undefined;
+
+      await exportService.exportAttendanceToPDF(filteredRecords, dateRange);
+      toast.success('Attendance records exported to PDF successfully');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      toast.error('Failed to export attendance records to PDF');
     }
   };
 
@@ -216,12 +321,12 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       toast.error('Please select both start and end dates');
       return;
     }
-    
+
     if (new Date(startDate) > new Date(endDate)) {
       toast.error('Start date must be before end date');
       return;
     }
-    
+
     setDateFilterEnabled(true);
     fetchAttendanceRecords(false, startDate, endDate);
     setShowDateFilter(false);
@@ -241,7 +346,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - days);
-    
+
     setStartDate(start.toISOString().split('T')[0]);
     setEndDate(end.toISOString().split('T')[0]);
     setDateFilterEnabled(true);
@@ -257,27 +362,33 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setShowEmployeeStats(true);
     }
   };
-  
+
   // Sort and filter records
   const filteredRecords = records
     .filter(record => {
       // Filter by organization ID (extra check in case records from multiple orgs were provided)
-      if (organizationId && record.organizationId && record.organizationId !== organizationId) {
+      if (organizationId && record.organizationId && String(record.organizationId) !== String(organizationId)) {
+        console.log('Filtering out record due to org mismatch:', {
+          recordOrgId: record.organizationId,
+          currentOrgId: organizationId,
+          recordOrgType: typeof record.organizationId,
+          currentOrgType: typeof organizationId
+        });
         return false;
       }
-      
+
       // Filter by type
       if (filter !== 'all' && record.type !== filter) {
         return false;
       }
-      
+
       // Filter by search term
       if (searchTerm === '') {
         return true;
       }
-      
+
       const employee = employees[record.employeeId];
-      
+
       return employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
              employee?.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
              (record.employeeName && record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -293,7 +404,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           : String(b.employeeId).localeCompare(String(a.employeeId));
       }
     });
-  
+
   const handleSort = (field: 'timestamp' | 'employeeId') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -302,34 +413,34 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       setSortDirection('desc');
     }
   };
-  
+
   const getEmployeeName = (employeeId: string, recordEmployeeName?: string): string => {
     // First use the employee data from our map if available
     if (employees[employeeId]?.name) {
       return employees[employeeId].name;
     }
-    
+
     // If not available, use the employee name stored in the record
     if (recordEmployeeName) {
       return recordEmployeeName;
     }
-    
+
     // Fallback
     return 'Unknown Employee';
   };
-  
+
   // Fixed function to never show "Unknown Department"
   const getEmployeeDepartment = (employeeId: string): string => {
     return employees[employeeId]?.department || '';
   };
-  
+
   // Helper to extract image from different possible sources
   const getEmployeeImage = (record: AttendanceRecord): string | null => {
     // First priority: Check facial capture from the record
     if (record.facialCapture && record.facialCapture.image) {
       return record.facialCapture.image;
     }
-    
+
     // Second priority: Get employee from the map and check for face recognition images
     const employee = employees[record.employeeId];
     if (employee) {
@@ -339,18 +450,18 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         const faceData = typeof employee.faceRecognition === 'string'
           ? JSON.parse(employee.faceRecognition)
           : employee.faceRecognition;
-          
+
         if (faceData.faceImages && faceData.faceImages.length > 0) {
           return faceData.faceImages[0];
         }
       }
-      
+
       // Check for profile image
       if (employee.profileImage) {
         return employee.profileImage;
       }
     }
-    
+
     return null;
   };
 
@@ -382,7 +493,8 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   return (
     <>
       <Card className="overflow-hidden">
-      <CardHeader>
+      <CardHeader className="space-y-4">
+        {/* Header with Title and Refresh */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white mr-2">
@@ -393,9 +505,29 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 {organizationName}
               </span>
             )}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            
+            {/* WebSocket Connection Status */}
+            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ml-3 ${
+              isConnected
+                ? 'bg-success-50 dark:bg-success-900/20 text-success-700 dark:text-success-300'
+                : 'bg-warning-50 dark:bg-warning-900/20 text-warning-700 dark:text-warning-300'
+            }`}>
+              {isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3" />
+                  <span>Live</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3" />
+                  <span>Offline</span>
+                </>
+              )}
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleRefresh}
               isLoading={refreshing}
               className="rounded-full p-1 ml-2"
@@ -404,8 +536,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               <RefreshCw size={16} />
             </Button>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+
+          {/* Search Input */}
+          <div className="w-full sm:w-auto">
             <Input
               placeholder="Search employee or department"
               value={searchTerm}
@@ -413,12 +546,35 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               leftIcon={<Search size={18} />}
               className="w-full sm:w-64"
             />
-            
-            <div className="flex gap-2">
+          </div>
+        </div>
+
+        {/* New Record Alert */}
+        {newRecordAlert && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-center space-x-2 animate-pulse">
+            <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+              {newRecordAlert}
+            </span>
+            <button 
+              onClick={() => setNewRecordAlert(null)}
+              className="ml-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* Filters and Controls Row */}
+        <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <Button
                 variant={filter === 'all' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilter('all')}
+                className={filter === 'all' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'hover:bg-white/50 dark:hover:bg-gray-700/50'}
               >
                 All
               </Button>
@@ -426,6 +582,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 variant={filter === 'sign-in' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilter('sign-in')}
+                className={filter === 'sign-in' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'hover:bg-white/50 dark:hover:bg-gray-700/50'}
               >
                 Sign In
               </Button>
@@ -433,109 +590,149 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 variant={filter === 'sign-out' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => setFilter('sign-out')}
+                className={filter === 'sign-out' ? 'bg-white dark:bg-gray-700 shadow-sm' : 'hover:bg-white/50 dark:hover:bg-gray-700/50'}
               >
                 Sign Out
               </Button>
-              
-              {allowDateFilter && (
-                <div className="relative">
-                  <Button
-                    variant={dateFilterEnabled ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setShowDateFilter(!showDateFilter)}
-                    className="flex items-center gap-2"
-                  >
-                    <Calendar size={16} />
-                    Date Filter
-                    <ChevronDown size={14} className={`transition-transform ${showDateFilter ? 'rotate-180' : ''}`} />
-                  </Button>
-                  
-                  {showDateFilter && (
-                    <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 w-80 z-50">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Filters</h4>
-                          <div className="flex flex-wrap gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(7)}>
-                              Last 7 days
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(30)}>
-                              Last 30 days
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(90)}>
-                              Last 90 days
-                            </Button>
-                          </div>
+            </div>
+
+            {/* Date Filter */}
+            {allowDateFilter && (
+              <div className="relative">
+                <Button
+                  variant={dateFilterEnabled ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setShowDateFilter(!showDateFilter)}
+                  className="flex items-center gap-2 border border-gray-200 dark:border-gray-700"
+                >
+                  <Calendar size={16} />
+                  Date Filter
+                  <ChevronDown size={14} className={`transition-transform ${showDateFilter ? 'rotate-180' : ''}`} />
+                </Button>
+
+                {showDateFilter && (
+                  <div className="absolute left-0 top-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 w-80 z-50">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Filters</h4>
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(7)}>
+                            Last 7 days
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(30)}>
+                            Last 30 days
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleQuickDateFilter(90)}>
+                            Last 90 days
+                          </Button>
                         </div>
-                        
-                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Range</h4>
-                          <div className="space-y-3">
-                            <div>
-                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start Date</label>
-                              <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">End Date</label>
-                              <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={handleDateFilterApply}
-                                className="flex-1"
-                              >
-                                Apply Filter
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={handleDateFilterClear}
-                                className="flex-1"
-                              >
-                                Clear
-                              </Button>
-                            </div>
+                      </div>
+
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Range</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Start Date</label>
+                            <Input
+                              type="date"
+                              value={startDate}
+                              onChange={(e) => setStartDate(e.target.value)}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">End Date</label>
+                            <Input
+                              type="date"
+                              value={endDate}
+                              onChange={(e) => setEndDate(e.target.value)}
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={handleDateFilterApply}
+                              className="flex-1"
+                            >
+                              Apply Filter
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleDateFilterClear}
+                              className="flex-1"
+                            >
+                              Clear
+                            </Button>
                           </div>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          
-          {dateFilterEnabled && (
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Filter size={14} className="text-blue-600 dark:text-blue-400" />
-              <span className="text-sm text-blue-700 dark:text-blue-300">
-                Showing records from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
-              </span>
+
+          {/* Export Actions */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Export:</span>
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <Button
-                size="sm"
                 variant="ghost"
-                onClick={handleDateFilterClear}
-                className="ml-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                size="sm"
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                title="Export to CSV"
               >
-                Clear filter
+                <Download size={14} />
+                CSV
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                title="Export to Excel"
+              >
+                <Download size={14} />
+                Excel
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                title="Export to PDF"
+              >
+                <Download size={14} />
+                PDF
               </Button>
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Active Date Filter Indicator */}
+        {dateFilterEnabled && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <Filter size={14} className="text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-700 dark:text-blue-300">
+              Showing records from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleDateFilterClear}
+              className="ml-auto text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+            >
+              Clear filter
+            </Button>
+          </div>
+        )}
       </CardHeader>
-      
+
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -579,21 +776,20 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredRecords.length > 0 ? (
                 filteredRecords.map((record) => (
-                  <tr key={record._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td 
-                      className="px-4 py-4 whitespace-nowrap cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" 
+                  <tr key={record._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
+                    <td
+                      className="px-4 py-4 whitespace-nowrap cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 rounded-l-lg"
                       onClick={() => handleEmployeeClick(record.employeeId)}
                       title="Click to view employee statistics"
                     >
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0">
-                          {/* Improved image handling with better priority system */}
+                        <div className="h-10 w-10 flex-shrink-0 relative">
                           {(() => {
                             const imageUrl = getEmployeeImage(record);
-                            
+
                             if (imageUrl) {
                               return (
-                                <img 
+                                <img
                                   src={imageUrl}
                                   alt={getEmployeeName(record.employeeId, record.employeeName)}
                                   className="h-10 w-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
@@ -609,7 +805,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                             }
                             return null;
                           })()}
-                          
+
                           {/* Fallback initials if no image is available or loading fails */}
                           <div className={`h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm font-medium ${
                             getEmployeeImage(record) ? 'hidden' : ''
@@ -620,6 +816,11 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                               .join('')
                               .toUpperCase()}
                           </div>
+                          {record.facialCapture?.isLive && (
+                            <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full p-1 border-2 border-white dark:border-gray-800" title="Live Capture">
+                              <CheckCircle size={10} className="text-white" />
+                            </div>
+                          )}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -630,17 +831,15 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {getEmployeeDepartment(record.employeeId)}
+                        {getEmployeeDepartment(record.employeeId) || <span className="text-gray-400 italic">N/A</span>}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <div className="text-sm text-gray-900 dark:text-white flex items-center">
-                          <Clock size={14} className="mr-1" />
-                          {formatTime(record.timestamp)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDate(record.timestamp)}
+                      <div className="flex items-center"> {/* Changed to flex items-center */}
+                        <Clock size={14} className="mr-2 text-gray-500 dark:text-gray-400" />
+                        <div className="flex flex-col"> {/* Added flex-col for stacking time and date */}
+                            <span className="text-sm text-gray-900 dark:text-white">{formatTime(record.timestamp)}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(record.timestamp)}</span>
                         </div>
                       </div>
                     </td>
@@ -650,19 +849,19 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                         text={getStatusText(record)}
                       />
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4">
                       {record.location ? (
-                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                          <MapPin size={14} className="mr-1" />
-                          <span className="truncate max-w-[120px]">
-                            {typeof record.location === 'string' 
+                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-start">
+                          <MapPin size={14} className="mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="break-all">
+                            {typeof record.location === 'string'
                               ? (() => {
                                   try {
                                     const loc = JSON.parse(record.location);
                                     return `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`;
                                   } catch (error) {
                                     console.error('Error parsing location:', error);
-                                    return record.location; // If parsing fails, just display the string
+                                    return record.location;
                                   }
                                 })()
                               : record.location.latitude && record.location.longitude
@@ -672,18 +871,18 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">No location</span>
+                        <span className="text-sm text-gray-400 italic">No location</span>
                       )}
                     </td>
                     <td className="px-4 py-4">
                       <div className="text-sm text-gray-500 dark:text-gray-400 max-w-[200px] truncate">
-                        {record.notes || '-'}
+                        {record.notes || <span className="text-gray-400 italic">-</span>}
                       </div>
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {record.ipAddress || 'Unknown'}
+                          {record.ipAddress || <span className="text-gray-400 italic">Unknown</span>}
                         </div>
                       </td>
                     )}
@@ -691,40 +890,53 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-                    No attendance records found matching your criteria
+                  <td colSpan={isAdmin ? 7 : 6} className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <Search size={24} className="text-gray-400 dark:text-gray-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">
+                          No attendance records found
+                        </p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500">
+                          Try adjusting your search or filter criteria
+                        </p>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        
+
         {/* Load More Button */}
         {allowPagination && hasMoreRecords && filteredRecords.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
-            <div className="text-center">
+          <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30">
+            <div className="text-center space-y-3">
               <Button
-                variant="ghost"
+                variant="primary"
                 onClick={handleLoadMore}
                 isLoading={loadingMore}
                 disabled={loadingMore}
-                className="px-6 py-2"
+                className="px-8 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-lg"
               >
-                {loadingMore ? 'Loading more records...' : 'See More Records'}
+                {loadingMore ? 'Loading more records...' : 'Load More Records'}
               </Button>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Showing {filteredRecords.length} records
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Showing {filteredRecords.length} records • Click to load more
               </p>
             </div>
           </div>
         )}
-        
+
         {/* No more records indicator */}
         {allowPagination && !hasMoreRecords && filteredRecords.length > 0 && (
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
-            <div className="text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+            <div className="text-center flex items-center justify-center gap-2">
+              <CheckCircle size={16} className="text-green-700 dark:text-green-300" />
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">
                 All records loaded ({filteredRecords.length} total)
               </p>
             </div>
@@ -732,7 +944,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         )}
       </CardContent>
     </Card>
-    
+
     {/* Employee Stats Modal */}
     {selectedEmployee && (
       <EmployeeStatsModal

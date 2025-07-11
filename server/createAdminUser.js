@@ -12,11 +12,11 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 
-// Admin user credentials
+// Admin user credentials - Use environment variables for production
 const adminUser = {
-  name: 'Admin',
-  email: 'admin@workbeat.com',
-  password: 'admin123',
+  name: process.env.ADMIN_NAME || 'Admin',
+  email: process.env.ADMIN_EMAIL || 'admin@example.com',
+  password: process.env.ADMIN_PASSWORD || 'changeme123',
   role: 'admin'
 };
 
@@ -37,7 +37,7 @@ const createAdmin = async () => {
         data: {
           name: 'Default Organization',
           industry: 'Technology',
-          contactEmail: 'admin@workbeat.com',
+          contactEmail: process.env.ADMIN_EMAIL || 'admin@example.com',
           contactPhone: '+1234567890',
           settings: JSON.stringify({
             workingHours: {
@@ -84,11 +84,11 @@ const createAdmin = async () => {
       console.log(`Admin user created successfully with ID: ${user.id}`);
     }
 
-    // Create a default employee user
+    // Create a default employee user - Use environment variables for production
     const employeeUser = {
-      name: 'Employee',
-      email: 'employee@workbeat.com',
-      password: 'employee123',
+      name: process.env.EMPLOYEE_NAME || 'Employee',
+      email: process.env.EMPLOYEE_EMAIL || 'employee@example.com',
+      password: process.env.EMPLOYEE_PASSWORD || 'changeme123',
       role: 'employee'
     };
 

@@ -4,6 +4,153 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Default brand colors */
+    --primary-color: #3B82F6;
+    --secondary-color: #1E3A8A;
+    
+    /* Dynamic primary color palette - auto-generated from brand color */
+    --primary-50: #eff6ff;
+    --primary-100: #dbeafe;
+    --primary-200: #bfdbfe;
+    --primary-300: #93c5fd;
+    --primary-400: #60a5fa;
+    --primary-500: var(--primary-color);
+    --primary-600: #2563eb;
+    --primary-700: #1d4ed8;
+    --primary-800: #1e40af;
+    --primary-900: #1e3a8a;
+    --primary-950: #1e3a8a;
+    
+    /* Dynamic secondary color palette - auto-generated from brand color */
+    --secondary-50: #eff6ff;
+    --secondary-100: #dbeafe;
+    --secondary-200: #bfdbfe;
+    --secondary-300: #93c5fd;
+    --secondary-400: #60a5fa;
+    --secondary-500: var(--secondary-color);
+    --secondary-600: #1d4ed8;
+    --secondary-700: #1e40af;
+    --secondary-800: #1e3a8a;
+    --secondary-900: #172554;
+    --secondary-950: #172554;
+    
+    /* Comprehensive UI element colors */
+    --color-primary: var(--primary-500);
+    --color-primary-hover: var(--primary-600);
+    --color-primary-active: var(--primary-700);
+    --color-primary-light: var(--primary-100);
+    --color-primary-dark: var(--primary-800);
+    
+    --color-secondary: var(--secondary-500);
+    --color-secondary-hover: var(--secondary-600);
+    --color-secondary-active: var(--secondary-700);
+    
+    /* Navigation and layout colors */
+    --color-nav-bg: rgba(255, 255, 255, 0.95);
+    --color-nav-border: var(--primary-100);
+    --color-nav-item-hover: var(--primary-50);
+    --color-nav-item-active: var(--primary-500);
+    --color-nav-text: #374151;
+    --color-nav-text-active: white;
+    
+    /* Sidebar colors */
+    --color-sidebar-bg: rgba(255, 255, 255, 0.98);
+    --color-sidebar-border: var(--primary-100);
+    --color-sidebar-item-hover: var(--primary-50);
+    --color-sidebar-item-active: var(--primary-500);
+    --color-sidebar-text: #374151;
+    --color-sidebar-text-active: white;
+    
+    /* Card and surface colors */
+    --color-card-bg: rgba(255, 255, 255, 0.9);
+    --color-card-border: var(--primary-100);
+    --color-card-hover: var(--primary-25);
+    --color-surface: #f8fafc;
+    --color-surface-secondary: #f1f5f9;
+    
+    /* Interactive element colors */
+    --color-button-primary: var(--primary-500);
+    --color-button-primary-hover: var(--primary-600);
+    --color-button-primary-active: var(--primary-700);
+    --color-button-secondary: var(--secondary-500);
+    --color-button-secondary-hover: var(--secondary-600);
+    
+    /* Form element colors */
+    --color-input-border: #d1d5db;
+    --color-input-border-focus: var(--primary-500);
+    --color-input-bg: white;
+    --color-input-text: #374151;
+    
+    /* Link colors */
+    --color-link: var(--primary-600);
+    --color-link-hover: var(--primary-700);
+    --color-link-visited: var(--primary-800);
+    
+    /* Focus and ring colors */
+    --color-focus-ring: var(--primary-500);
+    --color-focus-ring-offset: white;
+    
+    /* Border and divider colors */
+    --color-border: var(--primary-200);
+    --color-border-light: var(--primary-100);
+    --color-divider: var(--primary-150);
+    
+    /* Status colors that adapt to brand */
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: var(--primary-500);
+    
+    /* Background gradients */
+    --gradient-primary: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    --gradient-secondary: linear-gradient(135deg, var(--secondary-500), var(--secondary-700));
+    --gradient-surface: linear-gradient(135deg, var(--primary-25), var(--primary-50));
+  }
+
+  /* Dark mode color overrides */
+  .dark {
+    /* Navigation and layout colors for dark mode */
+    --color-nav-bg: rgba(15, 23, 42, 0.95);
+    --color-nav-border: var(--primary-800);
+    --color-nav-item-hover: var(--primary-900);
+    --color-nav-item-active: var(--primary-600);
+    --color-nav-text: #cbd5e1;
+    --color-nav-text-active: white;
+    
+    /* Sidebar colors for dark mode */
+    --color-sidebar-bg: rgba(15, 23, 42, 0.98);
+    --color-sidebar-border: var(--primary-800);
+    --color-sidebar-item-hover: var(--primary-900);
+    --color-sidebar-item-active: var(--primary-600);
+    --color-sidebar-text: #cbd5e1;
+    --color-sidebar-text-active: white;
+    
+    /* Card and surface colors for dark mode */
+    --color-card-bg: rgba(30, 41, 59, 0.9);
+    --color-card-border: var(--primary-800);
+    --color-card-hover: var(--primary-900);
+    --color-surface: #0f172a;
+    --color-surface-secondary: #1e293b;
+    
+    /* Form element colors for dark mode */
+    --color-input-border: #475569;
+    --color-input-border-focus: var(--primary-500);
+    --color-input-bg: #1e293b;
+    --color-input-text: #cbd5e1;
+    
+    /* Focus and ring colors for dark mode */
+    --color-focus-ring-offset: #0f172a;
+    
+    /* Border and divider colors for dark mode */
+    --color-border: var(--primary-700);
+    --color-border-light: var(--primary-800);
+    --color-divider: var(--primary-750);
+    
+    /* Background gradients for dark mode */
+    --gradient-surface: linear-gradient(135deg, var(--primary-900), var(--primary-800));
+  }
+
   html {
     @apply scroll-smooth;
   }
@@ -19,21 +166,72 @@
   input, select, textarea {
     @apply px-4 py-3 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-sm 
            bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100
-           focus:ring-2 focus:ring-primary-500 focus:border-primary-500 
            transition-all duration-200 placeholder:text-neutral-400;
+    border-color: #e5e7eb;
   }
   
   input:focus, select:focus, textarea:focus {
-    @apply outline-none ring-2 ring-primary-500 ring-opacity-20 border-primary-500;
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--focus-ring-color);
   }
   
   /* Enhanced button focus states */
   button:focus-visible {
-    @apply outline-none ring-2 ring-offset-2 ring-primary-500;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus-ring-color);
+  }
+  
+  /* Links */
+  a {
+    color: var(--link-color);
+    transition: color 0.2s ease;
+  }
+  
+  a:hover {
+    color: var(--link-hover);
   }
 }
 
 @layer components {
+  /* Custom buttons using CSS variables */
+  .btn-primary {
+    background-color: var(--btn-primary-bg);
+    color: white;
+    border: none;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--btn-primary-hover);
+    transform: translateY(-1px);
+  }
+  
+  .btn-secondary {
+    background-color: var(--secondary-500);
+    /* color: white; */
+    color: var(--secondary-600);
+    border: 0;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-secondary:hover {
+    background-color: var(--secondary-600);
+    transform: translateY(-1px);
+  }
+  
+  .btn-outline-primary {
+    background-color: transparent;
+    color: var(--primary-500);
+    border: 2px solid var(--primary-500);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: var(--primary-500);
+    color: white;
+  }
+
   /* Card hover effects */
   .card-hover {
     @apply transition-all duration-300 hover:shadow-medium hover:-translate-y-1 hover:scale-[1.02];

@@ -33,11 +33,11 @@ const Card: React.FC<CardProps> = ({
   const baseStyles = 'overflow-hidden transition-all duration-200';
   
   const variantStyles = {
-    default: 'bg-white dark:bg-neutral-800 shadow-soft border border-neutral-200/50 dark:border-neutral-700/50 rounded-2xl',
-    outlined: 'border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-2xl',
+    default: 'bg-ui-cardBg shadow-soft border border-ui-cardBorder rounded-2xl',
+    outlined: 'border-2 border-ui-cardBorder bg-ui-cardBg rounded-2xl',
     glass: 'glass rounded-2xl shadow-soft',
-    elevated: 'bg-white dark:bg-neutral-800 shadow-medium hover:shadow-large rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50',
-    interactive: 'card-interactive bg-white dark:bg-neutral-800 shadow-soft border border-neutral-200/50 dark:border-neutral-700/50 rounded-2xl hover:border-primary-200 dark:hover:border-primary-700'
+    elevated: 'bg-ui-cardBg shadow-medium hover:shadow-large rounded-2xl border border-ui-cardBorder',
+    interactive: 'card-interactive bg-ui-cardBg shadow-soft border border-ui-cardBorder rounded-2xl hover:border-primary-200 dark:hover:border-primary-700'
   };
 
   const sizeStyles = {
@@ -62,10 +62,8 @@ const CardTitle: React.FC<CardTitleProps> = ({
   className = '',
   ...props
 }) => {
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
-  
   const baseStyles = 'font-semibold tracking-tight';
-  const gradientStyles = gradient ? 'text-gradient-primary' : 'text-neutral-900 dark:text-white';
+  const gradientStyles = gradient ? 'text-gradient-primary' : 'text-ui-cardText dark:text-white';
   
   const sizeStyles = {
     1: 'text-3xl',
@@ -78,10 +76,10 @@ const CardTitle: React.FC<CardTitleProps> = ({
   
   const combinedClassName = `${baseStyles} ${gradientStyles} ${sizeStyles[level]} ${className}`;
   
-  return (
-    <Tag className={combinedClassName} {...props}>
-      {children}
-    </Tag>
+  return React.createElement(
+    `h${level}` as keyof JSX.IntrinsicElements,
+    { className: combinedClassName, ...props },
+    children
   );
 };
 
@@ -91,7 +89,7 @@ const CardHeader: React.FC<CardHeaderProps> = ({
   className = '',
   ...props
 }) => {
-  const borderStyle = bordered ? 'border-b border-neutral-200 dark:border-neutral-700' : '';
+  const borderStyle = bordered ? 'border-b border-ui-cardBorder' : '';
   const combinedClassName = `px-6 py-5 ${borderStyle} ${className}`;
   
   return (
@@ -129,7 +127,7 @@ const CardFooter: React.FC<CardFooterProps> = ({
   className = '',
   ...props
 }) => {
-  const borderStyle = bordered ? 'border-t border-neutral-200 dark:border-neutral-700' : '';
+  const borderStyle = bordered ? 'border-t border-ui-cardBorder' : '';
   
   const justifyStyles = {
     start: 'justify-start',

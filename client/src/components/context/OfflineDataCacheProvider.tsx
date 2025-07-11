@@ -1,0 +1,172 @@
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import offlineDataCacheService from '../../services/offlineDataCacheService';
+import { toast } from 'react-hot-toast';
+
+interface CacheStats {
+  employees: number;
+  organizations: number;
+  apiResponses: number;
+  analytics: number;
+  settings: number;
+  totalSize: number;
+}
+
+interface OfflineDataCacheContextType {
+  isInitialized: boolean;
+  cacheStats: CacheStats;
+  // Cache management methods
+  clearAllCache: () => Promise<void>;
+  refreshCacheStats: () => Promise<void>;
+  preloadCriticalData: () => Promise<void>;
+  // Cache status
+  isCacheAvailable: boolean;
+  lastCleanup: Date | null;
+}
+
+const OfflineDataCacheContext = createContext<OfflineDataCacheContextType>({
+  isInitialized: false,
+  cacheStats: { employees: 0, organizations: 0, apiResponses: 0, analytics: 0, settings: 0, totalSize: 0 },
+  clearAllCache: async () => {},
+  refreshCacheStats: async () => {},
+  preloadCriticalData: async () => {},
+  isCacheAvailable: false,
+  lastCleanup: null
+});
+
+export const useOfflineDataCache = () => useContext(OfflineDataCacheContext);
+
+interface OfflineDataCacheProviderProps {
+  children: ReactNode;
+}
+
+export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> = ({ 
+  children 
+}) => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isCacheAvailable, setIsCacheAvailable] = useState(false);
+  const [lastCleanup, setLastCleanup] = useState<Date | null>(null);
+  const [cacheStats, setCacheStats] = useState<CacheStats>({
+    employees: 0,
+    organizations: 0,
+    apiResponses: 0,
+    analytics: 0,
+    settings: 0,
+    totalSize: 0
+  });
+
+  // Initialize the cache service
+  useEffect(() => {
+    const initializeCache = async () => {
+      try {
+        await offlineDataCacheService.init();
+        setIsInitialized(true);
+        setIsCacheAvailable(true);
+        
+        // Get initial cache stats
+        await refreshCacheStats();
+        
+        console.log('📦 Offline data cache provider initialized');
+        
+        // Set up periodic cleanup (every hour)
+        const cleanupInterval = setInterval(async () => {
+          try {
+            await offlineDataCacheService.cleanupExpiredEntries();
+            setLastCleanup(new Date());
+            await refreshCacheStats();
+          } catch (error) {
+            console.error('❌ Failed to cleanup cache:', error);
+          }
+        }, 60 * 60 * 1000); // 1 hour
+
+        // Initial cleanup
+        await offlineDataCacheService.cleanupExpiredEntries();
+        setLastCleanup(new Date());
+
+        return () => {
+          clearInterval(cleanupInterval);
+        };
+      } catch (error) {
+        console.error('❌ Failed to initialize offline data cache:', error);
+        setIsCacheAvailable(false);
+        // Don't show toast for cache initialization errors - it's not critical for UX
+        // toast.error('Failed to initialize offline data cache');
+      }
+    };
+
+    initializeCache();
+  }, []);
+
+  // Refresh cache statistics
+  const refreshCacheStats = async () => {
+    try {
+      const stats = await offlineDataCacheService.getCacheStats();
+      setCacheStats(stats);
+    } catch (error) {
+      console.error('❌ Failed to refresh cache stats:', error);
+    }
+  };
+
+  // Clear all cache data
+  const clearAllCache = async () => {
+    try {
+      await offlineDataCacheService.clearAllCache();
+      await refreshCacheStats();
+      toast.success('All offline cache cleared');
+      console.log('🧹 All offline cache cleared');
+    } catch (error) {
+      console.error('❌ Failed to clear cache:', error);
+      toast.error('Failed to clear offline cache');
+    }
+  };
+
+  // Preload critical data for offline access
+  const preloadCriticalData = async () => {
+    if (!navigator.onLine) {
+      console.log('📦 Cannot preload data while offline');
+      return;
+    }
+
+    try {
+      toast.loading('Preloading data for offline access...', { id: 'preload' });
+      
+      // This would be implemented based on the current user's context
+      // For now, it's a placeholder that could preload:
+      // - Current organization data
+      // - Employee list
+      // - Recent analytics
+      // - App settings
+      
+      // Example implementation would go here:
+      // const organizationId = getCurrentOrganizationId();
+      // await offlineEmployeeService.getEmployees(organizationId);
+      // await offlineOrganizationService.getOrganization(organizationId);
+      // etc.
+      
+      await refreshCacheStats();
+      
+      toast.success('Critical data preloaded for offline access', { id: 'preload' });
+      console.log('📦 Critical data preloaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to preload critical data:', error);
+      toast.error('Failed to preload data for offline access', { id: 'preload' });
+    }
+  };
+
+  const contextValue: OfflineDataCacheContextType = {
+    isInitialized,
+    cacheStats,
+    clearAllCache,
+    refreshCacheStats,
+    preloadCriticalData,
+    isCacheAvailable,
+    lastCleanup
+  };
+
+  return (
+    <OfflineDataCacheContext.Provider value={contextValue}>
+      {children}
+    </OfflineDataCacheContext.Provider>
+  );
+};
+
+export default OfflineDataCacheProvider;

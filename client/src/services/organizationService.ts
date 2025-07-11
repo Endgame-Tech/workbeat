@@ -28,6 +28,11 @@ export const organizationService = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching organization:', error);
+      // Only log detailed error info in development
+      if (process.env.NODE_ENV === 'development' && error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
       throw error;
     }
   },
@@ -168,6 +173,211 @@ export const organizationService = {
       return response.data.success;
     } catch (error) {
       console.error('Error removing organization user:', error);
+      throw error;
+    }
+  },
+
+  // Department Management Methods
+
+  /**
+   * Get all departments in an organization
+   * @param organizationId The ID of the organization
+   * @returns List of departments
+   */
+  async getDepartments(organizationId: string) {
+    try {
+      const response = await api.get(`/api/organizations/${organizationId}/departments`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new department
+   * @param organizationId The ID of the organization
+   * @param departmentData The department data to create
+   * @returns The created department
+   */
+  async createDepartment(organizationId: string, departmentData: any) {
+    try {
+      const response = await api.post(
+        `/api/organizations/${organizationId}/departments`,
+        departmentData
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error creating department:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update a department
+   * @param organizationId The ID of the organization
+   * @param departmentId The ID of the department to update
+   * @param departmentData The updated department data
+   * @returns The updated department
+   */
+  async updateDepartment(organizationId: string, departmentId: string, departmentData: any) {
+    try {
+      const response = await api.put(
+        `/api/organizations/${organizationId}/departments/${departmentId}`,
+        departmentData
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating department:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a department
+   * @param organizationId The ID of the organization
+   * @param departmentId The ID of the department to delete
+   * @returns Success status
+   */
+  async deleteDepartment(organizationId: string, departmentId: string) {
+    try {
+      const response = await api.delete(
+        `/api/organizations/${organizationId}/departments/${departmentId}`
+      );
+      return response.data.success;
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      throw error;
+    }
+  },
+
+  // Settings and Configuration Methods
+
+  /**
+   * Get organization settings
+   * @param organizationId The ID of the organization
+   * @returns Organization settings
+   */
+  async getSettings(organizationId: string) {
+    try {
+      const response = await api.get(`/api/organizations/${organizationId}/settings`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching organization settings:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update organization settings
+   * @param organizationId The ID of the organization
+   * @param settings The settings to update
+   * @returns Updated settings
+   */
+  async updateSettings(organizationId: string, settings: any) {
+    try {
+      const response = await api.put(
+        `/api/organizations/${organizationId}/settings`,
+        settings
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating organization settings:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reset organization settings to defaults
+   * @param organizationId The ID of the organization
+   * @returns Success status
+   */
+  async resetSettings(organizationId: string) {
+    try {
+      const response = await api.post(`/api/organizations/${organizationId}/settings/reset`);
+      return response.data.success;
+    } catch (error) {
+      console.error('Error resetting organization settings:', error);
+      throw error;
+    }
+  },
+
+  // Data Export Methods
+
+  /**
+   * Export organization data
+   * @param organizationId The ID of the organization
+   * @param exportType The type of export (csv, json, pdf)
+   * @returns Export data or download link
+   */
+  async exportData(organizationId: string, exportType: 'csv' | 'json' | 'pdf' = 'json') {
+    try {
+      const response = await api.get(
+        `/api/organizations/${organizationId}/export?format=${exportType}`,
+        { responseType: exportType === 'pdf' ? 'blob' : 'json' }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting organization data:', error);
+      throw error;
+    }
+  },
+
+  // Audit and Logging Methods
+
+  /**
+   * Get organization audit logs
+   * @param organizationId The ID of the organization
+   * @param limit Number of logs to fetch
+   * @param offset Offset for pagination
+   * @returns Audit logs
+   */
+  async getAuditLogs(organizationId: string, limit: number = 50, offset: number = 0) {
+    try {
+      const response = await api.get(
+        `/api/organizations/${organizationId}/audit-logs?limit=${limit}&offset=${offset}`
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+      throw error;
+    }
+  },
+
+  // Holiday and Calendar Methods
+
+  /**
+   * Get organization holiday calendar
+   * @param organizationId The ID of the organization
+   * @param year The year to fetch holidays for
+   * @returns Holiday calendar
+   */
+  async getHolidayCalendar(organizationId: string, year?: number) {
+    try {
+      const yearParam = year ? `?year=${year}` : '';
+      const response = await api.get(`/api/organizations/${organizationId}/holidays${yearParam}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching holiday calendar:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update organization holiday calendar
+   * @param organizationId The ID of the organization
+   * @param holidays Array of holiday objects
+   * @returns Updated holiday calendar
+   */
+  async updateHolidayCalendar(organizationId: string, holidays: any[]) {
+    try {
+      const response = await api.put(
+        `/api/organizations/${organizationId}/holidays`,
+        { holidays }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating holiday calendar:', error);
       throw error;
     }
   }

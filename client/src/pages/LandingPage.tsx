@@ -18,49 +18,49 @@ const LandingPage: React.FC = () => {
           <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary-400/10 animate-bounce-slow"></div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32 relative z-10">
           <div className="text-center">
-            <div className="flex justify-center mb-8">
-              <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
-                <Fingerprint className="h-16 w-16 text-white" />
+            <div className="flex justify-center mb-6 sm:mb-8">
+              <div className="p-3 sm:p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
+                <Fingerprint className="h-12 w-12 sm:h-16 sm:w-16 text-white" />
               </div>
             </div>
             
-            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
               <span className="block animate-slide-up">WorkBeat</span>
-              <span className="block text-primary-200 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <span className="block text-primary-200 animate-slide-up text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mt-2" style={{ animationDelay: '0.2s' }}>
                 Biometric Attendance System
               </span>
             </h1>
             
-            <p className="mt-8 max-w-2xl mx-auto text-xl text-primary-100 sm:text-2xl animate-slide-up" style={{ animationDelay: '0.4s' }}>
+            <p className="mt-6 sm:mt-8 max-w-2xl mx-auto text-lg sm:text-xl lg:text-2xl text-primary-100 animate-slide-up px-4 sm:px-0" style={{ animationDelay: '0.4s' }}>
               Secure, reliable attendance tracking with dual-factor biometric authentication.
-              <span className="block mt-2 text-lg text-primary-200">
+              <span className="block mt-2 text-base sm:text-lg text-primary-200">
                 Boost productivity and eliminate time theft with our cutting-edge solution.
               </span>
             </p>
             
-            <div className="mt-12 max-w-md mx-auto sm:max-w-none sm:flex sm:justify-center animate-slide-up" style={{ animationDelay: '0.6s' }}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <Link to="/register">
-                  <Button variant="secondary" size="lg" className="w-full bg-white text-primary-600 hover:bg-primary-50 shadow-xl hover:shadow-2xl">
+            <div className="mt-8 sm:mt-12 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center animate-slide-up px-4 sm:px-0" style={{ animationDelay: '0.6s' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full sm:w-auto">
+                <Link to="/register" className="w-full sm:w-auto">
+                  <Button variant="secondary" size="lg" className="w-full text-blue m:min-w-[200px]  hover:bg-primary-50 shadow-xl hover:shadow-2xl text-base sm:text-lg py-3 sm:py-4">
                     Start Free Trial
                   </Button>
                 </Link>
-                <Link to="/demo">
-                  <Button variant="outline" size="lg" className="w-full border-white/20 text-white hover:bg-white/10 backdrop-blur-sm">
-                    View Demo
+                <Link to="/attend" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] border-white/20 text-white hover:bg-white/10 backdrop-blur-sm text-base sm:text-lg py-3 sm:py-4">
+                    Try Demo
                   </Button>
                 </Link>
               </div>
             </div>
             
-            <div className="mt-12 text-center animate-fade-in" style={{ animationDelay: '0.8s' }}>
+            <div className="mt-8 sm:mt-12 text-center animate-fade-in" style={{ animationDelay: '0.8s' }}>
               <p className="text-primary-200 text-sm mb-4">Trusted by leading companies worldwide</p>
-              <div className="flex justify-center items-center space-x-8 opacity-60">
-                <div className="text-white font-semibold">TechCorp</div>
-                <div className="text-white font-semibold">InnovateCo</div>
-                <div className="text-white font-semibold">FutureSoft</div>
+              <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 opacity-60">
+                <div className="text-white font-semibold text-sm sm:text-base">Interswitch</div>
+                <div className="text-white font-semibold text-sm sm:text-base">Dangote Group</div>
+                <div className="text-white font-semibold text-sm sm:text-base">Access Bank</div>
               </div>
             </div>
           </div>
@@ -75,7 +75,7 @@ const LandingPage: React.FC = () => {
       </div>
       
       {/* Features Section */}
-      <div className="py-20 sm:py-28 lg:py-32 bg-white dark:bg-neutral-900">
+      <div id="features" className="py-20 sm:py-28 lg:py-32 bg-white dark:bg-neutral-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-4">
@@ -210,7 +210,7 @@ const LandingPage: React.FC = () => {
       </div>
 
       {/* Pricing Section */}
-      <div className="bg-neutral-100 dark:bg-neutral-800 py-20 sm:py-28 lg:py-32">
+      <div id="pricing" className="bg-neutral-100 dark:bg-neutral-800 py-20 sm:py-28 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-sm font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-4">
@@ -225,8 +225,8 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
-            {/* Free Plan */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 xl:gap-12">
+            {/* Starter Plan */}
             <Card variant="elevated" className="relative overflow-hidden group hover:scale-105 transition-all duration-300">
               <CardContent className="p-8">
                 <div className="text-center">
@@ -234,14 +234,17 @@ const LandingPage: React.FC = () => {
                     <Clock className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
-                    Free Trial
+                    Starter
                   </h3>
                   <p className="text-neutral-600 dark:text-neutral-400 mb-8">
-                    Perfect for small teams getting started
+                    Perfect for small businesses getting started
                   </p>
                   <div className="mb-8">
-                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">$0</span>
+                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">₦15,000</span>
                     <span className="text-lg text-neutral-600 dark:text-neutral-400">/month</span>
+                  </div>
+                  <div className="text-center mb-4">
+                    <span className="text-sm text-neutral-500 dark:text-neutral-400">30-day free trial</span>
                   </div>
                 </div>
                 
@@ -250,7 +253,7 @@ const LandingPage: React.FC = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Up to 10 employees</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Up to 25 employees</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
@@ -262,7 +265,7 @@ const LandingPage: React.FC = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Simple reports</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Standard reports</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
@@ -273,7 +276,7 @@ const LandingPage: React.FC = () => {
                 </ul>
                 
                 <Link to="/register" className="block">
-                  <Button variant="outline" className="w-full rounded-xl h-12 font-semibold">
+                  <Button variant="outline" className="w-full  rounded-xl h-12 font-semibold">
                     Start Free Trial
                   </Button>
                 </Link>
@@ -294,11 +297,14 @@ const LandingPage: React.FC = () => {
                     Professional
                   </h3>
                   <p className="text-neutral-600 dark:text-neutral-400 mb-8">
-                    For growing businesses with complex needs
+                    For growing businesses with advanced needs
                   </p>
                   <div className="mb-8">
-                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">$19</span>
+                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">₦35,000</span>
                     <span className="text-lg text-neutral-600 dark:text-neutral-400">/month</span>
+                  </div>
+                  <div className="text-center mb-4">
+                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Most popular choice</span>
                   </div>
                 </div>
                 
@@ -307,31 +313,37 @@ const LandingPage: React.FC = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Up to 50 employees</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Up to 100 employees</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Advanced biometric verification</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Biometric authentication</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Comprehensive analytics</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Advanced reports & exports</span>
+                  </li>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Geofencing</span>
+                  </li>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">White-label branding</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
                     <span className="ml-3 text-neutral-700 dark:text-neutral-300">Priority support</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
-                    </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">API access</span>
                   </li>
                 </ul>
                 
@@ -354,11 +366,14 @@ const LandingPage: React.FC = () => {
                     Enterprise
                   </h3>
                   <p className="text-neutral-600 dark:text-neutral-400 mb-8">
-                    For large organizations with custom requirements
+                    For large corporations with custom requirements
                   </p>
                   <div className="mb-8">
-                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">$49</span>
+                    <span className="text-5xl font-bold text-neutral-900 dark:text-white">₦150,000</span>
                     <span className="text-lg text-neutral-600 dark:text-neutral-400">/month</span>
+                  </div>
+                  <div className="text-center mb-4">
+                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Everything included</span>
                   </div>
                 </div>
                 
@@ -373,7 +388,19 @@ const LandingPage: React.FC = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Advanced security features</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Everything in Professional</span>
+                  </li>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">API access</span>
+                  </li>
+                  <li className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
+                    </div>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Advanced analytics</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
@@ -385,19 +412,21 @@ const LandingPage: React.FC = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Dedicated support</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">Dedicated account manager</span>
                   </li>
                   <li className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-success-600 dark:text-success-400" />
                     </div>
-                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">On-premise deployment</span>
+                    <span className="ml-3 text-neutral-700 dark:text-neutral-300">On-premise deployment option</span>
                   </li>
                 </ul>
                 
-                <Button variant="outline" className="w-full rounded-xl h-12 font-semibold">
-                  Contact Sales
-                </Button>
+                <Link to="/contact" className="block">
+                  <Button variant="outline" className="w-full rounded-xl h-12 font-semibold">
+                    Contact Sales
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
@@ -413,49 +442,49 @@ const LandingPage: React.FC = () => {
               Trusted by businesses everywhere
             </p>
           </div>
-          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 sm:mt-16 grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <div className="flex items-center mb-6">
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">T</span>
+                  <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">F</span>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Endgame</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Agency</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Adebayo Ogundimu</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">HR Director, Fidelity Bank</p>
                 </div>
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                "WorkBeat's biometric system solved our attendance tracking challenges instantly. Our employees love the simplicity and security."
+                "WorkBeat's biometric system eliminated timesheet fraud completely. We've seen a 40% reduction in attendance disputes and our payroll process is now 90% faster."
               </p>
             </div>
             
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <div className="flex items-center mb-6">
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">H</span>
+                  <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">K</span>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Kome Care</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Healthcare Provider</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Kemi Adebayo</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Operations Manager, Shoprite Nigeria</p>
                 </div>
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                "The dual-factor authentication gives us peace of mind knowing exactly who is clocking in and when. The reporting features have been invaluable."
+                "The white-label branding feature allows us to maintain our corporate identity. Our staff can easily clock in with fingerprint authentication across all our outlets."
               </p>
             </div>
             
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <div className="flex items-center mb-6">
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                  <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">E</span>
+                  <span className="text-blue-700 dark:text-blue-300 font-bold text-xl">O</span>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">DO TakeAction</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">NGO</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Olumide Taiwo</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">CEO, TechAdvance Solutions</p>
                 </div>
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                "We've seen a 30% increase in punctuality since implementing WorkBeat. The analytics help us identify patterns and improve staff scheduling."
+                "ROI was evident within 2 months. The detailed analytics helped us optimize shift schedules and we've saved over ₦2M annually in labor costs."
               </p>
             </div>
           </div>
@@ -501,19 +530,19 @@ const LandingPage: React.FC = () => {
                 Revolutionizing attendance tracking with secure biometric authentication.
               </p>
               <div className="flex space-x-6">
-                <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                <a href="https://facebook.com/workbeat" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                   <span className="sr-only">Facebook</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
                   </svg>
                 </a>
-                <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                <a href="https://twitter.com/workbeat" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                   <span className="sr-only">Twitter</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 0 006.29 1.84" />
                   </svg>
                 </a>
-                <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                <a href="https://linkedin.com/company/workbeat" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                   <span className="sr-only">LinkedIn</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fillRule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clipRule="evenodd" />
@@ -521,30 +550,30 @@ const LandingPage: React.FC = () => {
                 </a>
               </div>
             </div>
-            <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
+            <div className="mt-8 sm:mt-12 grid grid-cols-2 gap-6 sm:gap-8 xl:mt-0 xl:col-span-2">
               <div className="md:grid md:grid-cols-2 md:gap-8">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">Product</h3>
                   <ul className="mt-4 space-y-4">
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/#features" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Features
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/#pricing" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Pricing
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/security" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Security
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/integrations" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Integrations
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -552,24 +581,24 @@ const LandingPage: React.FC = () => {
                   <h3 className="text-sm font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">Support</h3>
                   <ul className="mt-4 space-y-4">
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/docs" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Documentation
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/guides" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Guides
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/help" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Help Center
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/contact" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Contact
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -579,24 +608,24 @@ const LandingPage: React.FC = () => {
                   <h3 className="text-sm font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">Company</h3>
                   <ul className="mt-4 space-y-4">
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/about" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         About
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/blog" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Blog
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/careers" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Careers
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/press" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Press
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -604,24 +633,24 @@ const LandingPage: React.FC = () => {
                   <h3 className="text-sm font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">Legal</h3>
                   <ul className="mt-4 space-y-4">
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                        Privacy
-                      </a>
+                      <Link to="/privacy" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                        Privacy Policy
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                        Terms
-                      </a>
+                      <Link to="/terms" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                        Terms of Service
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/cookies" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Cookie Policy
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                      <Link to="/data-processing" className="text-base text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         Data Processing
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>

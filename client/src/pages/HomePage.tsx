@@ -44,23 +44,9 @@ const HomePage: React.FC = () => {
     }
   }, [navigate]);
 
-  // Admin login handler
-  const handleAdminLogin = async (email: string, password: string) => {
-    try {
-      const data = await authService.login(email, password);
-      
-      // Store authentication data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // Close modal and redirect to dashboard
-      setIsLoginModalOpen(false);
-      toast.success(`Welcome back, ${data.user.name}!`);
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      throw new Error('Invalid email or password');
-    }
+  // Admin login modal close handler
+  const handleLoginModalClose = () => {
+    setIsLoginModalOpen(false);
   };
 
   // Fingerprint verification handler
@@ -409,8 +395,7 @@ const HomePage: React.FC = () => {
       {/* Modals */}
       <LoginModal
         isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLogin={handleAdminLogin}
+        onClose={handleLoginModalClose}
       />
     </div>
   );

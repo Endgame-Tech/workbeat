@@ -47,7 +47,7 @@ export interface Employee {
 }
 
 /**
- * Attendance record interface
+ * Enhanced Attendance record interface with comprehensive data capture
  */
 export interface AttendanceRecord {
   _id: string;
@@ -59,15 +59,51 @@ export interface AttendanceRecord {
   location?: {
     latitude: number;
     longitude: number;
+    address?: string;
+    accuracy?: number;
+    source?: 'gps' | 'wifi' | 'cell' | 'manual';
   } | null;
   ipAddress?: string;
   isLate?: boolean;
+  lateMinutes?: number;
   notes?: string;
+  noteCategory?: 'transport' | 'health' | 'personal' | 'work' | 'weather' | 'other';
   facialVerification?: boolean;
   facialCapture?: {
     image: string;
+    confidence?: number;
+    quality?: 'low' | 'medium' | 'high';
   };
-  verificationMethod?: 'face-recognition' | 'fingerprint' | 'manual';
+  verificationMethod?: 'face-recognition' | 'fingerprint' | 'manual' | 'qr-code' | 'nfc';
+  device?: {
+    type: 'mobile' | 'desktop' | 'tablet' | 'kiosk';
+    browser?: string;
+    os?: string;
+    userAgent?: string;
+  };
+  weather?: {
+    condition: string;
+    temperature: number;
+    description: string;
+  };
+  workSession?: {
+    expectedStartTime: string;
+    expectedEndTime: string;
+    actualDuration?: number;
+    breakDuration?: number;
+    overtime?: number;
+  };
+  managerOverride?: {
+    overriddenBy: string;
+    reason: string;
+    originalTimestamp: Date;
+  };
+  geofenceCompliant?: boolean;
+  networkInfo?: {
+    wifi?: string;
+    signal?: 'strong' | 'medium' | 'weak';
+  };
+  offline?: boolean; // Flag to indicate if this record was created offline
   createdAt: Date;
   updatedAt: Date;
 }
@@ -100,6 +136,11 @@ export interface User {
   role: 'admin' | 'employee';
   employeeId?: string;
   lastLogin?: string | Date;
+  organizationId?: string;
+  organization?: {
+    id: string;
+    name?: string;
+  };
 }
 
 /**
@@ -146,7 +187,7 @@ export interface AttendanceFormData {
 }
 
 /**
- * Analytics data interface
+ * Enhanced Analytics data interface with comprehensive insights
  */
 export interface AnalyticsData {
   departmentStats: {
@@ -156,31 +197,153 @@ export interface AnalyticsData {
     avgPunctualityRate: number;
     totalHours: number;
     lateArrivals: number;
+    earlyDepartures: number;
+    overtime: number;
+    costImpact: number;
+    productivityScore: number;
+    riskLevel: 'low' | 'medium' | 'high';
   }[];
   timePatterns: {
     hour: number;
     checkIns: number;
     checkOuts: number;
     avgEmployees: number;
+    productivity: number;
+    commonReasons: string[];
   }[];
   lateArrivalTrends: {
     date: string;
     lateCount: number;
     totalCheckIns: number;
     percentage: number;
+    avgLateMinutes: number;
+    commonReasons: string[];
+    weatherImpact: boolean;
   }[];
   topPerformers: {
     employee: Employee;
     attendanceRate: number;
     punctualityRate: number;
     totalHours: number;
+    improvementTrend: 'improving' | 'stable' | 'declining';
+    consistencyScore: number;
   }[];
   weeklyTrends: {
     week: string;
     attendance: number;
     punctuality: number;
     avgHours: number;
+    overtime: number;
+    productivity: number;
+    anomalies: string[];
   }[];
+  insights: {
+    keyFindings: string[];
+    riskAlerts: string[];
+    opportunities: string[];
+    recommendations: string[];
+    costSavings: number;
+    complianceScore: number;
+  };
+  predictiveMetrics: {
+    expectedAttendance: number;
+    riskEmployees: string[];
+    seasonalTrends: string[];
+    burnoutIndicators: string[];
+  };
+  noteAnalysis: {
+    categories: {
+      category: string;
+      count: number;
+      percentage: number;
+      trend: 'increasing' | 'decreasing' | 'stable';
+    }[];
+    sentiment: {
+      positive: number;
+      neutral: number;
+      negative: number;
+    };
+    commonPatterns: string[];
+    actionableInsights: string[];
+  };
+}
+
+/**
+ * Executive Summary Interface
+ */
+export interface ExecutiveSummary {
+  reportPeriod: {
+    startDate: string;
+    endDate: string;
+    workingDays: number;
+  };
+  keyMetrics: {
+    totalEmployees: number;
+    overallAttendanceRate: number;
+    punctualityRate: number;
+    avgDailyAttendance: number;
+    totalLateIncidents: number;
+    costImpact: number;
+    productivityIndex: number;
+    complianceScore: number;
+  };
+  trends: {
+    attendanceTrend: 'improving' | 'stable' | 'declining';
+    punctualityTrend: 'improving' | 'stable' | 'declining';
+    weekOverWeekChange: number;
+    monthOverMonthChange: number;
+    seasonalFactors: string[];
+  };
+  criticalInsights: {
+    topConcerns: string[];
+    quickWins: string[];
+    longTermActions: string[];
+    budgetImpact: number;
+  };
+  departmentHighlights: {
+    bestPerforming: string;
+    needsAttention: string;
+    mostImproved: string;
+    riskiest: string;
+  };
+  employeeInsights: {
+    topPerformers: string[];
+    riskEmployees: string[];
+    newHires: string[];
+    improvingEmployees: string[];
+  };
+}
+
+/**
+ * Operational Intelligence Interface
+ */
+export interface OperationalIntelligence {
+  dailyAlerts: {
+    type: 'attendance' | 'punctuality' | 'anomaly' | 'compliance';
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    affectedEmployees: string[];
+    recommendedAction: string;
+    dueDate?: string;
+  }[];
+  patternDetection: {
+    unusualPatterns: string[];
+    emergingTrends: string[];
+    seasonalFactors: string[];
+    externalFactors: string[];
+  };
+  resourceOptimization: {
+    overstaffedHours: number[];
+    understaffedHours: number[];
+    optimalShiftTimes: string[];
+    capacityUtilization: number;
+  };
+  complianceTracking: {
+    regulatoryCompliance: number;
+    policyViolations: number;
+    auditReadiness: number;
+    documentationGaps: string[];
+  };
 }
 
 /**
@@ -230,4 +393,143 @@ export interface DetailedAttendanceStats extends AttendanceStats {
       rate: number;
     }[];
   };
+}
+
+/**
+ * Leave Management Types
+ */
+export interface LeaveType {
+  id: number;
+  organizationId: number;
+  name: string;
+  annualAllocation: number;
+  requiresApproval: boolean;
+  adviceNoticeDays: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface LeaveBalance {
+  id: number;
+  employeeId: number;
+  leaveTypeId: number;
+  year: number;
+  totalDays: number;
+  usedDays: number;
+  pendingDays: number;
+  remainingDays: number;
+  carryOverDays: number;
+  createdAt: Date;
+  updatedAt: Date;
+  // Relations
+  employee?: Employee;
+  leaveType?: LeaveType;
+}
+
+export interface LeaveRequest {
+  id: number;
+  employeeId: number;
+  leaveTypeId: number;
+  startDate: Date;
+  endDate: Date;
+  totalDays: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  approvedBy?: number;
+  approvedAt?: Date;
+  rejectionReason?: string;
+  attachments?: string[];
+  isEmergency: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  // Relations
+  employee?: Employee;
+  leaveType?: LeaveType;
+  approver?: Employee;
+}
+
+/**
+ * Shift Scheduling Types
+ */
+export interface ShiftTemplate {
+  id: number;
+  organizationId: number;
+  name: string;
+  startTime: string;
+  endTime: string;
+  breakDuration: number;
+  daysOfWeek: string[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  _count?: {
+    scheduledShifts: number;
+  };
+}
+
+export interface ScheduledShift {
+  id: number;
+  employeeId: number;
+  organizationId: number;
+  shiftTemplateId?: number;
+  date: Date;
+  startTime: string;
+  endTime: string;
+  status: 'scheduled' | 'completed' | 'missed' | 'cancelled';
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Relations
+  employee?: Employee;
+  shiftTemplate?: ShiftTemplate;
+}
+
+/**
+ * Notification Types
+ */
+export interface NotificationTemplate {
+  id: number;
+  organizationId: string;
+  name: string;
+  type: 'email' | 'sms' | 'push';
+  event: 'leave_request' | 'leave_approved' | 'leave_rejected' | 'shift_assigned' | 'shift_reminder' | 'attendance_reminder';
+  subject: string;
+  body: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface NotificationPreference {
+  id: number;
+  employeeId: number;
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+  leaveRequests: boolean;
+  shiftChanges: boolean;
+  attendanceReminders: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  // Relations
+  employee?: Employee;
+}
+
+export interface NotificationQueue {
+  id: number;
+  employeeId: number;
+  templateId: number;
+  type: 'email' | 'sms' | 'push';
+  recipient: string;
+  subject: string;
+  body: string;
+  status: 'pending' | 'sent' | 'failed';
+  sentAt?: Date;
+  errorMessage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Relations
+  employee?: Employee;
+  template?: NotificationTemplate;
 }

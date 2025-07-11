@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService'; // Import authService
+import { useAuth } from './context/AuthContext';
 
 // Import UI components
 import Button from './ui/Button';
@@ -10,7 +10,6 @@ import Input from './ui/Input';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/Card';
 
 interface LoginModalProps {
-  onLogin: (email: string, password: string) => Promise<void>;
   onClose: () => void;
   isOpen: boolean;
 }
@@ -23,12 +22,13 @@ interface ApiError {
   }
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose, isOpen }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { login, user, forgotPassword } = useAuth();
 
   if (!isOpen) return null;
 
@@ -38,43 +38,33 @@ const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose, isOpen }) => 
     setIsLoading(true);
 
     try {
-      // Use the authService.login method instead of direct API call
-      const userData = await authService.login(email, password);
-      
-      console.log('Login successful, user data:', userData);
-      
-      // Debug check for organizationId
-      if (userData.organizationId) {
-        console.log('organizationId found in response:', userData.organizationId);
-        
-        // Double-check localStorage to make sure it was saved
-        setTimeout(() => {
-          try {
-            const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-            console.log('User data in localStorage:', storedUser);
-            if (storedUser.organizationId) {
-              console.log('organizationId found in localStorage:', storedUser.organizationId);
-            } else {
-              console.warn('organizationId missing from localStorage');
-            }
-          } catch (err) {
-            console.error('Error checking localStorage:', err);
-          }
-        }, 100);
-      } else {
-        console.warn('organizationId missing from login response');
-      }
-      
-      // Call the parent's onLogin handler if needed
-      // Note: this might not be necessary if authService.login already does everything needed
-      try {
-        await onLogin(email, password);
-      } catch (err) {
-        console.error('Error in parent onLogin handler:', err);
-      }
+      // Use the auth context login method
+      await login(email, password);
       
       toast.success('Logged in successfully!');
-      navigate('/dashboard');
+      onClose(); // Close the modal
+      
+      // Force immediate navigation after successful login
+      // Since the user state might not be updated yet in the context
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const userData = JSON.parse(userString);
+        
+        // Navigate based on user role
+        if (userData.role === 'admin') {
+          // Get organization ID for admin navigation
+          const orgId = userData.organizationId || userData.organization?.id;
+          if (orgId) {
+            navigate(`/organization/${orgId}`);
+          } else {
+            console.warn('Admin user without organizationId, redirecting to dashboard');
+            navigate('/dashboard');
+          }
+        } else {
+          // Employee navigation
+          navigate('/employee');
+        }
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError((err as ApiError).response?.data?.message || 'Invalid email or password');
@@ -83,11 +73,31 @@ const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose, isOpen }) => 
     }
   };
 
+  // Handle navigation after successful login
+  React.useEffect(() => {
+    if (user && !isLoading) {
+      // Navigate based on user role
+      if (user.role === 'admin') {
+        // Get organization ID for admin navigation
+        const orgId = user.organizationId || user.organization?.id;
+        if (orgId) {
+          navigate(`/organization/${orgId}`);
+        } else {
+          console.warn('Admin user without organizationId, redirecting to dashboard');
+          navigate('/dashboard');
+        }
+      } else {
+        // Employee navigation
+        navigate('/employee');
+      }
+    }
+  }, [user, isLoading, navigate]);
+
   const handleForgotPassword = async () => {
     const emailForReset = prompt("Enter your email to reset password");
     if (emailForReset) {
       try {
-        await authService.forgotPassword(emailForReset);
+        await forgotPassword(emailForReset);
         toast.success("If your email is registered, you will receive a password reset link");
       } catch (error) {
         console.error('Forgot password error:', error);
@@ -151,8 +161,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose, isOpen }) => 
           </CardContent>
 
           <CardFooter className="text-center">
-            Email: admin@workbeat.com
-            Password: admin123
             <button
               type="button"
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"

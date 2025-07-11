@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 
 // Define the organization type
 interface Organization {
@@ -23,7 +23,7 @@ interface OrganizationContextType {
 }
 
 // Create the context with default values
-const OrganizationContext = createContext<OrganizationContextType>({
+export const OrganizationContext = createContext<OrganizationContextType>({
   organizationId: null,
   organization: null,
   isLoading: true,
@@ -31,9 +31,6 @@ const OrganizationContext = createContext<OrganizationContextType>({
   setOrganization: () => {},
   refreshOrganization: () => {}
 });
-
-// Custom hook to use the organization context
-export const useOrganization = () => useContext(OrganizationContext);
 
 interface OrganizationProviderProps {
   children: ReactNode;
@@ -50,7 +47,12 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   const getOrganizationIdFromStorage = (): string | null => {
     try {
       const userString = localStorage.getItem('user');
-      if (!userString) return null;
+      console.log('🔍 Raw user string from localStorage:', userString);
+      
+      if (!userString) {
+        console.log('❌ No user data in localStorage');
+        return null;
+      }
       
       // Handle case where "user" might be prepended
       const jsonString = userString.startsWith('user{') 
@@ -59,10 +61,17 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       
       try {
         const userData = JSON.parse(jsonString);
+        console.log('🔍 Parsed user data:', userData);
+        
         if (userData.organizationId) {
+          console.log('✅ Found organizationId:', userData.organizationId);
           return userData.organizationId;
         } else if (userData.organization?.id) {
+          console.log('✅ Found organization.id:', userData.organization.id);
           return userData.organization.id;
+        } else {
+          console.log('❌ No organizationId found in user data');
+          console.log('🔍 User data keys:', Object.keys(userData));
         }
       } catch (err) {
         console.error('Error parsing user data:', err);
@@ -81,12 +90,22 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     setError(null);
     
     try {
-      // You'll need to implement this API endpoint
-      const response = await fetch(`/api/organizations/${orgId}`, {
+      // Use the correct API URL with base URL
+      const response = await fetch(`http://localhost:3001/api/organizations/${orgId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      
+      if (response.status === 404) {
+        // Organization not found - this is expected for new users
+        console.log('Organization not found, creating minimal organization state');
+        setOrganizationState({
+          id: orgId
+        });
+        setIsLoading(false);
+        return;
+      }
       
       if (!response.ok) {
         throw new Error('Failed to load organization data');
@@ -109,6 +128,7 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       }
     } catch (err) {
       console.error('Error loading organization:', err);
+      // Only set error for actual server errors, not 404s
       setError('Failed to load organization data');
       
       // Still set the basic organization with ID

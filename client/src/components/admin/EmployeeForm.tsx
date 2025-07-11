@@ -4,10 +4,11 @@ import { Card, CardHeader, CardContent, CardFooter } from '../ui/Card';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Button from '../ui/Button';
-import { Save, X, Fingerprint, Camera } from 'lucide-react';
+import { Save, X, Fingerprint, Camera, RefreshCw } from 'lucide-react';
 import FingerprintScanner from '../FingerprintScanner';
 import FaceCapture from '../FaceCapture';
 import { toast } from 'react-hot-toast';
+import { organizationService } from '../../services/organizationService';
 
 // Add to interface props
 interface EmployeeFormProps {
@@ -54,6 +55,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 }) => {
   // Get organization ID from user in localStorage
   const [organizationId, setOrganizationId] = useState<string | undefined>();
+  const [departments, setDepartments] = useState<Array<{id: string, name: string}>>([]);
+  const [organization, setOrganization] = useState<any>(null);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
   
   useEffect(() => {
     const userString = localStorage.getItem('user');
@@ -100,6 +104,73 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const [faceEnrolled, setFaceEnrolled] = useState<boolean>(
     employee?.faceRecognition?.faceImages?.length ? true : false
   );
+
+  // Fetch departments and organization data
+  const fetchDepartmentsAndOrganization = async (orgId: string) => {
+    if (!orgId) return;
+    
+    setLoadingDepartments(true);
+    try {
+      // Fetch departments and organization data in parallel
+      const [deptData, orgData] = await Promise.all([
+        organizationService.getDepartments(orgId).catch(() => []), // Fallback to empty array
+        organizationService.getOrganization(orgId).catch(() => null) // Fallback to null
+      ]);
+      
+      // Transform departments to the expected format
+      const formattedDepartments = deptData.map((dept: any) => ({
+        id: dept.id,
+        name: dept.name
+      }));
+      
+      setDepartments(formattedDepartments);
+      setOrganization(orgData);
+      
+      console.log(`Loaded ${formattedDepartments.length} departments for organization`);
+    } catch (error) {
+      console.error('Error fetching departments and organization:', error);
+      toast.error('Failed to load departments');
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
+  // Generate employee ID based on organization initials and employee name
+  const generateEmployeeId = () => {
+    if (!organization || !formData.name) {
+      toast.error('Please enter employee name and ensure organization data is loaded');
+      return;
+    }
+
+    // Get organization initials (first 2-3 letters of name)
+    const orgInitials = organization.name
+      ?.replace(/[^A-Za-z\s]/g, '') // Remove non-alphabetic characters
+      ?.split(' ')
+      ?.map((word: string) => word.charAt(0).toUpperCase())
+      ?.join('')
+      ?.substring(0, 3) || 'ORG';
+
+    // Get location initials (first 2 letters of city or first word of address)
+    const locationInitials = (organization.city || organization.address || 'LOC')
+      ?.replace(/[^A-Za-z]/g, '') // Remove non-alphabetic characters
+      ?.substring(0, 2)
+      ?.toUpperCase() || 'LC';
+
+    // Get employee initials (first letter of first and last name)
+    const nameParts = formData.name.trim().split(' ');
+    const employeeInitials = nameParts.length >= 2
+      ? `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}`.toUpperCase()
+      : formData.name.substring(0, 2).toUpperCase();
+
+    // Generate random 3-digit number
+    const randomNumber = Math.floor(Math.random() * 900) + 100; // 100-999
+
+    // Combine all parts: ORG-LOC-EMP-XXX
+    const generatedId = `${orgInitials}-${locationInitials}-${employeeInitials}-${randomNumber}`;
+    
+    handleChange('employeeId', generatedId);
+    toast.success('Employee ID generated successfully');
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -173,6 +244,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             ...prev,
             organizationId: orgId
           }));
+          
+          // Fetch departments and organization data
+          fetchDepartmentsAndOrganization(orgId);
           return; // Exit early since we found the ID
         }
         
@@ -186,6 +260,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             ...prev,
             organizationId: userData.organizationId
           }));
+          
+          // Fetch departments and organization data
+          fetchDepartmentsAndOrganization(userData.organizationId);
           return; // Exit early since we found the ID
         }
       }
@@ -203,6 +280,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             ...prev,
             organizationId: orgData.id
           }));
+          
+          // Fetch departments and organization data
+          fetchDepartmentsAndOrganization(orgData.id);
           return; // Exit early since we found the ID
         }
       }
@@ -361,13 +441,43 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               required
             />
             
-            <Input
-              label="Employee ID"
-              value={formData.employeeId || ''}
-              onChange={(e) => handleChange('employeeId', e.target.value)}
-              error={errors.employeeId}
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Employee ID <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={formData.employeeId || ''}
+                  onChange={(e) => handleChange('employeeId', e.target.value)}
+                  error={errors.employeeId}
+                  placeholder="Enter ID or generate automatically"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateEmployeeId}
+                  disabled={!formData.name || !organization}
+                  leftIcon={<RefreshCw size={16} />}
+                  title="Generate Employee ID"
+                  className="whitespace-nowrap"
+                >
+                  Generate
+                </Button>
+              </div>
+              {errors.employeeId && (
+                <p className="text-sm text-red-600 mt-1">{errors.employeeId}</p>
+              )}
+              {organization && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Auto-generated format: {organization.name?.split(' ').map((w: string) => w.charAt(0)).join('').substring(0, 3) || 'ORG'}-
+                  {(organization.city || 'LOC').substring(0, 2).toUpperCase()}-
+                  {formData.name ? formData.name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase() : 'XX'}-
+                  XXX
+                </p>
+              )}
+            </div>
             
             <Input
               label="Email"
@@ -387,13 +497,40 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               required
             />
             
-            <Input
-              label="Department"
-              value={formData.department || ''}
-              onChange={(e) => handleChange('department', e.target.value)}
-              error={errors.department}
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Department <span className="text-red-500">*</span>
+              </label>
+              {loadingDepartments ? (
+                <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700">
+                  <RefreshCw size={16} className="animate-spin mr-2 text-gray-500" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Loading departments...</span>
+                </div>
+              ) : departments.length > 0 ? (
+                <Select
+                  options={departments.map(dept => ({ value: dept.name, label: dept.name }))}
+                  value={formData.department || ''}
+                  onChange={(value) => handleChange('department', value)}
+                  placeholder="Select a department"
+                  error={errors.department}
+                />
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={formData.department || ''}
+                    onChange={(e) => handleChange('department', e.target.value)}
+                    placeholder="Enter department name"
+                    error={errors.department}
+                  />
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    No departments found. You can enter manually or add departments in Settings.
+                  </p>
+                </div>
+              )}
+              {errors.department && (
+                <p className="text-sm text-red-600 mt-1">{errors.department}</p>
+              )}
+            </div>
             
             <Input
               label="Position"
