@@ -26,9 +26,8 @@ export class OfflineApiWrapper {
       skipCache?: boolean; // Skip cache completely
       offlineOnly?: boolean; // Only return cached data
     } = {}
-  ): Promise<any> {
+  ): Promise<unknown> {
     const {
-      maxAge = 30 * 60 * 1000, // 30 minutes default
       cacheKey,
       skipCache = false,
       offlineOnly = false
@@ -115,12 +114,16 @@ export class OfflineApiWrapper {
   }
 
   // Convenience methods for different HTTP verbs
-  async get(url: string, params?: Record<string, any>, cacheOptions?: any): Promise<any> {
-    const urlWithParams = params ? `${url}?${new URLSearchParams(params)}` : url;
+  async get(
+    url: string,
+    params?: Record<string, unknown>,
+    cacheOptions?: Record<string, unknown>
+  ): Promise<unknown> {
+    const urlWithParams = params ? `${url}?${new URLSearchParams(params as Record<string, string>)}` : url;
     return this.fetchWithCache(urlWithParams, { method: 'GET' }, cacheOptions);
   }
 
-  async post(url: string, data?: any, options: RequestInit = {}): Promise<any> {
+  async post(url: string, data?: unknown, options: RequestInit = {}): Promise<unknown> {
     return this.fetchWithCache(url, {
       method: 'POST',
       headers: {
@@ -132,7 +135,7 @@ export class OfflineApiWrapper {
     }, { skipCache: true }); // Don't cache POST requests
   }
 
-  async put(url: string, data?: any, options: RequestInit = {}): Promise<any> {
+  async put(url: string, data?: unknown, options: RequestInit = {}): Promise<unknown> {
     return this.fetchWithCache(url, {
       method: 'PUT',
       headers: {
@@ -144,7 +147,7 @@ export class OfflineApiWrapper {
     }, { skipCache: true }); // Don't cache PUT requests
   }
 
-  async delete(url: string, options: RequestInit = {}): Promise<any> {
+  async delete(url: string, options: RequestInit = {}): Promise<unknown> {
     return this.fetchWithCache(url, {
       method: 'DELETE',
       ...options
@@ -152,13 +155,22 @@ export class OfflineApiWrapper {
   }
 
   // Special method for offline-only data retrieval
-  async getOfflineOnly(url: string, params?: Record<string, any>): Promise<any> {
-    const urlWithParams = params ? `${url}?${new URLSearchParams(params)}` : url;
+  async getOfflineOnly(url: string, params?: Record<string, unknown>): Promise<unknown> {
+    const urlWithParams = params ? `${url}?${new URLSearchParams(params as Record<string, string>)}` : url;
     return this.fetchWithCache(urlWithParams, { method: 'GET' }, { offlineOnly: true });
   }
 }
 
 // Enhanced API services with offline capabilities
+// Define a specific Employee type
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  position?: string;
+  [key: string]: unknown; // Add more fields as needed
+}
+
 export class OfflineEmployeeService extends OfflineApiWrapper {
   constructor() {
     super('/api', {
@@ -166,7 +178,7 @@ export class OfflineEmployeeService extends OfflineApiWrapper {
     });
   }
 
-  async getEmployees(organizationId: string): Promise<any[]> {
+  async getEmployees(organizationId: string): Promise<Employee[]> {
     // Try to get from cache first if offline
     if (!isOnline()) {
       const cachedEmployees = await offlineDataCacheService.getCachedEmployees(organizationId);
@@ -176,7 +188,7 @@ export class OfflineEmployeeService extends OfflineApiWrapper {
     }
 
     try {
-      const employees = await this.get(`/employees`, { organizationId });
+      const employees = await this.get(`/employees`, { organizationId }) as Employee[];
       
       // Cache the employee data
       await offlineDataCacheService.cacheEmployeeData(organizationId, employees);
@@ -193,27 +205,25 @@ export class OfflineEmployeeService extends OfflineApiWrapper {
     }
   }
 
-  async getEmployee(employeeId: string): Promise<any> {
+  async getEmployee(employeeId: string): Promise<Employee | undefined> {
     return this.get(`/employees/${employeeId}`, undefined, {
       maxAge: 60 * 60 * 1000, // 1 hour cache
       cacheKey: `employee-${employeeId}`
-    });
+    }) as Promise<Employee | undefined>;
   }
 
-  async createEmployee(employeeData: any): Promise<any> {
+  async createEmployee(employeeData: Partial<Employee>): Promise<Employee | undefined> {
     const result = await this.post('/employees', employeeData);
-    
     // Invalidate employee cache for this organization
     // This could be enhanced to update the cache instead of invalidating
-    return result;
+    return result as Employee | undefined;
   }
 
-  async updateEmployee(employeeId: string, employeeData: any): Promise<any> {
+  async updateEmployee(employeeId: string, employeeData: Partial<Employee>): Promise<Employee | undefined> {
     const result = await this.put(`/employees/${employeeId}`, employeeData);
-    
     // Update cached employee data
     // This could be enhanced to update the specific employee in cache
-    return result;
+    return result as Employee | undefined;
   }
 }
 
@@ -224,7 +234,7 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
     });
   }
 
-  async getOrganization(organizationId: string): Promise<any> {
+  async getOrganization(organizationId: string): Promise<Record<string, unknown> | undefined> {
     // Try to get from cache first if offline
     if (!isOnline()) {
       const cachedOrg = await offlineDataCacheService.getCachedOrganization(organizationId);
@@ -239,7 +249,7 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
       // Cache the organization data
       await offlineDataCacheService.cacheOrganizationData(organizationId, organization);
       
-      return organization;
+      return organization as Record<string, unknown>;
     } catch (error) {
       // Fallback to cached data
       const cachedOrg = await offlineDataCacheService.getCachedOrganization(organizationId);
@@ -251,11 +261,11 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
     }
   }
 
-  async getOrganizationSettings(organizationId: string): Promise<any> {
+  async getOrganizationSettings(organizationId: string): Promise<Record<string, unknown> | undefined> {
     return this.get(`/organizations/${organizationId}/settings`, undefined, {
       maxAge: 24 * 60 * 60 * 1000, // 24 hour cache
       cacheKey: `org-settings-${organizationId}`
-    });
+    }) as Promise<Record<string, unknown> | undefined>;
   }
 }
 
@@ -270,7 +280,7 @@ export class OfflineAnalyticsService extends OfflineApiWrapper {
     organizationId: string, 
     type: string, 
     dateRange: string
-  ): Promise<any> {
+  ): Promise<Record<string, unknown> | undefined> {
     // Try to get from cache first if offline
     if (!isOnline()) {
       const cachedAnalytics = await offlineDataCacheService.getCachedAnalytics(
@@ -318,7 +328,7 @@ export class OfflineAnalyticsService extends OfflineApiWrapper {
     organizationId: string,
     startDate: string,
     endDate: string
-  ): Promise<any> {
+  ): Promise<Record<string, unknown> | undefined> {
     const dateRange = `${startDate}-${endDate}`;
     return this.getAnalyticsData(organizationId, 'attendance-report', dateRange);
   }

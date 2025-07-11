@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 
 export interface ApiError extends AxiosError {
   response?: {
-    data: any;
+    data: unknown;
     status: number;
     statusText: string;
   };

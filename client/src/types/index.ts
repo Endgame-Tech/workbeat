@@ -1,3 +1,9 @@
+export interface Holiday {
+  date: string;
+  name: string;
+  description?: string;
+  type?: string;
+}
 /**
  * Employee interface
  */
@@ -532,4 +538,99 @@ export interface NotificationQueue {
   // Relations
   employee?: Employee;
   template?: NotificationTemplate;
+}
+
+/**
+ * Pagination interface
+ */
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  [key: string]: number | string | undefined;
+}
+
+/**
+ * Organization Settings Interface
+ */
+export interface OrganizationSettings {
+  timezone?: string;
+  workWeek?: string[];
+  defaultShiftStart?: string;
+  defaultShiftEnd?: string;
+  allowOvertime?: boolean;
+  [key: string]: string | string[] | boolean | undefined;
+}
+
+/**
+ * Subscription Data Interface
+ */
+export interface SubscriptionData {
+  plan: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  renewalDate?: string;
+  [key: string]: string | undefined;
+}
+
+/**
+ * Organization User Data Interface
+ */
+export interface OrganizationUserData {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+  [key: string]: string | undefined;
+}
+
+/**
+ * Department Data Interface
+ */
+export interface DepartmentData {
+  id?: string;
+  name: string;
+  description?: string;
+  [key: string]: string | undefined;
+}
+
+/**
+ * Cache Data Interfaces
+ */
+export interface EmployeeCacheData {
+  id: string;
+  organizationId: string;
+  // Add all employee fields you want to cache
+  [key: string]: unknown;
+}
+
+export interface OrganizationCacheData {
+  id: string;
+  // Add all organization fields you want to cache
+  [key: string]: unknown;
+}
+
+export interface ApiResponseCacheData {
+  url: string;
+  method: string;
+  // The actual response data
+  [key: string]: unknown;
+}
+
+export interface AnalyticsCacheData {
+  id: string;
+  organizationId: string;
+  type: string;
+  dateRange: string;
+  // The actual analytics data
+  [key: string]: unknown;
+}
+
+export interface SettingsCacheData {
+  key: string;
+  // The actual settings data
+  [key: string]: unknown;
 }

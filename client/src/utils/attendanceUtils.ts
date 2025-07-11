@@ -112,6 +112,20 @@ export const getCurrentLocation = (): Promise<{ latitude: number; longitude: num
 };
 
 /**
+ * Attendance record type definition
+ */
+export interface AttendanceRecord {
+  employeeId: string;
+  type: 'sign-in' | 'sign-out';
+  timestamp: Date;
+  location: { latitude: number; longitude: number } | null;
+  isLate: boolean;
+  notes: string;
+  ipAddress: string;
+  status: 'late' | 'on-time';
+}
+
+/**
  * Create an attendance record
  * @param {string} employeeId - Employee ID
  * @param {string} type - Attendance type (sign-in or sign-out)
@@ -124,7 +138,7 @@ export const createAttendanceRecord = async (
   type: 'sign-in' | 'sign-out',
   notes: string,
   workingHours?: { start: string; end: string }
-): Promise<any> => {
+): Promise<AttendanceRecord> => {
   // Create timestamp
   const timestamp = new Date();
   

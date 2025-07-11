@@ -7,16 +7,11 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import EmployeeView from './components/EmployeeView';
 import LoginModal from './components/LoginModal';
-import FaceCapture from './components/FaceCapture';
-import BiometricAttendance from './components/BiometricAttendance';
-import FingerprintScanner from './components/FingerprintScanner';
-import Button from './components/ui/Button';
 
 // Services
 import { authService } from './services/authService';
 import { themeService } from './services/themeService';
-import { employeeAuthService } from './services/employeeAuthService';
-import { fingerprintService } from './services/fingerprintService';
+
 
 function App() {
   const navigate = useNavigate();
@@ -27,19 +22,12 @@ function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Biometric authentication state
-  const [showBiometricAttendance, setShowBiometricAttendance] = useState(false);
-  const [isCapturingFace, setIsCapturingFace] = useState(false);
-  const [isScanningFingerprint, setIsScanningFingerprint] = useState(false);
-  const [employeeData, setEmployeeData] = useState(null);
-  const [attendanceType, setAttendanceType] = useState('check-in');
-  const [attendanceSuccess, setAttendanceSuccess] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         // Check for existing user session
-        const user = authService.getCurrentUser();
+        const user = await authService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
         }
@@ -55,7 +43,7 @@ function App() {
 
   const handleLogin = async (credentials) => {
     try {
-      const user = await authService.login(credentials);
+      const user = await authService.login(credentials.email, credentials.password);
       setCurrentUser(user);
       setShowLoginModal(false);
       toast.success('Login successful!');
@@ -63,7 +51,11 @@ function App() {
       // Redirect logic is now handled by LoginModal component
       // No need to duplicate it here
     } catch (error) {
-      toast.error(error.message || 'Login failed');
+      toast.error(
+        error && typeof error === 'object' && 'message' in error
+          ? (error as { message: string }).message
+          : 'Login failed'
+      );
     }
   };
 
@@ -153,7 +145,7 @@ function App() {
               
               <div className="grid grid-cols-1 gap-4">
                 <button
-                  onClick={() => setShowBiometricAttendance(true)}
+                  onClick={() => {/* TODO: Implement biometric attendance */}}
                   className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md"
                 >
                   Biometric Attendance

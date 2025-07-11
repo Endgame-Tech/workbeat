@@ -3,6 +3,7 @@
 ## Overview
 
 Deploy WorkBeat using:
+
 - **Render**: Backend API + PostgreSQL Database
 - **Vercel**: Frontend React Application
 
@@ -31,7 +32,7 @@ Deploy WorkBeat using:
 2. Connect your GitHub repository: `Endgame-Tech/workbeat`
 3. Configure the service:
 
-```
+```sh
 Name: workbeat-api
 Branch: main
 Root Directory: server
@@ -66,7 +67,7 @@ RATE_LIMIT_WINDOW=900000
 3. Import from GitHub: `Endgame-Tech/workbeat`
 4. Configure the project:
 
-```
+```sh
 Framework Preset: Vite
 Root Directory: client
 Build Command: npm run build
@@ -100,7 +101,7 @@ After deployment, update the CORS origin in your backend:
 
 ## 🔧 Production Checklist
 
-### Before Deployment:
+### Before Deployment
 
 - [ ] All environment variables configured
 - [ ] Database migrations ready
@@ -108,7 +109,7 @@ After deployment, update the CORS origin in your backend:
 - [ ] JWT secrets are secure
 - [ ] Build scripts tested locally
 
-### After Deployment:
+### After Deployment
 
 - [ ] Database connected successfully
 - [ ] API endpoints responding correctly
@@ -135,7 +136,7 @@ git push origin main
 # 4. Deploy to Vercel (automatic after push)
 ```
 
-#### Deploy Frontend
+### Deploy Frontend
 
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Click "Add New..." → "Project"

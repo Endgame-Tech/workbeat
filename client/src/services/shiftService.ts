@@ -1,5 +1,5 @@
 import api from './api';
-import { ShiftTemplate, ScheduledShift } from '../types';
+import { ShiftTemplate, ScheduledShift, Pagination } from '../types';
 
 export const shiftService = {
   // Shift Templates
@@ -44,7 +44,7 @@ export const shiftService = {
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ data: ScheduledShift[]; pagination: any }> {
+  }): Promise<{ data: ScheduledShift[]; pagination: Pagination }> {
     const queryParams = new URLSearchParams();
     if (params?.employeeId) queryParams.append('employeeId', params.employeeId.toString());
     if (params?.startDate) queryParams.append('startDate', params.startDate);

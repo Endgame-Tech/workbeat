@@ -27,11 +27,11 @@ export interface WebSocketStats {
   uptime: number;
 }
 
-type EventCallback<T = any> = (data: T) => void;
+type EventCallback<T = unknown> = (data: T) => void;
 
 class WebSocketService {
   private socket: Socket | null = null;
-  private eventListeners: Map<string, Set<EventCallback>> = new Map();
+  private eventListeners: Map<string, Set<EventCallback<unknown>>> = new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
@@ -60,7 +60,7 @@ class WebSocketService {
       }
 
       // Create socket connection
-      const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_APP_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+      const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
       this.socket = io(wsUrl, {
         auth: { token: authToken },
         transports: ['websocket', 'polling'],
@@ -160,7 +160,7 @@ class WebSocketService {
     });
 
     // Connection health
-    this.socket.on('pong', (data) => {
+    this.socket.on('pong', () => {
       // Connection is healthy
     });
 
@@ -193,7 +193,7 @@ class WebSocketService {
     
     // First try to get from httpOnly cookie
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'token') {
         return value;
@@ -206,7 +206,7 @@ class WebSocketService {
       if (token) {
         return token;
       }
-    } catch (error) {
+    } catch {
       console.warn('Unable to access localStorage for token');
     }
     
@@ -214,11 +214,11 @@ class WebSocketService {
   }
 
   // Event subscription methods
-  on<T = any>(event: string, callback: EventCallback<T>): () => void {
+  on<T = unknown>(event: string, callback: EventCallback<T>): () => void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)!.add(callback);
+    (this.eventListeners.get(event) as Set<EventCallback<unknown>>).add(callback as EventCallback<unknown>);
     
     // Return unsubscribe function
     return () => {
@@ -226,17 +226,17 @@ class WebSocketService {
     };
   }
 
-  off<T = any>(event: string, callback: EventCallback<T>): void {
+  off<T = unknown>(event: string, callback: EventCallback<T>): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
-      listeners.delete(callback);
+      listeners.delete(callback as EventCallback<unknown>);
       if (listeners.size === 0) {
         this.eventListeners.delete(event);
       }
     }
   }
 
-  private emit<T = any>(event: string, data: T): void {
+  private emit<T = unknown>(event: string, data: T): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.forEach(callback => {

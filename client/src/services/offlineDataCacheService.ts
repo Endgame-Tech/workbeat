@@ -4,13 +4,21 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 // Define the database schema
+import {
+  EmployeeCacheData,
+  OrganizationCacheData,
+  ApiResponseCacheData,
+  AnalyticsCacheData,
+  SettingsCacheData
+} from '../types';
+
 interface OfflineCacheDB extends DBSchema {
   employees: {
     key: string;
     value: {
       id: string;
       organizationId: string;
-      data: any;
+      data: EmployeeCacheData;
       lastUpdated: number;
       expiresAt: number;
     };
@@ -19,7 +27,7 @@ interface OfflineCacheDB extends DBSchema {
     key: string;
     value: {
       id: string;
-      data: any;
+      data: OrganizationCacheData;
       lastUpdated: number;
       expiresAt: number;
     };
@@ -29,7 +37,7 @@ interface OfflineCacheDB extends DBSchema {
     value: {
       url: string;
       method: string;
-      data: any;
+      data: ApiResponseCacheData;
       lastUpdated: number;
       expiresAt: number;
     };
@@ -40,7 +48,7 @@ interface OfflineCacheDB extends DBSchema {
       id: string;
       organizationId: string;
       type: string;
-      data: any;
+      data: AnalyticsCacheData;
       dateRange: string;
       lastUpdated: number;
       expiresAt: number;
@@ -50,7 +58,7 @@ interface OfflineCacheDB extends DBSchema {
     key: string;
     value: {
       key: string;
-      data: any;
+      data: SettingsCacheData;
       lastUpdated: number;
     };
   };
@@ -121,7 +129,7 @@ class OfflineDataCacheService {
   }
 
   // Employee data caching
-  async cacheEmployeeData(organizationId: string, employees: any[]): Promise<void> {
+  async cacheEmployeeData(organizationId: string, employees: EmployeeCacheData[]): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const tx = this.db.transaction('employees', 'readwrite');
@@ -146,7 +154,7 @@ class OfflineDataCacheService {
     }
   }
 
-  async getCachedEmployees(organizationId: string): Promise<any[] | null> {
+  async getCachedEmployees(organizationId: string): Promise<EmployeeCacheData[] | null> {
     if (!this.db) return null;
 
     try {
@@ -167,7 +175,7 @@ class OfflineDataCacheService {
   }
 
   // Organization data caching
-  async cacheOrganizationData(organizationId: string, data: any): Promise<void> {
+  async cacheOrganizationData(organizationId: string, data: OrganizationCacheData): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const now = Date.now();
@@ -187,7 +195,7 @@ class OfflineDataCacheService {
     }
   }
 
-  async getCachedOrganization(organizationId: string): Promise<any | null> {
+  async getCachedOrganization(organizationId: string): Promise<OrganizationCacheData | null> {
     if (!this.db) return null;
 
     try {
@@ -206,7 +214,7 @@ class OfflineDataCacheService {
   }
 
   // API response caching
-  async cacheApiResponse(url: string, method: string, data: any): Promise<void> {
+  async cacheApiResponse(url: string, method: string, data: ApiResponseCacheData): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const now = Date.now();
@@ -227,7 +235,7 @@ class OfflineDataCacheService {
     }
   }
 
-  async getCachedApiResponse(url: string, method: string = 'GET'): Promise<any | null> {
+  async getCachedApiResponse(url: string, method: string = 'GET'): Promise<ApiResponseCacheData | null> {
     if (!this.db) return null;
 
     try {
@@ -250,7 +258,7 @@ class OfflineDataCacheService {
     organizationId: string, 
     type: string, 
     dateRange: string, 
-    data: any
+    data: AnalyticsCacheData
   ): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
@@ -279,7 +287,7 @@ class OfflineDataCacheService {
     organizationId: string, 
     type: string, 
     dateRange: string
-  ): Promise<any | null> {
+  ): Promise<AnalyticsCacheData | null> {
     if (!this.db) return null;
 
     const id = `${organizationId}-${type}-${dateRange}`;
@@ -300,7 +308,7 @@ class OfflineDataCacheService {
   }
 
   // Settings caching
-  async cacheSetting(key: string, data: any): Promise<void> {
+  async cacheSetting(key: string, data: SettingsCacheData): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const now = Date.now();
@@ -318,7 +326,7 @@ class OfflineDataCacheService {
     }
   }
 
-  async getCachedSetting(key: string): Promise<any | null> {
+  async getCachedSetting(key: string): Promise<SettingsCacheData | null> {
     if (!this.db) return null;
 
     try {
@@ -447,15 +455,15 @@ class OfflineDataCacheService {
   }
 
   // Get cache key for API requests
-  getCacheKey(url: string, params?: Record<string, any>): string {
+  getCacheKey(url: string, params?: Record<string, unknown>): string {
     if (!params) return url;
     
-    const sortedParams = Object.keys(params).sort().reduce((sorted: Record<string, any>, key) => {
+    const sortedParams = Object.keys(params).sort().reduce((sorted: Record<string, unknown>, key) => {
       sorted[key] = params[key];
       return sorted;
-    }, {});
+    }, {} as Record<string, unknown>);
     
-    const paramString = new URLSearchParams(sortedParams).toString();
+    const paramString = new URLSearchParams(sortedParams as Record<string, string>).toString();
     return `${url}?${paramString}`;
   }
 }

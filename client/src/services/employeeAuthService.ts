@@ -2,7 +2,7 @@
 
 import { ApiError, AttendanceData, FingerprintData, FingerprintEnrollData } from '../types/api.types';
 import api from './api';
-import { AttendanceRecord, Employee } from '../types';
+import { Employee } from '../types';
 import { employeeService } from './employeeService';
 
 // Improved checkIfLate function with reliable detection
@@ -26,9 +26,11 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
         console.error('🕒 Error parsing work schedule string:', error);
         
         // Try to extract times using regex if JSON.parse fails
-        if (typeof employee.workSchedule === 'string' && employee.workSchedule.includes('start')) {
+        if (typeof employee.workSchedule === 'string' && (employee.workSchedule as string).includes('start')) {
           try {
-            const startMatch = employee.workSchedule.match(/start["']?\s*:\s*["']?(\d{1,2}:\d{2})["']?/);
+            const startMatch = (typeof employee.workSchedule === 'string'
+              ? employee.workSchedule
+              : '').match(/start["']?\s*:\s*["']?(\d{1,2}:\d{2})["']?/);
             if (startMatch && startMatch[1]) {
               workSchedule = { start: startMatch[1] };
               console.log("🕒 LATENESS CHECK - Extracted start time from string:", workSchedule.start);
@@ -211,7 +213,7 @@ export const employeeAuthService = {
       const dataToSubmit = {
         employeeId: String(attendanceData.employeeId),
         type: attendanceData.type,
-        employeeName: attendanceData.employeeName || '',
+        // employeeName: attendanceData.employeeName || '',
         notes: attendanceData.notes || '',
         facialImage: attendanceData.facialImage,
         organizationId: String(organizationId),

@@ -6,7 +6,7 @@ interface PushNotificationOptions {
   tag?: string;
   requireInteraction?: boolean;
   silent?: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 interface NotificationPermissionStatus {
@@ -108,20 +108,7 @@ class PushNotificationService {
         tag: options.tag || 'workbeat-notification',
         requireInteraction: options.requireInteraction || false,
         silent: options.silent || false,
-        data: options.data || {},
-        timestamp: Date.now(),
-        actions: [
-          {
-            action: 'view',
-            title: 'View Details',
-            icon: '/icons/icon-32x32.svg'
-          },
-          {
-            action: 'dismiss',
-            title: 'Dismiss',
-            icon: '/icons/icon-32x32.svg'
-          }
-        ]
+        data: options.data || {}
       };
 
       if (this.registration) {

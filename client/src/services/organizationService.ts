@@ -1,4 +1,20 @@
+
 import api from './api';
+import {
+  OrganizationSettings,
+  SubscriptionData,
+  OrganizationUserData,
+  DepartmentData,
+  Holiday
+} from '../types';
+
+export interface RegisterOrganizationData {
+  name: string;
+  email: string;
+  address?: string;
+  phone?: string;
+  // Add other required fields here
+}
 
 // Organization management service
 export const organizationService = {
@@ -7,7 +23,7 @@ export const organizationService = {
    * @param organizationData The organization data to register
    * @returns The registered organization and admin user data
    */
-  async registerOrganization(organizationData: any) {
+  async registerOrganization(organizationData: RegisterOrganizationData) {
     try {
       const response = await api.post('/api/organizations/register', organizationData);
       return response.data.data;
@@ -29,9 +45,15 @@ export const organizationService = {
     } catch (error) {
       console.error('Error fetching organization:', error);
       // Only log detailed error info in development
-      if (process.env.NODE_ENV === 'development' && error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
+      if (
+        process.env.NODE_ENV === 'development' &&
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error
+      ) {
+        const err = error as { response: { data: unknown; status: unknown } };
+        console.error('Response data:', err.response.data);
+        console.error('Response status:', err.response.status);
       }
       throw error;
     }
@@ -43,7 +65,7 @@ export const organizationService = {
    * @param organizationData The updated organization data
    * @returns The updated organization
    */
-  async updateOrganization(organizationId: string, organizationData: any) {
+  async updateOrganization(organizationId: string, organizationData: RegisterOrganizationData) {
     try {
       const response = await api.put(
         `/api/organizations/${organizationId}`,
@@ -77,7 +99,7 @@ export const organizationService = {
    * @param subscriptionData The updated subscription data
    * @returns The updated subscription
    */
-  async updateSubscription(organizationId: string, subscriptionData: any) {
+  async updateSubscription(organizationId: string, subscriptionData: SubscriptionData) {
     try {
       const response = await api.put(
         `/api/organizations/${organizationId}/subscription`,
@@ -126,7 +148,7 @@ export const organizationService = {
    * @param userData The user data to add
    * @returns The added user
    */
-  async addOrganizationUser(organizationId: string, userData: any) {
+  async addOrganizationUser(organizationId: string, userData: OrganizationUserData) {
     try {
       const response = await api.post(
         `/api/organizations/${organizationId}/users`,
@@ -146,7 +168,7 @@ export const organizationService = {
    * @param userData The updated user data
    * @returns The updated user
    */
-  async updateOrganizationUser(organizationId: string, userId: string, userData: any) {
+  async updateOrganizationUser(organizationId: string, userId: string, userData: OrganizationUserData) {
     try {
       const response = await api.put(
         `/api/organizations/${organizationId}/users/${userId}`,
@@ -200,7 +222,7 @@ export const organizationService = {
    * @param departmentData The department data to create
    * @returns The created department
    */
-  async createDepartment(organizationId: string, departmentData: any) {
+  async createDepartment(organizationId: string, departmentData: DepartmentData) {
     try {
       const response = await api.post(
         `/api/organizations/${organizationId}/departments`,
@@ -220,7 +242,7 @@ export const organizationService = {
    * @param departmentData The updated department data
    * @returns The updated department
    */
-  async updateDepartment(organizationId: string, departmentId: string, departmentData: any) {
+  async updateDepartment(organizationId: string, departmentId: string, departmentData: DepartmentData) {
     try {
       const response = await api.put(
         `/api/organizations/${organizationId}/departments/${departmentId}`,
@@ -274,7 +296,7 @@ export const organizationService = {
    * @param settings The settings to update
    * @returns Updated settings
    */
-  async updateSettings(organizationId: string, settings: any) {
+  async updateSettings(organizationId: string, settings: OrganizationSettings) {
     try {
       const response = await api.put(
         `/api/organizations/${organizationId}/settings`,
@@ -369,7 +391,7 @@ export const organizationService = {
    * @param holidays Array of holiday objects
    * @returns Updated holiday calendar
    */
-  async updateHolidayCalendar(organizationId: string, holidays: any[]) {
+  async updateHolidayCalendar(organizationId: string, holidays: Holiday[]) {
     try {
       const response = await api.put(
         `/api/organizations/${organizationId}/holidays`,

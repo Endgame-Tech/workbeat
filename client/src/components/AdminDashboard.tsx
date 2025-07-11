@@ -337,7 +337,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     const endDate = new Date(); // Today
     endDate.setHours(23, 59, 59, 999); // End of today
     
-    let startDate = new Date();
+    const startDate = new Date();
     
     switch (reportType) {
       case ReportType.DAILY:

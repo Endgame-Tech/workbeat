@@ -1,3 +1,8 @@
+// TypeScript type declaration for SyncManager (for background sync API)
+interface SyncManager {
+  register(tag: string): Promise<void>;
+}
+
 import { attendanceService as originalAttendanceService } from './attendanceService';
 import offlineAttendanceDB from './offlineAttendanceDB';
 import { AttendanceRecord } from '../types';
@@ -31,11 +36,17 @@ export const offlineAttendanceService = {
     console.log('🌐 Network connection restored');
     
     // Register background sync if supported
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register('attendance-sync');
-        console.log('🔄 Background sync registered for attendance');
+        const syncManager = (registration as ServiceWorkerRegistration & { sync?: SyncManager }).sync;
+        if (syncManager) {
+          await syncManager.register('attendance-sync');
+          console.log('🔄 Background sync registered for attendance');
+        } else {
+          // Fallback to immediate sync if background sync not supported
+          this.syncOfflineRecords();
+        }
       } catch (error) {
         console.error('🔄 Failed to register background sync:', error);
         // Fallback to immediate sync
@@ -51,17 +62,17 @@ export const offlineAttendanceService = {
   setupServiceWorkerMessageHandler(): void {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
-        const { type, data, messageId } = event.data;
+        const { type, data } = event.data;
         
         switch (type) {
           case 'get-offline-attendance':
-            this.handleGetOfflineAttendance(event, messageId);
+            this.handleGetOfflineAttendance(event);
             break;
           case 'mark-record-synced':
-            this.handleMarkRecordSynced(event, data, messageId);
+            this.handleMarkRecordSynced(event, data);
             break;
           case 'update-retry-count':
-            this.handleUpdateRetryCount(event, data, messageId);
+            this.handleUpdateRetryCount(event, data);
             break;
           case 'sync-event':
             this.handleSyncEvent(data);
@@ -74,7 +85,7 @@ export const offlineAttendanceService = {
   },
 
   // Handle get offline attendance data request from service worker
-  async handleGetOfflineAttendance(event: MessageEvent, messageId: string): Promise<void> {
+  async handleGetOfflineAttendance(event: MessageEvent): Promise<void> {
     try {
       const unsynced = await offlineAttendanceDB.getUnsyncedRecords();
       const authToken = localStorage.getItem('authToken'); // Get current auth token
@@ -86,7 +97,6 @@ export const offlineAttendanceService = {
         organizationId: record.organizationId,
         type: record.type,
         timestamp: record.timestamp,
-        biometricData: record.biometricData,
         locationData: record.location,
         deviceId: record.deviceId,
         authToken
@@ -95,34 +105,43 @@ export const offlineAttendanceService = {
       event.ports[0].postMessage({ result: records });
     } catch (error) {
       console.error('🔄 Error getting offline attendance data:', error);
-      event.ports[0].postMessage({ error: error.message });
+      const errorMessage = (error && typeof error === 'object' && 'message' in error)
+        ? (error as { message: string }).message
+        : String(error);
+      event.ports[0].postMessage({ error: errorMessage });
     }
   },
 
   // Handle mark record as synced request from service worker
-  async handleMarkRecordSynced(event: MessageEvent, data: any, messageId: string): Promise<void> {
+  async handleMarkRecordSynced(event: MessageEvent, data: { recordId: string }): Promise<void> {
     try {
       await offlineAttendanceDB.markAsSynced(data.recordId);
       event.ports[0].postMessage({ result: 'success' });
     } catch (error) {
       console.error('🔄 Error marking record as synced:', error);
-      event.ports[0].postMessage({ error: error.message });
+      const errorMessage = (error && typeof error === 'object' && 'message' in error)
+        ? (error as { message: string }).message
+        : String(error);
+      event.ports[0].postMessage({ error: errorMessage });
     }
   },
 
   // Handle update retry count request from service worker
-  async handleUpdateRetryCount(event: MessageEvent, data: any, messageId: string): Promise<void> {
+  async handleUpdateRetryCount(event: MessageEvent, data: { recordId: string }): Promise<void> {
     try {
       await offlineAttendanceDB.markSyncAttempt(data.recordId);
       event.ports[0].postMessage({ result: 'success' });
     } catch (error) {
       console.error('🔄 Error updating retry count:', error);
-      event.ports[0].postMessage({ error: error.message });
+      const errorMessage = (error && typeof error === 'object' && 'message' in error)
+        ? (error as { message: string }).message
+        : String(error);
+      event.ports[0].postMessage({ error: errorMessage });
     }
   },
 
   // Handle sync events from service worker
-  handleSyncEvent(data: any): void {
+  handleSyncEvent(data: { eventType: string; data: unknown }): void {
     const { eventType, data: eventData } = data;
     
     switch (eventType) {
@@ -302,12 +321,19 @@ export const offlineAttendanceService = {
 
   // Manually trigger background sync
   async triggerBackgroundSync(): Promise<boolean> {
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register('attendance-sync');
-        console.log('🔄 Manual background sync triggered');
-        return true;
+        const syncManager = (registration as ServiceWorkerRegistration & { sync?: SyncManager }).sync;
+        if (syncManager) {
+          await syncManager.register('attendance-sync');
+          console.log('🔄 Manual background sync triggered');
+          return true;
+        } else {
+          console.warn('🔄 Background sync not supported, using immediate sync');
+          this.syncOfflineRecords();
+          return false;
+        }
       } catch (error) {
         console.error('🔄 Failed to trigger background sync:', error);
         // Fallback to immediate sync
@@ -323,7 +349,10 @@ export const offlineAttendanceService = {
 
   // Check if background sync is supported
   isBackgroundSyncSupported(): boolean {
-    return 'serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype;
+    return (
+      'serviceWorker' in navigator &&
+      'SyncManager' in window
+    );
   },
   
   // Forward other methods to original service

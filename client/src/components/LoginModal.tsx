@@ -22,6 +22,12 @@ interface ApiError {
   }
 }
 
+export interface LoginModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onLogin: (credentials: any) => Promise<void>;
+}
+
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

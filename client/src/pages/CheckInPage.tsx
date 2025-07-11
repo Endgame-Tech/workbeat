@@ -6,7 +6,7 @@ import { employeeAuthService } from '../services/employeeAuthService';
 import { Employee } from '../types';
 import { Card, CardHeader, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Clock, MapPin, CheckCircle, XCircle, Fingerprint, Camera } from 'lucide-react';
+import { Clock, MapPin, Fingerprint, Camera } from 'lucide-react';
 import AttendanceSuccess from '../components/AttendanceSuccess';
 import FingerprintScanner from '../components/FingerprintScanner';
 import toast from 'react-hot-toast';
@@ -17,7 +17,6 @@ const CheckInPage: React.FC = () => {
   const [isCapturingFace, setIsCapturingFace] = useState(false);
   const [employeeData, setEmployeeData] = useState<Employee | null>(null);
   const [attendanceType, setAttendanceType] = useState<'sign-in' | 'sign-out'>('sign-in');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [location, setLocation] = useState<{ latitude: number, longitude: number } | null>(null);
   const [notes, setNotes] = useState('');
@@ -149,7 +148,6 @@ const CheckInPage: React.FC = () => {
     if (!employeeData) return;
     
     setIsSubmitting(true);
-    
     try {
       // Prepare attendance record
       const attendanceData = {
@@ -193,8 +191,6 @@ const CheckInPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
   const handleDone = () => {
     // Reset form
     setEmployeeData(null);
@@ -215,7 +211,8 @@ const CheckInPage: React.FC = () => {
     const minutes = currentTime.getMinutes();
     return (hours > 9) || (hours === 9 && minutes > 5);
   };
-  
+
+  // Always return a ReactNode or null
   if (isSuccess && successData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
@@ -229,7 +226,7 @@ const CheckInPage: React.FC = () => {
       </div>
     );
   }
-  
+
   if (isCapturingFace) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
@@ -239,11 +236,11 @@ const CheckInPage: React.FC = () => {
               <h2 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
                 Face Verification
               </h2>
-              
+
               <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">
                 Look at the camera for attendance verification
               </p>
-              
+
               <div className="aspect-square bg-black rounded-lg overflow-hidden mb-4">
                 <video 
                   ref={videoRef} 
@@ -253,7 +250,7 @@ const CheckInPage: React.FC = () => {
                   muted
                 />
               </div>
-              
+
               <div className="text-center mb-4">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {employeeData?.name}
@@ -262,7 +259,7 @@ const CheckInPage: React.FC = () => {
                   {attendanceType === 'sign-in' ? 'Signing in' : 'Signing out'}
                 </p>
               </div>
-              
+
               <div className="flex justify-between">
                 <Button
                   variant="ghost"
@@ -270,7 +267,7 @@ const CheckInPage: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                
+
                 <Button
                   variant="primary"
                   onClick={captureFace}
@@ -279,7 +276,7 @@ const CheckInPage: React.FC = () => {
                   Take Photo
                 </Button>
               </div>
-              
+
               <canvas ref={canvasRef} className="hidden" />
             </CardContent>
           </Card>
@@ -287,7 +284,7 @@ const CheckInPage: React.FC = () => {
       </div>
     );
   }
-  
+
   if (isScanningFingerprint) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
@@ -302,7 +299,7 @@ const CheckInPage: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 flex items-center justify-center">
       <div className="w-full max-w-md">
@@ -317,7 +314,7 @@ const CheckInPage: React.FC = () => {
               </p>
             </div>
           </CardHeader>
-          
+
           <CardContent>
             <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3 rounded-lg mb-6">
               <div className="flex items-center">
@@ -329,7 +326,7 @@ const CheckInPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className={`text-xs font-medium px-2 py-1 rounded ${
                 attendanceType === 'sign-in' 
                   ? (isLate() ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 
@@ -341,7 +338,7 @@ const CheckInPage: React.FC = () => {
                   : 'Sign Out'}
               </div>
             </div>
-            
+
             <div className="mb-6">
               <h3 className="text-center text-base font-medium text-gray-800 dark:text-white mb-2">
                 Select Attendance Type
@@ -365,7 +362,7 @@ const CheckInPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="text-center mb-6">
               <p className="text-gray-600 dark:text-gray-400 mb-2">
                 Verify your identity with your fingerprint
@@ -374,7 +371,7 @@ const CheckInPage: React.FC = () => {
                 A face photo will be taken after fingerprint verification
               </p>
             </div>
-            
+
             <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-400 mb-6">
               <div className="flex items-start mb-1">
                 <MapPin size={16} className="mr-1 mt-0.5 flex-shrink-0" />
@@ -390,7 +387,7 @@ const CheckInPage: React.FC = () => {
               </div>
             </div>
           </CardContent>
-          
+
           <CardFooter>
             <Button
               variant="primary"
@@ -405,6 +402,6 @@ const CheckInPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default CheckInPage;

@@ -1,27 +1,34 @@
 import React, { useState } from 'react';
 import { User, Calendar, Moon, Sun, Menu, X } from 'lucide-react';
 import Button from '../ui/Button';
-import { useTheme } from '../context/ThemeProvider';
 import OfflineIndicator from '../OfflineIndicator';
 
 interface HeaderProps {
-  user: { name: string; role: string } | null;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    organizationId?: string;
+    organization?: { id: string };
+    // add other properties as needed
+  } | null;
   onLogout: () => void;
+  onToggleTheme: () => void;
+  isDarkMode: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout, onToggleTheme, isDarkMode }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { toggleTheme, isDarkMode } = useTheme();
-  
+  // Removed useTheme context, now using props
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
-  };
+  }
 
   const UserProfile = () => (
     <div className="flex items-center">
       <div className="mr-3 text-right">
         <div className="text-sm font-medium text-gray-800 dark:text-white">
-          {user?.name}
+          {user?.email}
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">
           {user?.role}
@@ -59,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
 
   const ThemeToggle = () => (
     <button 
-      onClick={toggleTheme}
+      onClick={onToggleTheme}
       className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       aria-label="Toggle theme"
     >
