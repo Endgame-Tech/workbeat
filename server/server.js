@@ -59,18 +59,26 @@ app.use(securityConfig.xss); // XSS protection
 app.use(sanitizeInput); // Additional input sanitization
 
 // CORS configuration
+const getDevOrigins = () => {
+  if (config.app.env !== 'development') return [];
+  
+  return [
+    'http://localhost:5173', // Vite dev server
+    'http://localhost:3000', // React dev server
+    'http://localhost:4173', // Vite preview
+    'http://127.0.0.1:5173', // Alternative localhost
+    'http://127.0.0.1:3000', // Alternative localhost
+  ];
+};
+
 const allowedOrigins = [
   config.app.frontendUrl,
-  'http://localhost:5173', // Vite dev server
-  'http://localhost:3000', // React dev server
-  'http://localhost:4173', // Vite preview
-  'http://127.0.0.1:5173', // Alternative localhost
-  'http://127.0.0.1:3000', // Alternative localhost
-];
+  ...getDevOrigins()
+].filter(Boolean);
 
 // In production, only allow the configured frontend URL
 const corsOrigins = config.app.env === 'production' 
-  ? [config.app.frontendUrl]
+  ? [config.app.frontendUrl].filter(Boolean)
   : allowedOrigins;
 
 app.use(cors({
@@ -225,7 +233,8 @@ server.listen(PORT, () => {
   console.log(`🚀 WorkBeat API v${config.app.version} running on port ${PORT}`);
   console.log(`🌍 Environment: ${config.app.env}`);
   console.log(`🔗 Frontend URL: ${config.app.frontendUrl}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`⚡ Performance monitoring: http://localhost:${PORT}/api/performance`);
-  console.log(`🔌 WebSocket statistics: http://localhost:${PORT}/api/websocket/stats`);
+  const baseUrl = config.app.baseUrl || `http://localhost:${PORT}`;
+  console.log(`📊 Health check: ${baseUrl}/health`);
+  console.log(`⚡ Performance monitoring: ${baseUrl}/api/performance`);
+  console.log(`🔌 WebSocket statistics: ${baseUrl}/api/websocket/stats`);
 });

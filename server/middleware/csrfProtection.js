@@ -168,13 +168,20 @@ const enhancedCSRFProtection = () => {
     const origin = req.get('Origin');
     const host = req.get('Host');
     
-    // In development, allow requests from the configured frontend URL
+    // Get allowed origins based on environment
+    const getDevOrigins = () => {
+      if (process.env.NODE_ENV === 'production') return [];
+      return [
+        `http://localhost:${process.env.PORT || 3001}`,
+        `https://localhost:${process.env.PORT || 3001}`,
+        'http://localhost:5173', // Default Vite dev server
+        'http://localhost:3000', // Default React dev server
+      ];
+    };
+    
     const allowedOrigins = [
       process.env.FRONTEND_URL,
-      `http://localhost:${process.env.PORT || 3001}`,
-      `https://localhost:${process.env.PORT || 3001}`,
-      'http://localhost:5173', // Default Vite dev server
-      'http://localhost:3000', // Default React dev server
+      ...getDevOrigins()
     ].filter(Boolean);
     
     if (origin && !allowedOrigins.includes(origin)) {

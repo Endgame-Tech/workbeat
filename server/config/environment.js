@@ -35,7 +35,8 @@ const config = {
     version: process.env.npm_package_version || '1.0.0',
     env: NODE_ENV,
     port: parseInt(process.env.PORT) || 5000,
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173'
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+    baseUrl: process.env.APP_URL || (NODE_ENV === 'production' ? undefined : `http://localhost:${parseInt(process.env.PORT) || 5000}`)
   },
 
   // Database configuration
