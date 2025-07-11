@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#1e40af" />
+  <text x="640" y="360" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        fill="white" 
+        font-family="Arial, sans-serif" 
+        font-size="36" 
+        font-weight="bold">
+    Dashboard Desktop View
+  </text>
+  <text x="640" y="417.6" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        fill="white" 
+        font-family="Arial, sans-serif" 
+        font-size="21.599999999999998" 
+        opacity="0.8">
+    WorkBeat Attendance System
+  </text>
+</svg>

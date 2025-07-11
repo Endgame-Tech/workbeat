@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="834" height="1194" viewBox="0 0 834 1194" xmlns="http://www.w3.org/2000/svg">
+  <rect width="834" height="1194" fill="#3b82f6" />
+  <text x="417" y="597" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        fill="white" 
+        font-family="Arial, sans-serif" 
+        font-size="41.7" 
+        font-weight="bold">
+    WorkBeat
+  </text>
+  <text x="417" y="663.72" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        fill="white" 
+        font-family="Arial, sans-serif" 
+        font-size="25.02" 
+        opacity="0.8">
+    WorkBeat Attendance System
+  </text>
+</svg>

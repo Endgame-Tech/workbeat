@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="204.8" fill="url(#bgGradient)" />
+  
+  <!-- Clock icon representing time tracking -->
+  <g transform="translate(256, 256)">
+    <!-- Clock face -->
+    <circle cx="0" cy="0" r="102.4" fill="#ffffff" opacity="0.9" />
+    
+    <!-- Clock hands -->
+    <line x1="0" y1="0" x2="0" y2="-61.44" stroke="#3b82f6" stroke-width="8.192" stroke-linecap="round" />
+    <line x1="0" y1="0" x2="40.96000000000001" y2="-20.480000000000004" stroke="#3b82f6" stroke-width="6.144" stroke-linecap="round" />
+    
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="6.144" fill="#3b82f6" />
+    
+    <!-- Hour markers -->
+    <circle cx="0" cy="-81.92000000000002" r="4.096" fill="#1e40af" />
+    <circle cx="81.92000000000002" cy="0" r="4.096" fill="#1e40af" />
+    <circle cx="0" cy="81.92000000000002" r="4.096" fill="#1e40af" />
+    <circle cx="-81.92000000000002" cy="0" r="4.096" fill="#1e40af" />
+  </g>
+  
+  <!-- "W" letter for WorkBeat -->
+  <text x="256" y="419.84000000000003" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        fill="#ffffff" 
+        font-family="Arial, sans-serif" 
+        font-weight="bold" 
+        font-size="61.44">W</text>
+</svg>
