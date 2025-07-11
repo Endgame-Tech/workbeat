@@ -29,6 +29,7 @@ const getApiUrl = () => {
     return fallbackUrl;
   }
   
+  
   // Development fallback
   const devUrl = 'http://localhost:3001';
   console.log('Using development API URL:', devUrl);
