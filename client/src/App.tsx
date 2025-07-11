@@ -31,7 +31,7 @@ function App() {
   const [attendanceType, setAttendanceType] = useState('sign-in');
   const [attendanceSuccess, setAttendanceSuccess] = useState(false);
   const [showBiometricAttendance, setShowBiometricAttendance] = useState(false);
-  const [fingerprintSupported, setFingerprintSupported] = useState(false);
+  const [fingerprintSupported] = useState(false);
   
   // Check for existing session and device capabilities on mount
   useEffect(() => {
@@ -84,12 +84,6 @@ function App() {
   const toggleTheme = () => {
     const newTheme = themeService.toggleTheme();
     setIsDarkMode(newTheme === 'dark');
-  };
-  
-  // Start fingerprint verification
-  const startFingerprintVerification = () => {
-    setIsScanningFingerprint(true);
-    setAttendanceSuccess(false);
   };
   
   // Handle fingerprint verification completion

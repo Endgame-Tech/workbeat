@@ -1,4 +1,4 @@
-const { prisma } = require('../config/db');
+const { prisma } = require('../config/db-simple');
 
 // Helper function to parse JSON fields
 const parseEmployeeJsonFields = (employee) => {
