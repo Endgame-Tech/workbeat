@@ -1,25 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Camera, Fingerprint, User } from 'lucide-react';
+import { Fingerprint, UserPlus, LogIn, User } from 'lucide-react';
 
 // Import components
 import LoginModal from '../components/LoginModal';
+import SignupModal from '../components/SignupModal';
 import FingerprintScanner from '../components/FingerprintScanner';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 
 // Import services
-import { authService } from '../services/authService';
 import { employeeAuthService } from '../services/employeeAuthService';
-import { attendanceService } from '../services/attendanceService';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isScanningFingerprint, setIsScanningFingerprint] = useState(false);
   const [isCapturingFace, setIsCapturingFace] = useState(false);
-  const [employeeData, setEmployeeData] = useState<any>(null);
+  interface EmployeeData {
+    _id: string;
+    name: string;
+    department: string;
+    position: string;
+    attendanceRecorded?: boolean;
+    attendanceTime?: string;
+    attendanceType?: 'sign-in' | 'sign-out';
+    [key: string]: unknown;
+  }
+
+  const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [attendanceType, setAttendanceType] = useState<'sign-in' | 'sign-out'>('sign-in');
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -47,6 +58,10 @@ const HomePage: React.FC = () => {
   // Admin login modal close handler
   const handleLoginModalClose = () => {
     setIsLoginModalOpen(false);
+  };
+
+  const handleSignupModalClose = () => {
+    setIsSignupModalOpen(false);
   };
 
   // Fingerprint verification handler
@@ -156,7 +171,7 @@ const HomePage: React.FC = () => {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
         };
-      } catch (error) {
+      } catch {
         console.warn('Location access denied or unavailable');
       }
       
@@ -164,11 +179,9 @@ const HomePage: React.FC = () => {
       const attendanceData = {
         employeeId: employeeData._id,
         type: attendanceType,
-        facialCapture: {
-          image: faceImage
-        },
+        facialCapture: faceImage,
         verificationMethod: 'biometric',
-        location
+        ...(location ? { location } : {})
       };
       
       // Submit attendance via employee auth service
@@ -188,7 +201,12 @@ const HomePage: React.FC = () => {
   };
 
   // Show success message after recording attendance
-  const showSuccessMessage = (attendanceRecord: any) => {
+  interface AttendanceRecord {
+    timestamp?: string | number;
+    [key: string]: unknown;
+  }
+
+  const showSuccessMessage = (attendanceRecord: AttendanceRecord) => {
     if (employeeData) {
       const timestamp = new Date(attendanceRecord.timestamp || Date.now());
       const formattedTime = timestamp.toLocaleTimeString([], { 
@@ -238,15 +256,27 @@ const HomePage: React.FC = () => {
               </h1>
             </div>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsLoginModalOpen(true)}
-              leftIcon={<User size={16} />}
-              className="rounded-xl"
-            >
-              Admin Login
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSignupModalOpen(true)}
+                leftIcon={<UserPlus size={16} />}
+                className="rounded-xl border-primary-200 hover:border-primary-300 text-primary-700 hover:bg-primary-50"
+              >
+                Get Started
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLoginModalOpen(true)}
+                leftIcon={<LogIn size={16} />}
+                className="rounded-xl"
+              >
+                Admin Login
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -396,6 +426,11 @@ const HomePage: React.FC = () => {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={handleLoginModalClose}
+      />
+      
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={handleSignupModalClose}
       />
     </div>
   );

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
 
 interface RuntimeConfig {
   VITE_APP_API_URL?: string;
@@ -10,11 +9,30 @@ const getApiUrl = () => {
   // Check for runtime config with proper typing
   const runtimeConfig = (window as Window & { _env_?: RuntimeConfig })._env_;
   if (runtimeConfig?.VITE_APP_API_URL) {
+    console.log('Using runtime config API URL:', runtimeConfig.VITE_APP_API_URL);
     return runtimeConfig.VITE_APP_API_URL;
   }
   
-  // Fall back to hardcoded default
-  return 'http://localhost:3001';
+  // Check Vite environment variable (this should be set in Vercel)
+  if (import.meta.env.VITE_APP_API_URL) {
+    console.log('Using VITE_APP_API_URL:', import.meta.env.VITE_APP_API_URL);
+    return import.meta.env.VITE_APP_API_URL;
+  }
+  
+  // Production fallback - you need to set VITE_APP_API_URL in Vercel
+  if (import.meta.env.PROD) {
+    console.error('VITE_APP_API_URL not set in production. Please set it in your deployment platform.');
+    console.log('Available env vars:', Object.keys(import.meta.env));
+    // Fallback to a common production API URL pattern
+    const fallbackUrl = 'https://workbeat-api.onrender.com';
+    console.log('Using fallback API URL:', fallbackUrl);
+    return fallbackUrl;
+  }
+  
+  // Development fallback
+  const devUrl = 'http://localhost:3001';
+  console.log('Using development API URL:', devUrl);
+  return devUrl;
 };
 
 // Create axios instance with default config

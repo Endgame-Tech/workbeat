@@ -52,7 +52,7 @@ generate_secrets() {
     echo "REDIS_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')" >> .env
     echo "CLIENT_URL=https://yourdomain.com" >> .env
     echo "CORS_ORIGIN=https://yourdomain.com" >> .env
-    echo "VITE_API_URL=https://yourdomain.com/api" >> .env
+    echo "VITE_APP_API_URL=https://yourdomain.com/api" >> .env
     
     print_success "Secret keys generated and saved to .env file."
     print_warning "Please update the domain name in the .env file before deployment."

@@ -78,7 +78,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+      VITE_APP_API_URL: ${VITE_APP_API_URL:-http://localhost:3001}
     depends_on:
       - backend
     ports:

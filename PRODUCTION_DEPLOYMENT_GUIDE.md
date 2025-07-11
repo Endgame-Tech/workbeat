@@ -206,6 +206,7 @@ docker-compose exec backend npx prisma migrate deploy
    ```
 
 4. **Regular security audits**:
+
    - Regularly check for outdated dependencies
    - Run security scanning tools like OWASP ZAP
    - Review application logs for suspicious activity

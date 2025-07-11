@@ -1,12 +1,61 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Fingerprint, Clock, CheckCircle, Shield, Users, BarChart2 } from 'lucide-react';
+import { Fingerprint, Clock, CheckCircle, Shield, Users, BarChart2, UserPlus, LogIn } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
+import LoginModal from '../components/LoginModal';
+import SignupModal from '../components/SignupModal';
 
 const LandingPage: React.FC = () => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+
+  const handleLoginModalClose = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleSignupModalClose = () => {
+    setIsSignupModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+      {/* Navigation Header */}
+      <nav className="absolute top-0 left-0 right-0 z-20 bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <Fingerprint className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="ml-2 text-lg font-bold text-white">WorkBeat</h1>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLoginModalOpen(true)}
+                leftIcon={<LogIn size={16} />}
+                className="text-white hover:bg-white/10 border-white/20"
+              >
+                Sign In
+              </Button>
+              
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsSignupModalOpen(true)}
+                leftIcon={<UserPlus size={16} />}
+                className="bg-white text-primary-600 hover:bg-white/90"
+              >
+                Get Started
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 gradient-primary opacity-95"></div>
@@ -42,11 +91,16 @@ const LandingPage: React.FC = () => {
             
             <div className="mt-8 sm:mt-12 max-w-sm mx-auto sm:max-w-none sm:flex sm:justify-center animate-slide-up px-4 sm:px-0" style={{ animationDelay: '0.6s' }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 w-full sm:w-auto">
-                <Link to="/register" className="w-full sm:w-auto">
-                  <Button variant="secondary" size="lg" className="w-full text-blue m:min-w-[200px]  hover:bg-primary-50 shadow-xl hover:shadow-2xl text-base sm:text-lg py-3 sm:py-4">
+                <div className="w-full sm:w-auto">
+                  <Button 
+                    variant="secondary" 
+                    size="lg" 
+                    onClick={() => setIsSignupModalOpen(true)}
+                    className="w-full text-blue sm:min-w-[200px] hover:bg-primary-50 shadow-xl hover:shadow-2xl text-base sm:text-lg py-3 sm:py-4"
+                  >
                     Start Free Trial
                   </Button>
-                </Link>
+                </div>
                 <Link to="/attend" className="w-full sm:w-auto">
                   <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] border-white/20 text-white hover:bg-white/10 backdrop-blur-sm text-base sm:text-lg py-3 sm:py-4">
                     Try Demo
@@ -664,6 +718,17 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleLoginModalClose}
+      />
+      
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={handleSignupModalClose}
+      />
     </div>
   );
 };

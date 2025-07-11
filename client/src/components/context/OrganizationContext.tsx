@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import api from '../../services/api';
 
 // Define the organization type
 interface Organization {
@@ -90,28 +91,11 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
     setError(null);
     
     try {
-      // Use the correct API URL with base URL
-      const response = await fetch(`http://localhost:3001/api/organizations/${orgId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      // Use the api instance which handles URL configuration
+      const response = await api.get(`/organizations/${orgId}`);
       
-      if (response.status === 404) {
-        // Organization not found - this is expected for new users
-        console.log('Organization not found, creating minimal organization state');
-        setOrganizationState({
-          id: orgId
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!response.ok) {
-        throw new Error('Failed to load organization data');
-      }
-      
-      const data = await response.json();
+      // With axios, successful responses are returned directly
+      const data = response.data;
       
       if (data.success && data.data) {
         setOrganizationState({
@@ -126,15 +110,24 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
           id: orgId
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading organization:', err);
-      // Only set error for actual server errors, not 404s
-      setError('Failed to load organization data');
       
-      // Still set the basic organization with ID
-      setOrganizationState({
-        id: orgId
-      });
+      // Handle 404 as expected case for new organizations
+      if (err.response?.status === 404) {
+        console.log('Organization not found, creating minimal organization state');
+        setOrganizationState({
+          id: orgId
+        });
+      } else {
+        // Only set error for actual server errors, not 404s
+        setError('Failed to load organization data');
+        
+        // Still set the basic organization with ID
+        setOrganizationState({
+          id: orgId
+        });
+      }
     } finally {
       setIsLoading(false);
     }
