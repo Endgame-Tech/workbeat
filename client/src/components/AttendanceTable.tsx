@@ -1,6 +1,27 @@
 // Updated AttendanceTable.tsx with improved UI arrangement for icons
 import React, { useState, useEffect, useCallback } from 'react';
 import { AttendanceRecord, Employee } from '../types';
+
+// Define AttendanceUpdate type if not already imported
+type AttendanceUpdate = {
+  _id?: string;
+  employeeId: string | number;
+  employeeName?: string;
+  type: 'sign-in' | 'sign-out';
+  timestamp: string | Date;
+  isLate?: boolean;
+  location?: { latitude: number; longitude: number } | string;
+  organizationId?: string;
+  verificationMethod?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  facialCapture?: {
+    image?: string;
+    isLive?: boolean;
+  };
+  notes?: string;
+  ipAddress?: string;
+};
 import { formatTime, formatDate } from '../utils/attendanceUtils';
 import { Card, CardHeader, CardContent } from './ui/Card';
 import { Clock, MapPin, ArrowDown, ArrowUp, Search, RefreshCw, Filter, Calendar, ChevronDown, Download, CheckCircle, Wifi, WifiOff } from 'lucide-react';
@@ -102,14 +123,64 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
       // Map AttendanceUpdate to AttendanceRecord
       const attendanceRecord: AttendanceRecord = {
         _id: attendanceData._id ? attendanceData._id.toString() : '',
-        employeeId: attendanceData.employeeId,
-        employeeName: attendanceData.employeeName,
+        employeeId: attendanceData.employeeId !== undefined ? String(attendanceData.employeeId) : '',
+        employeeName: attendanceData.employeeName ?? '',
         type: attendanceData.type,
-        timestamp: attendanceData.timestamp,
+        timestamp: attendanceData.timestamp
+          ? (attendanceData.timestamp instanceof Date
+              ? attendanceData.timestamp
+              : new Date(attendanceData.timestamp))
+          : new Date(),
+        notes: attendanceData.notes ?? '',
+        ipAddress: attendanceData.ipAddress ?? '',
         isLate: attendanceData.isLate,
-        location: attendanceData.location,
-        organizationId: attendanceData.organizationId,
-        verificationMethod: attendanceData.verificationMethod,
+        location: (() => {
+          if (!attendanceData.location) return undefined;
+          if (typeof attendanceData.location === 'string') {
+            try {
+              const loc = JSON.parse(attendanceData.location);
+              // Only keep latitude and longitude, ignore extra fields
+              if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+                return { latitude: loc.latitude, longitude: loc.longitude };
+              }
+              return undefined;
+            } catch {
+              return undefined;
+            }
+          }
+          if (typeof attendanceData.location === 'object' && attendanceData.location !== null) {
+            // Only keep latitude and longitude, ignore extra fields
+            const { latitude, longitude } = attendanceData.location;
+            if (typeof latitude === 'number' && typeof longitude === 'number') {
+              return { latitude, longitude };
+            }
+          }
+          return undefined;
+        })(),
+        organizationId: attendanceData.organizationId ?? '',
+        verificationMethod: (
+          attendanceData.verificationMethod === 'face-recognition' ||
+          attendanceData.verificationMethod === 'fingerprint' ||
+          attendanceData.verificationMethod === 'manual' ||
+          attendanceData.verificationMethod === 'qr-code' ||
+          attendanceData.verificationMethod === 'nfc'
+        ) ? attendanceData.verificationMethod : undefined,
+        facialCapture: attendanceData.facialCapture && typeof attendanceData.facialCapture.image === 'string'
+          ? {
+              image: attendanceData.facialCapture.image,
+              // Optionally map confidence and quality if available in attendanceData
+              confidence: (attendanceData.facialCapture as { confidence?: number }).confidence,
+              quality: (() => {
+                const q = (attendanceData.facialCapture as { quality?: number }).quality;
+                if (typeof q === 'number') {
+                  if (q >= 0 && q < 0.4) return 'low';
+                  if (q >= 0.4 && q < 0.7) return 'medium';
+                  if (q >= 0.7) return 'high';
+                }
+                return undefined;
+              })(),
+            }
+          : undefined,
         createdAt: attendanceData.createdAt ? new Date(attendanceData.createdAt) : new Date(),
         updatedAt: attendanceData.updatedAt ? new Date(attendanceData.updatedAt) : new Date(),
         // Add any other AttendanceRecord fields with sensible defaults if needed
