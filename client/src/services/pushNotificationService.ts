@@ -59,7 +59,6 @@ class PushNotificationService {
       };
 
       if (permission === 'granted') {
-        console.log('🔔 Push notification permission granted');
         return true;
       } else {
         console.warn('🔔 Push notification permission denied');
@@ -80,11 +79,8 @@ class PushNotificationService {
 
     try {
       this.registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('🔔 Service Worker registered successfully');
-      
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
-      console.log('🔔 Service Worker is ready');
       
       return true;
     } catch (error) {
@@ -118,8 +114,6 @@ class PushNotificationService {
         // Fallback to basic notification
         new Notification(options.title, notificationOptions);
       }
-
-      console.log('🔔 Notification displayed:', options.title);
       return true;
     } catch (error) {
       console.error('🔔 Error showing notification:', error);
@@ -209,7 +203,6 @@ class PushNotificationService {
     try {
       const notifications = await this.registration.getNotifications({ tag });
       notifications.forEach(notification => notification.close());
-      console.log(`🔔 Cleared ${notifications.length} notifications${tag ? ` with tag: ${tag}` : ''}`);
     } catch (error) {
       console.error('🔔 Error clearing notifications:', error);
     }
@@ -229,7 +222,6 @@ class PushNotificationService {
 
   // Initialize push notification service
   async initialize(): Promise<boolean> {
-    console.log('🔔 Initializing Push Notification Service...');
 
     if (!this.isSupported) {
       console.warn('🔔 Push notifications not supported in this browser');
@@ -245,13 +237,11 @@ class PushNotificationService {
       return true;
     }
 
-    console.log('🔔 Push notification service initialized (permission not yet granted)');
     return false;
   }
 
   // Setup with permission request
   async setup(): Promise<boolean> {
-    console.log('🔔 Setting up Push Notification Service...');
 
     // Initialize first
     await this.initialize();
@@ -285,7 +275,6 @@ class PushNotificationService {
   }): void {
     try {
       localStorage.setItem(this.getStorageKey('preferences'), JSON.stringify(preferences));
-      console.log('🔔 Notification preferences saved');
     } catch (error) {
       console.error('🔔 Error saving notification preferences:', error);
     }

@@ -52,7 +52,6 @@ self.addEventListener('install', (event) => {
     Promise.all([
       // Cache critical assets first
       caches.open(CACHE_NAME).then((cache) => {
-        console.log('📦 Caching critical assets...');
         return cache.addAll(CRITICAL_ASSETS).catch((error) => {
           console.warn('⚠️ Some critical assets could not be cached:', error);
           // Try to cache them individually
@@ -66,14 +65,12 @@ self.addEventListener('install', (event) => {
       
       // Cache static assets in background
       caches.open(STATIC_CACHE).then((cache) => {
-        console.log('📦 Caching static assets...');
         return cache.addAll(STATIC_ASSETS).catch((error) => {
           console.warn('⚠️ Some static assets could not be cached:', error);
           return Promise.resolve();
         });
       })
     ]).then(() => {
-      console.log('✅ Service Worker installation complete');
     })
   );
   
@@ -83,7 +80,6 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('🔔 Service Worker activating...');
   
   const expectedCaches = [CACHE_NAME, RUNTIME_CACHE, API_CACHE, STATIC_CACHE];
   
@@ -94,7 +90,6 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (!expectedCaches.includes(cacheName)) {
-              console.log('🧹 Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
@@ -107,7 +102,6 @@ self.addEventListener('activate', (event) => {
       // Clean up runtime cache if it gets too large
       cleanupRuntimeCache()
     ]).then(() => {
-      console.log('✅ Service Worker activation complete');
       // Claim all clients immediately
       return self.clients.claim();
     })
@@ -129,7 +123,6 @@ async function cleanupApiCache() {
         const cacheTime = dateHeader ? new Date(dateHeader).getTime() : 0;
         
         if (now - cacheTime > maxAge) {
-          console.log('🧹 Removing old API cache entry:', request.url);
           await cache.delete(request);
         }
       }
@@ -149,7 +142,6 @@ async function cleanupRuntimeCache() {
       // Remove oldest entries first
       const entriesToRemove = requests.slice(0, requests.length - 50);
       for (const request of entriesToRemove) {
-        console.log('🧹 Removing old runtime cache entry:', request.url);
         await cache.delete(request);
       }
     }
@@ -160,7 +152,6 @@ async function cleanupRuntimeCache() {
 
 // Handle push events (for server-sent push notifications)
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push event received:', event);
   
   let notificationData;
   
@@ -215,7 +206,6 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click events
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Notification clicked:', event.notification.tag, event.action);
   
   event.notification.close();
   
@@ -237,7 +227,6 @@ self.addEventListener('notificationclick', (event) => {
 
 // Handle notification close events
 self.addEventListener('notificationclose', (event) => {
-  console.log('🔔 Notification closed:', event.notification.tag);
   
   // Optional: Send analytics or tracking data
   const notificationData = event.notification.data || {};
@@ -297,7 +286,6 @@ async function handleNotificationClick(notificationData) {
 
 // Handle messages from the main thread
 self.addEventListener('message', (event) => {
-  console.log('🔔 Service Worker received message:', event.data);
   
   const { type, data } = event.data;
   
@@ -318,7 +306,6 @@ self.addEventListener('message', (event) => {
       break;
       
     default:
-      console.log('🔔 Unknown message type:', type);
   }
 });
 
@@ -327,7 +314,6 @@ async function clearNotificationsByTag(tag) {
   try {
     const notifications = await self.registration.getNotifications({ tag });
     notifications.forEach(notification => notification.close());
-    console.log(`🔔 Cleared ${notifications.length} notifications with tag: ${tag}`);
   } catch (error) {
     console.error('🔔 Error clearing notifications:', error);
   }
@@ -335,7 +321,6 @@ async function clearNotificationsByTag(tag) {
 
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
-  console.log('🔄 Background sync triggered:', event.tag);
   
   switch (event.tag) {
     case 'attendance-sync':
@@ -348,7 +333,6 @@ self.addEventListener('sync', (event) => {
       event.waitUntil(performCacheCleanup());
       break;
     default:
-      console.log('🔄 Unknown sync tag:', event.tag);
   }
 });
 
@@ -358,7 +342,6 @@ async function registerBackgroundSync(tag) {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       const registration = await navigator.serviceWorker.ready;
       await registration.sync.register(tag);
-      console.log('🔄 Background sync registered:', tag);
       return true;
     } else {
       console.warn('🔄 Background sync not supported');
@@ -372,18 +355,14 @@ async function registerBackgroundSync(tag) {
 
 // Sync offline attendance records with improved error handling and retry logic
 async function syncOfflineAttendance() {
-  console.log('🔄 Starting offline attendance sync...');
   
   try {
     // Get all pending offline attendance records from IndexedDB
     const offlineData = await getOfflineAttendanceData();
     
     if (!offlineData || offlineData.length === 0) {
-      console.log('🔄 No offline attendance records to sync');
       return;
     }
-    
-    console.log(`🔄 Found ${offlineData.length} offline attendance records to sync`);
     
     let syncSuccess = 0;
     let syncFailed = 0;
@@ -484,7 +463,6 @@ async function syncSingleAttendanceRecord(record) {
     
     if (response.ok) {
       const result = await response.json();
-      console.log('🔄 Successfully synced attendance record:', record.id);
       return { success: true, data: result };
     } else {
       console.warn('🔄 Failed to sync attendance record - HTTP', response.status);
@@ -516,17 +494,40 @@ async function updateRetryCount(recordId) {
 
 // Sync analytics data (placeholder for future implementation)
 async function syncAnalyticsData() {
-  console.log('🔄 Syncing analytics data...');
-  // Future implementation for syncing cached analytics data
+  try {
+    // Get analytics data from IndexedDB or local storage
+    const analyticsData = await getAnalyticsData();
+    
+    if (!analyticsData || analyticsData.length === 0) {
+      return;
+    }
+    
+    // Send analytics data to server
+    const response = await fetch('/api/analytics/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(analyticsData)
+    });
+    
+    if (response.ok) {
+      // Optionally clear local storage or IndexedDB after successful sync
+      await clearAnalyticsData();
+    } else {
+      console.warn('🔄 Failed to sync analytics data - HTTP', response.status);
+    }
+    
+  } catch (error) {
+    console.error('🔄 Error during analytics sync:', error);
+  }
 }
 
 // Perform cache cleanup during background sync
 async function performCacheCleanup() {
-  console.log('🔄 Performing background cache cleanup...');
   try {
     await cleanupApiCache();
     await cleanupRuntimeCache();
-    console.log('🔄 Background cache cleanup completed');
   } catch (error) {
     console.error('🔄 Error during background cache cleanup:', error);
   }
@@ -654,17 +655,14 @@ async function cacheFirstStrategy(request, cacheName) {
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('📦 Cache hit for:', request.url);
       return cachedResponse;
     }
     
-    console.log('🌐 Cache miss, fetching:', request.url);
     const response = await fetch(request);
     
     if (response.status === 200) {
       const responseClone = response.clone();
       await cache.put(request, responseClone);
-      console.log('💾 Cached:', request.url);
     }
     
     return response;
@@ -686,7 +684,6 @@ async function cacheFirstStrategy(request, cacheName) {
 // Network First Strategy - for API requests and dynamic content
 async function networkFirstStrategy(request, cacheName) {
   try {
-    console.log('🌐 Network first for:', request.url);
     const response = await fetch(request);
     
     // Only cache successful responses
@@ -694,7 +691,6 @@ async function networkFirstStrategy(request, cacheName) {
       const responseClone = response.clone();
       const cache = await caches.open(cacheName);
       await cache.put(request, responseClone);
-      console.log('💾 Cached API response:', request.url);
     }
     
     return response;
@@ -706,7 +702,6 @@ async function networkFirstStrategy(request, cacheName) {
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('📦 Cache fallback for:', request.url);
       return cachedResponse;
     }
     
@@ -736,7 +731,6 @@ async function staleWhileRevalidateStrategy(request, cacheName) {
     if (response.status === 200) {
       const responseClone = response.clone();
       cache.put(request, responseClone);
-      console.log('♻️ Revalidated:', request.url);
     }
     return response;
   }).catch(error => {
@@ -745,16 +739,11 @@ async function staleWhileRevalidateStrategy(request, cacheName) {
   });
   
   if (cachedResponse) {
-    console.log('📦 Stale cache hit for:', request.url);
     return cachedResponse;
   }
   
-  // If no cached version, wait for network
-  console.log('🌐 No cache, waiting for network:', request.url);
   return fetchPromise || new Response('Network error', { 
     status: 503, 
     statusText: 'Service Unavailable' 
   });
 }
-
-console.log(`🔔 WorkBeat Service Worker ${SW_VERSION} loaded successfully`);

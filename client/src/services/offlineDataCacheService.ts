@@ -264,8 +264,7 @@ class OfflineDataCacheService {
       }
       
       return response.data;
-    } catch (error) {
-      console.error('❌ Failed to get cached API response:', error);
+    } catch {
       return null;
     }
   }
@@ -454,7 +453,6 @@ class OfflineDataCacheService {
       ]);
 
       await tx.done;
-      console.log('🧹 Cleared all offline cache data');
     } catch (error) {
       console.error('❌ Failed to clear cache:', error);
       throw error;

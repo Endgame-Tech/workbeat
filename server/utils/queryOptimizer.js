@@ -22,11 +22,8 @@ class QueryOptimizer {
     const cached = this.queryCache.get(cacheKey);
 
     if (cached && this.isCacheValid(cached)) {
-      console.log(`📦 Cache hit for ${cacheKey}`);
       return cached.data;
     }
-
-    console.log(`🔍 Cache miss for ${cacheKey}, executing query`);
     const result = await prisma[model][operation](params);
     
     this.queryCache.set(cacheKey, {
@@ -263,7 +260,6 @@ class QueryOptimizer {
   // Clear cache
   clearCache() {
     this.queryCache.clear();
-    console.log('🧹 Query cache cleared');
   }
 
   // Clear expired cache entries

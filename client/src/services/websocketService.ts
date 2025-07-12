@@ -84,7 +84,6 @@ class WebSocketService {
           clearTimeout(timeout);
           this.isConnecting = false;
           this.reconnectAttempts = 0;
-          console.log('🔌 WebSocket connected successfully');
           
           // Subscribe to dashboard updates
           this.subscribeToDashboard('overview');
@@ -110,7 +109,6 @@ class WebSocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      console.log('🔌 WebSocket disconnected');
     }
     this.eventListeners.clear();
     this.reconnectAttempts = 0;
@@ -121,11 +119,10 @@ class WebSocketService {
 
     // Connection events
     this.socket.on('connected', (data) => {
-      console.log('🔌 WebSocket welcome message:', data);
+      this.emit('connected', data);
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('🔌 WebSocket disconnected:', reason);
       if (reason === 'io server disconnect') {
         // Server disconnected, try to reconnect
         this.handleReconnect();
@@ -134,29 +131,25 @@ class WebSocketService {
 
     // Real-time data events
     this.socket.on('attendance_updated', (data: AttendanceUpdate) => {
-      console.log('📊 Real-time attendance update:', data);
       this.emit('attendance_updated', data);
     });
 
     this.socket.on('stats_updated', (data: StatsUpdate) => {
-      console.log('📈 Real-time stats update:', data);
       this.emit('stats_updated', data);
     });
 
     // User presence events
     this.socket.on('user_online', (data) => {
-      console.log('👤 User came online:', data);
       this.emit('user_online', data);
     });
 
     this.socket.on('user_offline', (data) => {
-      console.log('👤 User went offline:', data);
       this.emit('user_offline', data);
     });
 
     // Dashboard subscription events
     this.socket.on('dashboard_subscribed', (data) => {
-      console.log('📊 Subscribed to dashboard:', data);
+      this.emit('dashboard_subscribed', data);
     });
 
     // Connection health
@@ -180,8 +173,6 @@ class WebSocketService {
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    
-    console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`);
     
     setTimeout(() => {
       this.connect();

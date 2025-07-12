@@ -232,8 +232,6 @@ class WebSocketService {
       dashboardType, 
       timestamp: new Date().toISOString() 
     });
-
-    console.log(`📊 User subscribed to dashboard: ${roomName}`);
   }
 
   // Handle dashboard unsubscription
