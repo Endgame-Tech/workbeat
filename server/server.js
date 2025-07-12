@@ -189,11 +189,7 @@ app.use('/api/notification-queue', notificationQueueRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
 // Temporary: Redirect /organizations/* to /api/organizations/*
-app.use('/organizations', (req, res, next) => {
-  console.log(`🔀 Redirecting ${req.originalUrl} to /api${req.originalUrl}`);
-  req.url = `/api${req.originalUrl}`;
-  return organizationRoutes(req, res, next);
-});
+app.use('/organizations', organizationRoutes);
 
 // Default route with health check
 app.get('/', (req, res) => {
