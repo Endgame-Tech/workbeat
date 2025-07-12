@@ -137,12 +137,18 @@ async function createMissingTables(existingTables) {
         "id" SERIAL NOT NULL,
         "organizationId" INTEGER NOT NULL,
         "employeeId" VARCHAR(50) NOT NULL,
-        "name" VARCHAR(100) NOT NULL,
+        "name" VARCHAR(200),
+        "firstName" VARCHAR(100) NOT NULL,
+        "lastName" VARCHAR(100) NOT NULL,
         "email" VARCHAR(255),
-        "department" VARCHAR(100) NOT NULL,
-        "position" VARCHAR(100) NOT NULL,
         "phone" VARCHAR(20),
+        "position" VARCHAR(100),
+        "department" VARCHAR(100),
+        "departmentId" INTEGER,
+        "hireDate" DATE,
+        "startDate" DATE,
         "workSchedule" TEXT,
+        "workingHours" TEXT,
         "employmentStatus" VARCHAR(20) DEFAULT 'full-time',
         "accessLevel" VARCHAR(20) DEFAULT 'employee',
         "isActive" BOOLEAN NOT NULL DEFAULT true,
@@ -156,7 +162,11 @@ async function createMissingTables(existingTables) {
       CREATE UNIQUE INDEX IF NOT EXISTS "employees_organizationId_employeeId_key" ON "employees"("organizationId", "employeeId")
     `;
     
-    console.log('✅ employees table created');
+    await prisma.$executeRaw`
+      CREATE UNIQUE INDEX IF NOT EXISTS "employees_email_key" ON "employees"("email")
+    `;
+    
+    console.log('✅ employees table created with firstName/lastName');
   }
 }
 
@@ -178,6 +188,59 @@ async function addMissingColumns() {
     console.log('✅ Added resetPasswordToken and resetPasswordExpire columns');
   } catch (error) {
     console.log('ℹ️ resetPasswordToken columns may already exist');
+  }
+  
+  // Add missing columns to employees table
+  try {
+    console.log('🔧 Adding missing employee columns...');
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(100)
+    `;
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(100)
+    `;
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ADD COLUMN IF NOT EXISTS "departmentId" INTEGER
+    `;
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ADD COLUMN IF NOT EXISTS "hireDate" DATE
+    `;
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ADD COLUMN IF NOT EXISTS "startDate" DATE
+    `;
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ADD COLUMN IF NOT EXISTS "workingHours" TEXT
+    `;
+    
+    // Make name column nullable and increase size
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ALTER COLUMN "name" TYPE VARCHAR(200),
+      ALTER COLUMN "name" DROP NOT NULL
+    `;
+    
+    // Make department and position nullable
+    await prisma.$executeRaw`
+      ALTER TABLE "employees" 
+      ALTER COLUMN "department" DROP NOT NULL,
+      ALTER COLUMN "position" DROP NOT NULL
+    `;
+    
+    console.log('✅ Added missing employee columns');
+  } catch (error) {
+    console.log('ℹ️ Employee columns update issue:', error.message);
   }
   
   // Test the schema
@@ -202,6 +265,20 @@ async function addMissingColumns() {
     console.log(`✅ audit_logs table accessible (${auditCount} records)`);
   } catch (error) {
     console.log('❌ audit_logs table issue:', error.message);
+  }
+  
+  try {
+    const employeeCount = await prisma.employee.count();
+    console.log(`✅ employees table accessible (${employeeCount} records)`);
+    
+    // Test firstName field specifically
+    await prisma.employee.findMany({
+      where: { firstName: { not: null } },
+      take: 1
+    });
+    console.log('✅ employees.firstName field accessible');
+  } catch (error) {
+    console.log('❌ employees table issue:', error.message);
   }
 }
 
