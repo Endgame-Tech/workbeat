@@ -153,6 +153,40 @@ app.get('/', (req, res) => {
   });
 });
 
+// Database health check endpoint
+app.get('/api/health/db', async (req, res) => {
+  try {
+    const { prisma } = require('./config/db');
+    
+    // Test database connection
+    await prisma.$connect();
+    
+    // Test if organizations table exists and is accessible
+    const orgCount = await prisma.organization.count();
+    
+    // Test if users table with resetPasswordToken exists
+    const userCount = await prisma.user.count();
+    
+    await prisma.$disconnect();
+    
+    res.json({
+      status: 'healthy',
+      database: 'connected',
+      organizations: orgCount,
+      users: userCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    res.status(500).json({
+      status: 'unhealthy',
+      database: 'failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Performance monitoring endpoint (admin only)
 app.get('/api/performance', (req, res) => {
   // Simple IP-based admin check for demo (in production, use proper auth)

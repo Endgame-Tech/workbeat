@@ -142,11 +142,11 @@ CREATE TABLE "payment_sessions" (
 CREATE TABLE "shift_templates" (
     "id" SERIAL NOT NULL,
     "organizationId" INTEGER NOT NULL,
-    "name" VARCHAR(100) NOT NULL,
-    "description" TEXT,
-    "startTime" TIME NOT NULL,
-    "endTime" TIME NOT NULL,
-    "workingDays" TEXT NOT NULL,
+    "name" VARCHAR(200) NOT NULL,
+    "startTime" VARCHAR(10) NOT NULL,
+    "endTime" VARCHAR(10) NOT NULL,
+    "breakDuration" INTEGER NOT NULL DEFAULT 0,
+    "daysOfWeek" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -220,6 +220,21 @@ CREATE TABLE "leave_requests" (
     CONSTRAINT "leave_requests_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "webhook_logs" (
+    "id" SERIAL NOT NULL,
+    "provider" VARCHAR(50) NOT NULL,
+    "event" VARCHAR(100) NOT NULL,
+    "data" TEXT NOT NULL,
+    "signature" VARCHAR(500),
+    "processed" BOOLEAN NOT NULL DEFAULT false,
+    "error" TEXT,
+    "processedAt" TIMESTAMPTZ(6),
+    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "webhook_logs_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "organizations_contactEmail_key" ON "organizations"("contactEmail");
 
@@ -255,6 +270,18 @@ CREATE UNIQUE INDEX "payment_sessions_sessionId_key" ON "payment_sessions"("sess
 
 -- CreateIndex
 CREATE UNIQUE INDEX "leave_balances_employeeId_leaveTypeId_year_key" ON "leave_balances"("employeeId", "leaveTypeId", "year");
+
+-- CreateIndex
+CREATE INDEX "idx_webhook_logs_provider" ON "webhook_logs"("provider");
+
+-- CreateIndex
+CREATE INDEX "idx_webhook_logs_event" ON "webhook_logs"("event");
+
+-- CreateIndex
+CREATE INDEX "idx_webhook_logs_processed" ON "webhook_logs"("processed");
+
+-- CreateIndex
+CREATE INDEX "idx_webhook_logs_createdAt" ON "webhook_logs"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
