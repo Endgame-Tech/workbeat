@@ -144,8 +144,6 @@ class OfflineDataCacheService {
           }
         },
       });
-
-      console.log('📦 Offline data cache service initialized');
       
       // Clean up expired entries on init
       await this.cleanupExpiredEntries();
@@ -174,7 +172,6 @@ class OfflineDataCacheService {
         });
       }
       await tx.done;
-      console.log(`📦 Cached ${employees.length} employees for organization ${organizationId}`);
     } catch (error) {
       console.error('❌ Failed to cache employee data:', error);
       throw error;
@@ -191,7 +188,6 @@ class OfflineDataCacheService {
       // Filter out expired entries
       const validEmployees = employees.filter(emp => emp.expiresAt > now);
       if (validEmployees.length === 0) return null;
-      console.log(`📦 Retrieved ${validEmployees.length} cached employees for organization ${organizationId}`);
       return validEmployees.map(emp => emp.data);
     } catch (error) {
       console.error('❌ Failed to get cached employees:', error);
@@ -213,7 +209,6 @@ class OfflineDataCacheService {
         lastUpdated: now,
         expiresAt
       });
-      console.log(`📦 Cached organization data for ${organizationId}`);
     } catch (error) {
       console.error('❌ Failed to cache organization data:', error);
       throw error;
@@ -230,7 +225,6 @@ class OfflineDataCacheService {
         return null;
       }
       
-      console.log(`📦 Retrieved cached organization data for ${organizationId}`);
       return org.data;
     } catch (error) {
       console.error('❌ Failed to get cached organization:', error);
@@ -253,7 +247,6 @@ class OfflineDataCacheService {
         lastUpdated: now,
         expiresAt
       });
-      console.log(`📦 Cached API response: ${method} ${url}`);
     } catch (error) {
       console.error('❌ Failed to cache API response:', error);
       throw error;
@@ -270,7 +263,6 @@ class OfflineDataCacheService {
         return null;
       }
       
-      console.log(`📦 Retrieved cached API response: ${method} ${url}`);
       return response.data;
     } catch (error) {
       console.error('❌ Failed to get cached API response:', error);
@@ -301,7 +293,6 @@ class OfflineDataCacheService {
         lastUpdated: now,
         expiresAt
       });
-      console.log(`📦 Cached analytics data: ${type} for ${organizationId} (${dateRange})`);
     } catch (error) {
       console.error('❌ Failed to cache analytics data:', error);
       throw error;
@@ -323,8 +314,6 @@ class OfflineDataCacheService {
       if (!analytics || analytics.expiresAt <= Date.now()) {
         return null;
       }
-      
-      console.log(`📦 Retrieved cached analytics: ${type} for ${organizationId} (${dateRange})`);
       return analytics.data;
     } catch (error) {
       console.error('❌ Failed to get cached analytics:', error);
@@ -344,7 +333,6 @@ class OfflineDataCacheService {
         data,
         lastUpdated: now
       });
-      console.log(`📦 Cached setting: ${key}`);
     } catch (error) {
       console.error('❌ Failed to cache setting:', error);
       throw error;
@@ -359,7 +347,6 @@ class OfflineDataCacheService {
       
       if (!setting) return null;
       
-      console.log(`📦 Retrieved cached setting: ${key}`);
       return setting.data;
     } catch (error) {
       console.error('❌ Failed to get cached setting:', error);

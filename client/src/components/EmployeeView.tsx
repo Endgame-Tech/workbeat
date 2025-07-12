@@ -57,15 +57,9 @@ const EmployeeView: React.FC = () => {
   
   // Handle employee selection
   const handleEmployeeSelect = async (employee: Employee, notes: string) => {
-    console.log("👤 Selected Employee:", employee.name);
+
     setEmployeeData(employee);
     
-    // Detailed logging of employee ID formats to help debugging
-    console.log("👤 Employee ID formats:", {
-      id: employee.id,
-      _id: employee._id,
-      employeeId: employee.employeeId
-    });
     
     // Submit attendance with the selected employee and notes
     if (capturedFaceImage) {
@@ -86,10 +80,6 @@ const EmployeeView: React.FC = () => {
   // Submit attendance
   const submitAttendance = async (employee: Employee, faceImage: string, notes: string) => {
     try {
-      // Print useful debug info
-      console.log("📋 Submitting attendance for:", employee.name);
-      console.log("📋 Attendance type:", attendanceType);
-      console.log("📋 Work schedule:", JSON.stringify(employee.workSchedule));
       
       // Get current location if available
       let location = null;
@@ -105,7 +95,6 @@ const EmployeeView: React.FC = () => {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
         };
-        console.log("📋 Got location:", location);
       } catch (error) {
         console.warn('📋 Location access denied or unavailable:', error);
       }
@@ -115,13 +104,10 @@ const EmployeeView: React.FC = () => {
       
       if (employee._id) {
         employeeId = employee._id;
-        console.log("📋 Using _id field:", employeeId);
       } else if (employee.id) {
         employeeId = employee.id;
-        console.log("📋 Using id field:", employeeId);
       } else if (employee.employeeId) {
         employeeId = employee.employeeId;
-        console.log("📋 Using employeeId field:", employeeId);
       }
       
       if (!employeeId) {
@@ -132,7 +118,6 @@ const EmployeeView: React.FC = () => {
       
       // Get current timestamp
       const timestamp = new Date().toISOString();
-      console.log("📋 Attendance timestamp:", timestamp);
       
       // Prepare attendance data
       const attendanceData = {
@@ -147,18 +132,10 @@ const EmployeeView: React.FC = () => {
         // Let the service handle isLate
       };
       
-      console.log("📋 Calling employeeAuthService.recordAttendanceWithFace");
       
       // Send to service
       const result = await employeeAuthService.recordAttendanceWithFace(attendanceData);
       
-      // IMPORTANT: Log the result with explicit mention of the isLate flag
-      console.log("📋 Attendance result received:", {
-        ...result,
-        facialCapture: result.facialCapture ? "[IMAGE DATA]" : null,
-        isLate: result.isLate, // Explicitly log this
-        timestamp: result.timestamp
-      });
       
       // Make sure isLate exists in the result
       if (result) {
@@ -169,7 +146,6 @@ const EmployeeView: React.FC = () => {
         
         // Double check the boolean value is properly set
         if (attendanceType === 'sign-in') {
-          console.log(`📋 Final isLate value being used: ${result.isLate}`);
           
           // Force isLate to be a proper boolean (not undefined, null, string, etc.)
           result.isLate = Boolean(result.isLate);
@@ -269,8 +245,6 @@ const EmployeeView: React.FC = () => {
       case AttendanceStep.SUCCESS:
         if (!record) return null;
         
-        // IMPORTANT: Log the isLate value before rendering the success screen
-        console.log("📋 Rendering Success screen with isLate =", record.isLate);
         
         return (
           <AttendanceSuccess 

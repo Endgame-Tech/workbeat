@@ -6,8 +6,7 @@ import { Employee } from '../types';
 const getCurrentOrganizationId = (): string | null => {
   try {
     const userString = localStorage.getItem('user');
-    console.log("Raw user string from localStorage:", userString);
-    
+
     if (!userString) {
       console.warn("No user data in localStorage");
       return null;
@@ -20,7 +19,6 @@ const getCurrentOrganizationId = (): string | null => {
     
     try {
       const userData = JSON.parse(jsonString);
-      console.log("Parsed user data:", userData);
       
       if (!userData.organizationId) {
         console.warn("No organizationId in user data");
@@ -32,7 +30,6 @@ const getCurrentOrganizationId = (): string | null => {
       // Try a more flexible approach in case json is malformed
       const match = jsonString.match(/"organizationId"\s*:\s*"?(\d+)"?/);
       if (match && match[1]) {
-        console.log("Found organizationId via regex:", match[1]);
         return match[1];
       }
     }
@@ -54,7 +51,6 @@ const getAllEmployees = async (activeOnly: boolean = false) => {
     }
     
     const response = await api.get(`/api/employees${queryParams}`);
-    console.log('getAllEmployees response:', response.data);
     
     if (response.data && response.data.data) {
       return response.data.data;
@@ -90,16 +86,13 @@ const createEmployee = async (employeeData: Partial<Employee>) => {
       
       if (organizationId) {
         dataToSubmit.organizationId = organizationId;
-        console.log('Added organizationId from current user:', organizationId);
       } else {
         console.error('No organization ID found for creating employee');
         throw new Error('Organization ID not found. Please log out and log in again.');
       }
     }
 
-    console.log('Creating employee with data:', dataToSubmit);
     const response = await api.post('/api/employees', dataToSubmit);
-    console.log('Employee created:', response.data);
     return response.data.data;
   } catch (error) {
     console.error('Error in createEmployee:', error);
@@ -113,8 +106,6 @@ const updateEmployee = async (id: string, employeeData: Partial<Employee>) => {
     if (!id) {
       throw new Error("Employee ID is required");
     }
-    
-    console.log("Updating employee with ID:", id);
     
     // Make sure data is properly formatted for the backend
     // Format dates if any
@@ -163,7 +154,6 @@ const toggleEmployeeStatus = async (id: string, isActive: boolean): Promise<Empl
       throw new Error("Employee ID is required to toggle status");
     }
     
-    console.log(`Toggling employee ${id} status to ${isActive ? 'active' : 'inactive'}`);
     const response = await updateEmployee(id, { isActive });
     return response;
   } catch (error) {

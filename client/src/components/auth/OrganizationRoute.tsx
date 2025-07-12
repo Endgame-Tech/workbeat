@@ -15,10 +15,8 @@ const OrganizationRoute: React.FC<OrganizationRouteProps> = ({ children, adminOn
 
   useEffect(() => {
     const checkOrganizationAccess = async () => {
-      console.log('OrganizationRoute: Checking access for organizationId:', organizationId);
       
       if (!organizationId) {
-        console.log('OrganizationRoute: No organizationId provided');
         setHasAccess(false);
         setLoading(false);
         return;
@@ -41,8 +39,6 @@ const OrganizationRoute: React.FC<OrganizationRouteProps> = ({ children, adminOn
         const userOrgId = user.organizationId?.toString() || user.organization?.id?.toString();
         
         if (userOrgId !== organizationId) {
-          console.log('Organization ID mismatch:', { userOrgId, routeOrgId: organizationId });
-          // Try to get the organization to verify the user has access
           try {
             await organizationService.getOrganization(organizationId);
             setHasAccess(true);

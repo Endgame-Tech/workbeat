@@ -134,8 +134,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       
       setDepartments(formattedDepartments);
       setOrganization(orgData);
-      
-      console.log(`Loaded ${formattedDepartments.length} departments for organization`);
     } catch (error) {
       console.error('Error fetching departments and organization:', error);
       toast.error('Failed to load departments');
@@ -245,7 +243,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         // Check if it's in organization.id format
         if (userData.organization && userData.organization.id) {
           const orgId = userData.organization.id;
-          console.log('Found organizationId from organization.id:', orgId);
           setOrganizationId(orgId);
           
           // Update formData with the organizationId
@@ -261,7 +258,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         
         // Check if it's directly in the user object
         if (userData.organizationId) {
-          console.log('Found organizationId in user data:', userData.organizationId);
           setOrganizationId(userData.organizationId);
           
           // Make sure it's in the form data too
@@ -281,7 +277,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       if (orgString) {
         const orgData = JSON.parse(orgString);
         if (orgData.id) {
-          console.log('Found organizationId in organization data:', orgData.id);
           setOrganizationId(orgData.id);
           
           // Update formData with the organizationId
@@ -318,11 +313,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       // If organizationId is missing from form data, add it from state
       if (!dataToSubmit.organizationId && organizationId) {
         dataToSubmit.organizationId = organizationId;
-        console.log('Added organizationId from state:', organizationId);
       }
-      
-      console.log('Submitting employee data with organizationId:', dataToSubmit.organizationId);
-      
       // Submit the data
       onSubmit(dataToSubmit);
     }

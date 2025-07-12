@@ -91,7 +91,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
   useEffect(() => {
     // Use prop organization ID if provided, otherwise get from service
     const orgId = propOrganizationId || employeeService.getCurrentOrganizationId();
-    console.log("Retrieved organization ID:", orgId);
     setOrganizationId(orgId);
     
     // Try to get organization name from localStorage
@@ -116,13 +115,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     }
     
     setLoadingAttendance(true);
-    try {
-      console.log('Fetching attendance records for organization:', organizationId);
+    try {;
       
       // If dates are provided, use them for filtering
       let records;
       if (startDate && endDate) {
-        console.log(`Fetching filtered records from ${startDate.toISOString()} to ${endDate.toISOString()}`);
         
         // Try to use attendance report endpoint if available
         try {
@@ -146,8 +143,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
         records = await attendanceService.getAllAttendanceRecords(100);
       }
       
-      console.log(`Fetched ${records.length} attendance records`);
-      
       // Only update state if not generating a report
       if (!startDate && !endDate) {
         setAttendanceRecords(records);
@@ -159,7 +154,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       console.error('Error fetching attendance records:', error);
       if (!startDate && !endDate) {
         // Only show toast for server errors, not expected empty states
-        if (error.isServerError) {
+        if (typeof error === 'object' && error !== null && 'isServerError' in error && (error as { isServerError: boolean }).isServerError) {
           toast.error('Failed to load attendance records');
         }
         setAttendanceRecords([]);
@@ -179,9 +174,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     
     setLoadingEmployees(true);
     try {
-      console.log('Fetching employees for organization:', organizationId);
       const data = await employeeService.getAllEmployees();
-      console.log('Fetched employees:', data);
       
       // Important: Make sure you're setting state with the new data
       setEmployees(data || []);
@@ -195,7 +188,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     } catch (err) {
       console.error('Error in fetch operation:', err);
       // Only show toast for server errors, not expected empty states
-      if (err.isServerError) {
+      if (typeof err === 'object' && err !== null && 'isServerError' in err && (err as { isServerError: boolean }).isServerError) {
         toast.error('Failed to load employees');
       }
       setEmployees([]);
@@ -208,7 +201,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
   // Fetch employees and attendance data on mount and when organizationId changes
   useEffect(() => {
     if (organizationId) {
-      console.log("Organization ID is available, fetching data:", organizationId);
       fetchEmployees();
       fetchAttendanceRecords();
     } else {
@@ -243,15 +235,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
 
   // Handle employee editing
   function handleEditEmployee(employee: Employee) {
-    console.log("Employee to edit:", employee);
-    console.log("Employee ID value:", employee.id || employee._id);
     setEditingEmployee(employee);
     setShowEmployeeForm(true);
   }
 
   // Handle employee form submission
   const handleEmployeeSubmit = async (data: Partial<Employee>) => {
-    console.log('Form data received:', data);
     setIsSubmitting(true);
 
     try {
@@ -273,7 +262,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       if (editingEmployee) {
         // Get the ID, handling both potential formats (_id or id)
         const employeeId = editingEmployee._id || editingEmployee.id;
-        console.log('Updating employee with ID:', employeeId);
         
         // Update existing employee
         await employeeService.updateEmployee(String(employeeId), employeeData);
@@ -307,7 +295,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
     }
     
     try {
-      await employeeService.deleteEmployee(employee._id);
+      await employeeService.deleteEmployee(String(employee._id));
       toast.success(`Employee ${employee.name} deleted successfully`);
       // Refresh employee list
       fetchEmployees();
@@ -759,9 +747,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       let lastSignInStatus = '';
       
       // Look through all records to find the latest sign-in
-      recordsToExport.forEach(record => {
+      recordsToExport.forEach((record: AttendanceRecord) => {
         if (record.employeeId === empId && record.type === 'sign-in') {
-          if (!lastSignIn || new Date(record.timestamp) > new Date(lastSignIn.timestamp)) {
+          if (!lastSignIn || new Date(record.timestamp) > new Date((lastSignIn as AttendanceRecord).timestamp)) {
             lastSignIn = record;
           }
         }
@@ -769,10 +757,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
       
       // Format last sign-in info if found
       if (lastSignIn) {
-        const lastTimestamp = new Date(lastSignIn.timestamp);
+        const lastTimestamp = new Date((lastSignIn as AttendanceRecord).timestamp);
         lastSignInDate = lastTimestamp.toISOString().split('T')[0];
         lastSignInTime = lastTimestamp.toLocaleTimeString();
-        lastSignInStatus = lastSignIn.isLate ? 'Late' : 'On Time';
+        lastSignInStatus = (lastSignIn as AttendanceRecord).isLate ? 'Late' : 'On Time';
       }
       
       // Add row to CSV

@@ -59,7 +59,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
       setIsLoading(true);
       const activeEmployees = await employeeService.getAllEmployees(true);
       
-      console.log(`Fetched ${activeEmployees.length} active employees for organization ${organizationId}`);
+      
       setEmployees(activeEmployees);
       setFilteredEmployees(activeEmployees);
     } catch (error) {
@@ -104,12 +104,6 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     setIsSelecting(true);
     setSelectedEmployeeId(employee._id || employee.id || employee.employeeId);
     
-    console.log("Selected employee in selector:", employee);
-    console.log("Employee ID formats:", {
-      id: employee.id,
-      _id: employee._id,
-      employeeId: employee.employeeId
-    });
 
     try {
       await onEmployeeSelect(employee, notes);

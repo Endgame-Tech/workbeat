@@ -128,7 +128,6 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
     
     try {
       const employeeId = employee.id || employee._id;
-      console.log("Toggling status for employee with ID:", employeeId);
       
       if (!employeeId) {
         throw new Error("Employee ID is missing or undefined");

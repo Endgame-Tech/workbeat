@@ -33,18 +33,11 @@ export const useSubscription = (): UseSubscriptionReturn => {
       return;
     }
 
-    console.log('🔄 Loading subscription for organization:', organizationId);
     setIsLoading(true);
     setError(null);
 
     try {
       const subscriptionData = await SubscriptionService.getSubscription();
-      console.log('✅ Subscription data loaded:', {
-        plan: subscriptionData?.plan,
-        status: subscriptionData?.status,
-        isActive: subscriptionData ? SubscriptionService.isSubscriptionActive(subscriptionData) : false,
-        features: subscriptionData?.features?.length || 0
-      });
       setSubscription(subscriptionData);
     } catch (err) {
       console.error('❌ Error loading subscription:', err);
@@ -67,38 +60,17 @@ export const useSubscription = (): UseSubscriptionReturn => {
     console.warn('⚠️ Full subscription object:', subscription);
     // Force a refresh to get updated subscription data
     setTimeout(() => {
-      console.log('🔄 Auto-refreshing subscription due to missing plan');
       loadSubscription();
     }, 1000);
   }
   
-  // Additional logging for debugging
-  if (subscription) {
-    console.log('🔍 Current subscription state:', {
-      plan: subscription.plan,
-      status: subscription.status,
-      endDate: subscription.endDate,
-      features: subscription.features
-    });
-  }
+
   const features = SubscriptionService.getFeatures(plan);
   const isActive = subscription ? SubscriptionService.isSubscriptionActive(subscription) : false;
   const daysRemaining = subscription ? SubscriptionService.getDaysRemaining(subscription) : 0;
   const recommendedUpgrade = SubscriptionService.getRecommendedUpgrade(plan);
 
-  // Debug logging for subscription state
-  // console.log('🎯 useSubscription computed values:', {
-  //   organizationId,
-  //   plan,
-  //   isActive,
-  //   subscription: subscription ? {
-  //     plan: subscription.plan,
-  //     status: subscription.status,
-  //     endDate: subscription.endDate
-  //   } : null,
-  //   isLoading,
-  //   error
-  // });
+
 
   const hasFeature = useCallback((feature: keyof SubscriptionFeatures): boolean => {
     console.log('🔍 Checking feature access:', {
@@ -120,20 +92,10 @@ export const useSubscription = (): UseSubscriptionReturn => {
         'emailSupport'
       ];
       const hasBasicFeature = basicFeatures.includes(feature);
-      console.log('🔍 Subscription not active, checking basic features:', {
-        feature,
-        hasBasicFeature,
-        basicFeatures
-      });
       return hasBasicFeature;
     }
     
     const hasFeatureResult = SubscriptionService.hasFeature(plan, feature);
-    console.log('🔍 Feature check result:', {
-      feature,
-      plan,
-      hasFeatureResult
-    });
     
     return hasFeatureResult;
   }, [plan, isActive, subscription]);
@@ -154,7 +116,6 @@ export const useSubscription = (): UseSubscriptionReturn => {
 
   // Force refresh subscription data (useful after payment completion)
   const forceRefresh = useCallback(async () => {
-    console.log('🔄 Force refreshing subscription data...');
     setSubscription(null); // Clear current subscription
     await loadSubscription();
   }, [loadSubscription]);
@@ -164,7 +125,6 @@ export const useSubscription = (): UseSubscriptionReturn => {
     const interval = setInterval(() => {
       // Only auto-refresh if subscription is pending payment or being processed
       if (subscription && (subscription.status === 'pending_payment' || subscription.status === 'pending')) {
-        console.log('🔄 Auto-refreshing subscription (status: ' + subscription.status + ')');
         loadSubscription();
       }
     }, 10000); // Check every 10 seconds

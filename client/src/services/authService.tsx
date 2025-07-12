@@ -29,10 +29,6 @@ export const authService = {
         password
       });
       
-      // Log the full response for debugging
-      console.log('Login response:', response.data);
-      console.log('User data from response:', response.data.data);
-      
       if (response.data && response.data.success) {
         // Note: Token is now stored as secure httpOnly cookie by the server
         // No need to store token in localStorage anymore
@@ -45,7 +41,6 @@ export const authService = {
           // Add organizationId if it's missing but organization is present
           if (!userData.organizationId && userData.organization?.id) {
             userData.organizationId = userData.organization.id;
-            console.log('Added organizationId from organization.id:', userData.organizationId);
           }
           
           localStorage.setItem('user', JSON.stringify(userData));
@@ -98,8 +93,6 @@ export const authService = {
                 const org = JSON.parse(orgString);
                 if (org.id) {
                   user.organizationId = org.id;
-                  console.log('Added organizationId from organization in localStorage:', org.id);
-                  // Update the stored user data with the organizationId
                   localStorage.setItem('user', JSON.stringify(user));
                 }
               } catch (error) {
@@ -110,7 +103,6 @@ export const authService = {
             // If user has organization object but no organizationId
             if (!user.organizationId && user.organization?.id) {
               user.organizationId = user.organization.id;
-              console.log('Added organizationId from user.organization.id:', user.organizationId);
               // Update the stored user data with the organizationId
               localStorage.setItem('user', JSON.stringify(user));
             }
@@ -121,7 +113,6 @@ export const authService = {
           return user;
         } catch (error) {
           console.error('Update error:', error);
-          console.log('Stored user data invalid, fetching fresh data');
         }
       }
       
@@ -138,7 +129,6 @@ export const authService = {
       // Add organizationId if it's missing but organization is present
       if (!userData.organizationId && userData.organization?.id) {
         userData.organizationId = userData.organization.id;
-        console.log('Added organizationId from organization.id in API response:', userData.organizationId);
       }
       
       // Store the updated user data

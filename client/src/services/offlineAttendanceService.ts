@@ -33,7 +33,6 @@ export const offlineAttendanceService = {
 
   // Handle network coming online
   async handleNetworkOnline(): Promise<void> {
-    console.log('🌐 Network connection restored');
     
     // Register background sync if supported
     if ('serviceWorker' in navigator) {
@@ -42,7 +41,6 @@ export const offlineAttendanceService = {
         const syncManager = (registration as ServiceWorkerRegistration & { sync?: SyncManager }).sync;
         if (syncManager) {
           await syncManager.register('attendance-sync');
-          console.log('🔄 Background sync registered for attendance');
         } else {
           // Fallback to immediate sync if background sync not supported
           this.syncOfflineRecords();
@@ -78,7 +76,6 @@ export const offlineAttendanceService = {
             this.handleSyncEvent(data);
             break;
           default:
-            console.log('🔄 Unknown service worker message:', type);
         }
       });
     }
@@ -146,12 +143,10 @@ export const offlineAttendanceService = {
     
     switch (eventType) {
       case 'attendance-sync-complete':
-        console.log('🔄 Background sync completed:', eventData);
         // Trigger UI refresh if needed
         window.dispatchEvent(new CustomEvent('attendance-sync-complete', { detail: eventData }));
         break;
       default:
-        console.log('🔄 Unknown sync event:', eventType);
     }
   },
   
@@ -190,9 +185,6 @@ export const offlineAttendanceService = {
         // Fall through to offline handling
       }
     }
-    
-    // We're offline or online submission failed
-    console.log('Recording attendance in offline mode');
     
     // Prepare record data
     let offlineRecord: {
@@ -256,14 +248,10 @@ export const offlineAttendanceService = {
     remaining: number;
   }> {
     if (!isOnline()) {
-      console.log('Cannot sync offline records: device is offline');
       return { success: 0, failed: 0, remaining: 0 };
     }
     
-    console.log('Starting sync of offline attendance records...');
-    
     const unsynced = await offlineAttendanceDB.getUnsyncedRecords();
-    console.log(`Found ${unsynced.length} unsynced records`);
     
     let successCount = 0;
     let failedCount = 0;
@@ -305,8 +293,6 @@ export const offlineAttendanceService = {
     // Get remaining unsynced count
     const remaining = (await offlineAttendanceDB.getStats()).unsynced;
     
-    console.log(`Sync completed: ${successCount} successful, ${failedCount} failed, ${remaining} remaining`);
-    
     return {
       success: successCount,
       failed: failedCount,
@@ -327,7 +313,6 @@ export const offlineAttendanceService = {
         const syncManager = (registration as ServiceWorkerRegistration & { sync?: SyncManager }).sync;
         if (syncManager) {
           await syncManager.register('attendance-sync');
-          console.log('🔄 Manual background sync triggered');
           return true;
         } else {
           console.warn('🔄 Background sync not supported, using immediate sync');

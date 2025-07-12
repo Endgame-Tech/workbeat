@@ -73,17 +73,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
 
   const processAnalyticsData = useCallback(async () => {
     try {
-      console.log('📊 Fetching analytics data for date range:', dateRange);
       
       const [attendanceRecords, employees] = await Promise.all([
         attendanceService.getAttendanceInRange(dateRange.start, dateRange.end),
         employeeService.getAllEmployees()
       ]);
-
-      console.log('📈 Raw data received:', {
-        attendanceRecords: attendanceRecords?.length || 0,
-        employees: employees?.length || 0
-      });
 
       // Process attendance metrics
       const totalEmployees = employees?.length || 0;
@@ -162,8 +156,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
         },
         trends: [] // TODO: Calculate trends over time
       };
-
-      console.log('📊 Processed analytics data:', analyticsData);
       return analyticsData;
     } catch (error) {
       console.error('Error processing analytics data:', error);
@@ -176,16 +168,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
       try {
         setLoading(true);
         
-        // Force refresh organization state to get latest employee count
-        console.log('🔄 Refreshing organization state for analytics...');
-        await orgState.refreshState();
-        
-        console.log('📊 Organization state:', {
-          hasEmployees: orgState.hasEmployees,
-          employeeCount: orgState.employeeCount,
-          isNewOrganization: orgState.isNewOrganization,
-          isLoading: orgState.isLoading
-        });
         
         // Always try to fetch analytics data - let the backend determine if there's data
         const data = await processAnalyticsData();

@@ -186,8 +186,6 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
         // Add any other AttendanceRecord fields with sensible defaults if needed
       };
 
-      console.log('📊 Real-time attendance update received in table:', attendanceRecord);
-
       // Show notification for new attendance record
       const employeeName = attendanceRecord.employeeName || 'Employee';
       const action = attendanceRecord.type === 'sign-in' ? 'checked in' : 'checked out';
@@ -431,12 +429,6 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     .filter(record => {
       // Filter by organization ID (extra check in case records from multiple orgs were provided)
       if (organizationId && record.organizationId && String(record.organizationId) !== String(organizationId)) {
-        console.log('Filtering out record due to org mismatch:', {
-          recordOrgId: record.organizationId,
-          currentOrgId: organizationId,
-          recordOrgType: typeof record.organizationId,
-          currentOrgType: typeof organizationId
-        });
         return false;
       }
 

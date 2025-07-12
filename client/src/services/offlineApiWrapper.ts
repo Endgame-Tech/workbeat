@@ -64,8 +64,6 @@ export class OfflineApiWrapper {
             // If cache is fresh, return it
             // If cache is stale, continue to network request but return cache as fallback
           } else {
-            // If offline, return cached data regardless of age
-            console.log(`📦 Returning cached data for ${fullUrl} (offline)`);
             return cachedData;
           }
         }
@@ -76,7 +74,6 @@ export class OfflineApiWrapper {
     if (!isOnline() && method === 'GET') {
       const cachedData = await offlineDataCacheService.getCachedApiResponse(finalCacheKey, method);
       if (cachedData) {
-        console.log(`📦 Returning stale cached data for ${fullUrl} (offline)`);
         return cachedData;
       }
       throw new Error(`No cached data available for ${fullUrl} and device is offline`);
@@ -111,7 +108,6 @@ export class OfflineApiWrapper {
       if (method === 'GET') {
         const cachedData = await offlineDataCacheService.getCachedApiResponse(finalCacheKey, method);
         if (cachedData) {
-          console.log(`📦 Returning cached data as fallback for ${fullUrl}`);
           return cachedData;
         }
       }
@@ -235,7 +231,6 @@ export class OfflineEmployeeService extends OfflineApiWrapper {
       // Fallback to cached data
       const cachedEmployees = await offlineDataCacheService.getCachedEmployees(organizationId);
       if (cachedEmployees) {
-        console.log('📦 Using cached employees as fallback');
         return cachedEmployees.map((emp: EmployeeCacheData): Employee => ({
           ...emp,
           id: emp.id,
@@ -287,7 +282,7 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
     }
 
     try {
-      const organization = await this.get(`/organizations/${organizationId}`);
+      const organization = await this.get(`/api/organizations/${organizationId}`);
       // Cache the organization data
       await offlineDataCacheService.cacheOrganizationData(organizationId, organization as OrganizationCacheData);
       return organization as Record<string, unknown>;
@@ -295,7 +290,6 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
       // Fallback to cached data
       const cachedOrg = await offlineDataCacheService.getCachedOrganization(organizationId);
       if (cachedOrg) {
-        console.log('📦 Using cached organization as fallback');
         return cachedOrg;
       }
       throw error;
@@ -303,7 +297,7 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
   }
 
   async getOrganizationSettings(organizationId: string): Promise<Record<string, unknown> | undefined> {
-    return this.get(`/organizations/${organizationId}/settings`, undefined, {
+    return this.get(`/api/organizations/${organizationId}/settings`, undefined, {
       maxAge: 24 * 60 * 60 * 1000, // 24 hour cache
       cacheKey: `org-settings-${organizationId}`
     }) as Promise<Record<string, unknown> | undefined>;
@@ -365,7 +359,6 @@ export class OfflineAnalyticsService extends OfflineApiWrapper {
         dateRange
       );
       if (cachedAnalytics) {
-        console.log('📦 Using cached analytics as fallback');
         return cachedAnalytics;
       }
       throw error;

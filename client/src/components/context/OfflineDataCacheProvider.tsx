@@ -63,8 +63,6 @@ export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> =
         // Get initial cache stats
         await refreshCacheStats();
         
-        console.log('📦 Offline data cache provider initialized');
-        
         // Set up periodic cleanup (every hour)
         const cleanupInterval = setInterval(async () => {
           try {
@@ -99,8 +97,8 @@ export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> =
     try {
       const stats = await offlineDataCacheService.getCacheStats();
       setCacheStats(stats);
-    } catch (error) {
-      console.error('❌ Failed to refresh cache stats:', error);
+    } catch {
+      console.error('❌ Failed to refresh cache stats');
     }
   };
 
@@ -110,9 +108,7 @@ export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> =
       await offlineDataCacheService.clearAllCache();
       await refreshCacheStats();
       toast.success('All offline cache cleared');
-      console.log('🧹 All offline cache cleared');
-    } catch (error) {
-      console.error('❌ Failed to clear cache:', error);
+    } catch {
       toast.error('Failed to clear offline cache');
     }
   };
@@ -120,32 +116,17 @@ export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> =
   // Preload critical data for offline access
   const preloadCriticalData = async () => {
     if (!navigator.onLine) {
-      console.log('📦 Cannot preload data while offline');
       return;
     }
 
     try {
       toast.loading('Preloading data for offline access...', { id: 'preload' });
       
-      // This would be implemented based on the current user's context
-      // For now, it's a placeholder that could preload:
-      // - Current organization data
-      // - Employee list
-      // - Recent analytics
-      // - App settings
-      
-      // Example implementation would go here:
-      // const organizationId = getCurrentOrganizationId();
-      // await offlineEmployeeService.getEmployees(organizationId);
-      // await offlineOrganizationService.getOrganization(organizationId);
-      // etc.
       
       await refreshCacheStats();
       
       toast.success('Critical data preloaded for offline access', { id: 'preload' });
-      console.log('📦 Critical data preloaded successfully');
     } catch (error) {
-      console.error('❌ Failed to preload critical data:', error);
       toast.error('Failed to preload data for offline access', { id: 'preload' });
     }
   };

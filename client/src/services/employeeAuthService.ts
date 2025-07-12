@@ -8,20 +8,12 @@ import { employeeService } from './employeeService';
 // Improved checkIfLate function with reliable detection
 const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
   try {
-    console.log("🕒 LATENESS CHECK - Employee:", JSON.stringify({
-      id: employee.id,
-      name: employee.name,
-      workSchedule: employee.workSchedule ? "PRESENT" : "MISSING",
-      workingHours: employee.workingHours ? "PRESENT" : "MISSING"
-    }));
-    console.log("🕒 LATENESS CHECK - Sign-in time:", signInTime.toLocaleTimeString());
     
     // Handle different formats of workSchedule
     let workSchedule;
     if (typeof employee.workSchedule === 'string') {
       try {
         workSchedule = JSON.parse(employee.workSchedule);
-        console.log("🕒 LATENESS CHECK - Parsed work schedule from string:", JSON.stringify(workSchedule));
       } catch (error) {
         console.error('🕒 Error parsing work schedule string:', error);
         
@@ -33,11 +25,9 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
               : '').match(/start["']?\s*:\s*["']?(\d{1,2}:\d{2})["']?/);
             if (startMatch && startMatch[1]) {
               workSchedule = { start: startMatch[1] };
-              console.log("🕒 LATENESS CHECK - Extracted start time from string:", workSchedule.start);
             } else {
               // Fall back to default work hours
               workSchedule = { start: "09:00" };
-              console.log("🕒 LATENESS CHECK - Using default hours after failed parsing");
             }
           } catch (e) {
             console.error("🕒 LATENESS CHECK - Error in regex parsing:", e);
@@ -46,19 +36,15 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
         } else {
           // If all else fails, use default hours
           workSchedule = { start: "09:00" };
-          console.log("🕒 LATENESS CHECK - Using default hours after failed parsing");
         }
       }
     } else if (employee.workSchedule) {
       workSchedule = employee.workSchedule;
-      console.log("🕒 LATENESS CHECK - Work schedule is already an object:", JSON.stringify(workSchedule));
     } else if (employee.workingHours) {
       workSchedule = { start: employee.workingHours.start };
-      console.log("🕒 LATENESS CHECK - Using workingHours.start:", workSchedule.start);
     } else {
       // Default fallback
       workSchedule = { start: "09:00" };
-      console.log("🕒 LATENESS CHECK - No schedule found, using default 9:00 AM");
     }
 
     // Get current day of week (lowercase)
@@ -66,16 +52,12 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
     const dayIndex = signInTime.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const dayOfWeek = days[dayIndex];
     
-    console.log("🕒 LATENESS CHECK - Current day of week (index):", dayIndex);
-    console.log("🕒 LATENESS CHECK - Current day of week (name):", dayOfWeek);
-    
     // Find start time for today based on the schedule format
     let startTime: string | undefined;
     
     // Format 1: {monday: {start: "09:00", end: "17:00"}, ...}
     if (workSchedule[dayOfWeek] && workSchedule[dayOfWeek].start) {
       startTime = workSchedule[dayOfWeek].start;
-      console.log(`🕒 LATENESS CHECK - Found start time in day object: ${startTime}`);
     } 
     // Format 2: workSchedule with days array and hours
     else if (workSchedule.days && Array.isArray(workSchedule.days)) {
@@ -93,21 +75,17 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
         } else if (workSchedule.start) {
           startTime = workSchedule.start;
         }
-        console.log(`🕒 LATENESS CHECK - Day is in workdays array, start time: ${startTime}`);
       } else {
-        console.log("🕒 LATENESS CHECK - Today is not in workdays array");
         return false; // Not a work day, can't be late
       }
     }
     // Format 3: Simple object with start time
     else if (workSchedule.start) {
       startTime = workSchedule.start;
-      console.log(`🕒 LATENESS CHECK - Using direct start time: ${startTime}`);
     }
     // Fallback to default for testing
     else {
       startTime = "09:00";
-      console.log(`🕒 LATENESS CHECK - No valid start time found, using default: ${startTime}`);
     }
     
     if (!startTime) {
@@ -123,8 +101,6 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
       return false;
     }
     
-    console.log(`🕒 LATENESS CHECK - Parsed start time: ${startHour}:${startMinute}`);
-    
     // Create Date object for scheduled start time today
     const scheduledStart = new Date(signInTime);
     scheduledStart.setHours(startHour, startMinute, 0, 0);
@@ -133,14 +109,8 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
     const graceEnd = new Date(scheduledStart);
     graceEnd.setMinutes(graceEnd.getMinutes() + 5);
     
-    console.log(`🕒 LATENESS CHECK - Scheduled start time: ${scheduledStart.toLocaleTimeString()}`);
-    console.log(`🕒 LATENESS CHECK - Grace period ends: ${graceEnd.toLocaleTimeString()}`);
-    console.log(`🕒 LATENESS CHECK - Actual sign-in time: ${signInTime.toLocaleTimeString()}`);
-    
     // IMPORTANT: Use getTime() for reliable comparison!
     const isLate = signInTime.getTime() > graceEnd.getTime();
-    console.log(`🕒 LATENESS CHECK - TIME COMPARISON: ${signInTime.getTime()} > ${graceEnd.getTime()} = ${isLate}`);
-    console.log(`🕒 LATENESS CHECK - Is employee late? ${isLate ? 'YES' : 'NO'}`);
     
     return isLate;
   } catch (error) {
@@ -153,10 +123,6 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
 export const employeeAuthService = {
   async recordAttendanceWithFace(attendanceData: AttendanceData) {
     try {
-      console.log("📝 Recording attendance with face:", JSON.stringify({
-        ...attendanceData,
-        facialImage: attendanceData.facialImage ? "[IMAGE DATA]" : undefined
-      }, null, 2));
       
       // Essential validation
       if (!attendanceData.employeeId) {
@@ -173,17 +139,14 @@ export const employeeAuthService = {
       let isLate = false;
       if (attendanceData.type === 'sign-in') {
         try {
-          console.log(`📝 Fetching employee details for ${attendanceData.employeeId} to check lateness`);
           const employee = await employeeService.getEmployeeById(attendanceData.employeeId);
           
           if (employee) {
-            console.log("📝 Employee details fetched successfully for:", employee.name);
             // Get the current time or use the provided timestamp
             const signInTime = attendanceData.timestamp ? new Date(attendanceData.timestamp) : new Date();
             
             // Calculate lateness using our improved function
             isLate = checkIfLate(employee, signInTime);
-            console.log(`📝 LATENESS RESULT: Employee is ${isLate ? "LATE" : "ON TIME"}`);
           } else {
             console.warn("📝 Could not fetch employee details for lateness check");
           }
@@ -198,7 +161,6 @@ export const employeeAuthService = {
         try {
           const user = JSON.parse(localStorage.getItem('user') || '{}');
           organizationId = user.organizationId;
-          console.log("📝 Got organization ID from localStorage:", organizationId);
         } catch (error) {
           console.error("📝 Error getting organization ID from localStorage:", error);
         }
@@ -222,23 +184,12 @@ export const employeeAuthService = {
         verificationMethod: 'face-recognition'
       };
       
-      console.log("📝 Data being submitted to API:", {
-        ...dataToSubmit,
-        facialImage: "[IMAGE DATA]",
-        isLate: isLate // Log lateness flag explicitly
-      });
-      
       // Make API call
       const response = await api.post('/api/employee-auth/record-attendance', dataToSubmit);
-      console.log('📝 API response received:', {
-        success: response.data.success,
-        isLate: response.data.data?.isLate
-      });
       
       // Make sure the response includes the isLate flag
       const responseData = response.data.data || response.data;
       if (responseData && typeof responseData.isLate === 'undefined') {
-        console.log('📝 API response missing isLate flag, adding it manually:', isLate);
         responseData.isLate = isLate;
       }
       
@@ -267,8 +218,6 @@ export const employeeAuthService = {
         ...attendanceData,
         verificationMethod: attendanceData.verificationMethod || 'fingerprint'
       };
-      
-      console.log('Recording attendance with biometrics:', JSON.stringify(dataToSubmit));
       
       const response = await api.post('/api/employee-auth/record-biometric-attendance', dataToSubmit);
       return response.data.data;

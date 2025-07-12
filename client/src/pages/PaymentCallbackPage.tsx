@@ -40,8 +40,6 @@ const PaymentCallbackPage: React.FC = () => {
           return;
         }
 
-        console.log('🔄 Processing payment callback for reference:', paymentReference);
-
         // Verify payment with backend
         const result = await SubscriptionService.verifyPayment(paymentReference);
         
@@ -62,14 +60,10 @@ const PaymentCallbackPage: React.FC = () => {
           }
           
           toast.success('Subscription activated successfully!');
-          
-          // Refresh subscription data to unlock features
-          console.log('🔄 Refreshing subscription data after payment...');
           refreshSubscription();
           
           // Wait a moment for data to propagate then refresh again
           setTimeout(() => {
-            console.log('🔄 Second refresh attempt...');
             refreshSubscription();
           }, 1000);
           

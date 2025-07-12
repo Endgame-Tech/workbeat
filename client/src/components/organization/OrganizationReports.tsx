@@ -132,12 +132,10 @@ const OrganizationReports: React.FC = () => {
     
     setLoadingAttendance(true);
     try {
-      console.log('Fetching attendance records for organization:', organizationId);
       
       // If dates are provided, use them for filtering
       let records;
       if (startDate && endDate) {
-        console.log(`Fetching filtered records from ${startDate.toISOString()} to ${endDate.toISOString()}`);
         
         // Try to use attendance report endpoint if available
         try {
@@ -161,7 +159,6 @@ const OrganizationReports: React.FC = () => {
         records = await attendanceService.getAllAttendanceRecords(100);
       }
       
-      console.log(`Fetched ${records.length} attendance records`);
       
       // Only update state if not generating a report
       if (!startDate && !endDate) {
@@ -190,9 +187,7 @@ const OrganizationReports: React.FC = () => {
     }
     
     try {
-      console.log('Fetching employees for organization:', organizationId);
       const data = await employeeService.getAllEmployees();
-      console.log('Fetched employees:', data);
       
       setEmployees(data || []);
       return data || [];
@@ -207,7 +202,6 @@ const OrganizationReports: React.FC = () => {
   // Fetch employees and attendance data on mount
   useEffect(() => {
     if (organizationId) {
-      console.log("Organization ID is available, fetching data:", organizationId);
       fetchEmployees();
       fetchAttendanceRecords();
     } else {
@@ -221,7 +215,6 @@ const OrganizationReports: React.FC = () => {
     
     // Auto-refresh attendance records every 30 seconds
     const refreshInterval = setInterval(() => {
-      console.log('Auto-refreshing attendance records...');
       fetchAttendanceRecords();
     }, 30000); // 30 seconds
     

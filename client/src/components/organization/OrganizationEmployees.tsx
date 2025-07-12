@@ -45,9 +45,7 @@ const OrganizationEmployees: React.FC = () => {
     
     setLoadingEmployees(true);
     try {
-      console.log('Fetching employees for organization:', organizationId);
       const data = await employeeService.getAllEmployees();
-      console.log('Fetched employees:', data);
       
       // Important: Make sure you're setting state with the new data
       setEmployees(data || []);
@@ -72,7 +70,6 @@ const OrganizationEmployees: React.FC = () => {
   // Fetch employees on mount and when organizationId changes
   useEffect(() => {
     if (organizationId) {
-      console.log("Organization ID is available, fetching data:", organizationId);
       fetchEmployees();
     } else {
       console.warn("No organization ID available yet, data fetch delayed");
@@ -81,15 +78,12 @@ const OrganizationEmployees: React.FC = () => {
 
   // Handle employee editing
   function handleEditEmployee(employee: Employee) {
-    console.log("Employee to edit:", employee);
-    console.log("Employee ID value:", employee.id || employee._id);
     setEditingEmployee(employee);
     setShowEmployeeForm(true);
   }
 
   // Handle employee form submission
   const handleEmployeeSubmit = async (data: Partial<Employee>) => {
-    console.log('Form data received:', data);
     setIsSubmitting(true);
 
     try {
@@ -111,7 +105,6 @@ const OrganizationEmployees: React.FC = () => {
       if (editingEmployee) {
         // Get the ID, handling both potential formats (_id or id)
         const employeeId = editingEmployee._id || editingEmployee.id;
-        console.log('Updating employee with ID:', employeeId);
         
         // Update existing employee
         await employeeService.updateEmployee(String(employeeId), employeeData);

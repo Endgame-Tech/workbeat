@@ -54,7 +54,6 @@ export const offlineAttendanceDB = {
       }
     });
     
-    console.log('Offline attendance database initialized');
   },
 
   /**
@@ -84,8 +83,6 @@ export const offlineAttendanceDB = {
     };
     
     await db!.add('offlineAttendance', storedRecord);
-    
-    console.log('Attendance record saved offline:', id);
     return id;
   },
 
@@ -114,7 +111,6 @@ export const offlineAttendanceDB = {
     if (record) {
       record.synced = true;
       await db!.put('offlineAttendance', record);
-      console.log('Attendance record marked as synced:', id);
     }
   },
 
@@ -128,7 +124,6 @@ export const offlineAttendanceDB = {
     if (record) {
       record.syncAttempts += 1;
       await db!.put('offlineAttendance', record);
-      console.log('Attendance record sync attempt incremented:', id, record.syncAttempts);
     }
   },
 
@@ -151,7 +146,6 @@ export const offlineAttendanceDB = {
       }
     }
     
-    console.log(`Cleaned up ${deletedCount} old synced records`);
     return deletedCount;
   },
 

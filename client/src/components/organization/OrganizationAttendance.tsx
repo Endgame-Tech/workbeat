@@ -11,8 +11,6 @@ const OrganizationAttendance: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'records' | 'checkin'>('records');
 
   const handleComplete = () => {
-    // Refresh attendance records after successful check-in
-    console.log('Attendance completed for organization:', organizationId);
     setActiveTab('records'); // Switch back to records view
   };
 

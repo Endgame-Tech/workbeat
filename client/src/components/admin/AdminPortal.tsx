@@ -38,9 +38,7 @@ const AdminPortal: React.FC = () => {
 
   const fetchEmployees = async () => {
     try {
-      console.log('Fetching employees...');
       const data = await employeeService.getAllEmployees();
-      console.log('Fetched employees:', data);
       setEmployees(data || []);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -64,22 +62,18 @@ const AdminPortal: React.FC = () => {
             const userData: UserData = JSON.parse(userString);
             if (userData.organizationId) {
               dataToSubmit.organizationId = userData.organizationId;
-              console.log('Added organizationId to employeeData:', userData.organizationId);
             } else {
               toast.error('Organization ID is missing from your user profile');
-              console.error('No organizationId found in user data');
               setIsLoading(false);
               return;
             }
-          } catch (parseError) {
-            console.error('Error parsing user data from localStorage:', parseError);
+          } catch {
             toast.error('Error reading user data. Please try logging in again.');
             setIsLoading(false);
             return;
           }
         } else {
           toast.error('User session not found. Please log in again.');
-          console.error('No user data found in localStorage');
           setIsLoading(false);
           return;
         }
@@ -92,12 +86,10 @@ const AdminPortal: React.FC = () => {
           end: dataToSubmit.workSchedule.hours.end
         };
       }
-      
-      console.log('Final employee data being sent to API:', dataToSubmit);
+
       
       // Create the employee
-      const response = await employeeService.createEmployee(dataToSubmit);
-      console.log('API response from create employee:', response);
+      await employeeService.createEmployee(dataToSubmit);
       
       // Success handling
       toast.success(`Employee ${dataToSubmit.name} added successfully`);
@@ -126,9 +118,7 @@ const AdminPortal: React.FC = () => {
     if (!selectedEmployee || !selectedEmployee._id) return;
 
     setIsLoading(true);
-    try {
-      console.log('Updating employee:', selectedEmployee._id, 'with data:', employeeData);
-      
+    try {      
       // Make sure working hours are set properly
       if (employeeData.workSchedule && employeeData.workSchedule.hours) {
         employeeData.workingHours = {
@@ -138,7 +128,6 @@ const AdminPortal: React.FC = () => {
       }
       
       const updatedEmployee = await employeeService.updateEmployee(selectedEmployee._id, employeeData);
-      console.log('Updated employee response:', updatedEmployee);
 
       // Update local state
       setEmployees(employees.map(emp => 
@@ -170,7 +159,6 @@ const AdminPortal: React.FC = () => {
     if (!confirm('Are you sure you want to delete this employee?')) return;
 
     try {
-      console.log('Deleting employee:', employee._id);
       const success = await employeeService.deleteEmployee(employee._id);
       
       if (!success) {

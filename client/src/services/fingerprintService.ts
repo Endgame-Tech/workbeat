@@ -142,7 +142,6 @@ const checkFingerprintSupport = async (): Promise<boolean> => {
   try {
     // Check if WebAuthn is supported in this browser
     if (!window.PublicKeyCredential) {
-      console.log('WebAuthn is not supported in this browser');
       return false;
     }
 

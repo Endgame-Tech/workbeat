@@ -41,7 +41,6 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
         setIsSupported(pushNotificationService.isNotificationSupported());
         setPermission(Notification.permission);
         
-        console.log('🔔 Push notification service initialized:', initialized);
       } catch (error) {
         console.error('❌ Failed to initialize push notifications:', error);
       } finally {

@@ -5,7 +5,6 @@ const RUNTIME_CACHE = 'workbeat-runtime-v1';
 const API_CACHE = 'workbeat-api-v1';
 const STATIC_CACHE = 'workbeat-static-v1';
 
-console.log(`🔔 WorkBeat Service Worker ${SW_VERSION} loading...`);
 
 // Define critical assets to cache on install
 const CRITICAL_ASSETS = [
@@ -48,7 +47,6 @@ const STATIC_ASSETS = [
 
 // Install event - cache critical assets
 self.addEventListener('install', (event) => {
-  console.log('🔔 Service Worker installing...');
   
   event.waitUntil(
     Promise.all([

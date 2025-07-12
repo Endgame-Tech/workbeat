@@ -72,7 +72,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       setIsInitialized(granted);
 
       if (granted) {
-        console.log('🔔 Push notification permission granted and service initialized');
         
         // Show welcome notification
         await pushNotificationService.showSystemNotification(
@@ -93,7 +92,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   // Initialize notification service
   useEffect(() => {
     const initializeNotifications = async () => {
-      console.log('🔔 Initializing notification provider...');
       
       const supported = pushNotificationService.isNotificationSupported();
       setIsSupported(supported);
@@ -116,12 +114,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         await pushNotificationService.initialize();
         setIsInitialized(true);
       }
-
-      console.log('🔔 Notification provider initialized', {
-        supported,
-        hasPermission: permissionStatus.granted,
-        preferences: savedPreferences
-      });
     };
 
     initializeNotifications();
@@ -144,8 +136,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     const updatedPreferences = { ...preferences, ...newPrefs };
     setPreferences(updatedPreferences);
     pushNotificationService.savePreferences(updatedPreferences);
-    
-    console.log('🔔 Notification preferences updated:', updatedPreferences);
     
     // If notifications are being disabled, clear any active ones
     if (!updatedPreferences.enabled && hasPermission) {
@@ -225,7 +215,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     }
 
     const handleAttendanceUpdate = async (attendanceData: AttendanceUpdateData) => {
-      console.log('🔔 Processing attendance notification:', attendanceData);
       
       // Show notification for attendance updates
       await showAttendanceNotification({
@@ -261,14 +250,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
       switch (type) {
         case 'notification-navigate':
-          console.log('🔔 Notification navigation requested:', data);
-          // Handle navigation based on notification data
-          // This could trigger route changes in your app
           break;
 
         case 'notification-closed':
-          console.log('🔔 Notification closed:', data);
-          // Handle notification closure analytics
           break;
 
         default:

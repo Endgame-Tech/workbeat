@@ -24,12 +24,6 @@ const AttendanceSuccess: React.FC<AttendanceSuccessProps> = ({
   // IMPORTANT: Force isLate to be a boolean to avoid any type issues
   const isEmployeeLate = Boolean(isLate);
   
-  // Log the type and value for debugging
-  console.log("AttendanceSuccess - isLate prop received:", {
-    value: isLate,
-    type: typeof isLate,
-    convertedValue: isEmployeeLate
-  });
 
   return (
     <Card className="max-w-md mx-auto">

@@ -85,7 +85,6 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
       setIsInstallable(false);
       setDeferredPrompt(null);
       setShowModal(false);
-      console.log('📱 PWA was installed');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

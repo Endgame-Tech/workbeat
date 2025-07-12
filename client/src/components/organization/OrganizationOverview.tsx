@@ -55,9 +55,7 @@ const OrganizationOverview: React.FC = () => {
     
     setLoadingAttendance(true);
     try {
-      console.log('Fetching attendance records for organization:', organizationId);
       const records = await attendanceService.getAllAttendanceRecords(100);
-      console.log(`Fetched ${records.length} attendance records`);
       
       setAttendanceRecords(records);
       setLastUpdated(new Date());
@@ -66,7 +64,10 @@ const OrganizationOverview: React.FC = () => {
     } catch (error) {
       console.error('Error fetching attendance records:', error);
       // Only show error toast for actual server errors, not empty data
-      if (error.isServerError) {
+      const hasServerError = (err: unknown): err is { isServerError: boolean } =>
+        typeof err === 'object' && err !== null && 'isServerError' in err && typeof (err as { isServerError: unknown }).isServerError === 'boolean';
+
+      if (hasServerError(error) && error.isServerError) {
         toast.error('Failed to load attendance records');
       }
       setAttendanceRecords([]);
@@ -84,16 +85,20 @@ const OrganizationOverview: React.FC = () => {
     }
     
     try {
-      console.log('Fetching employees for organization:', organizationId);
       const data = await employeeService.getAllEmployees();
-      console.log('Fetched employees:', data);
       
       setEmployees(data || []);
       return data || [];
     } catch (err) {
       console.error('Error in fetch operation:', err);
       // Only show error toast for actual server errors, not missing employees
-      if (err.isServerError) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'isServerError' in err &&
+        typeof (err as { isServerError: unknown }).isServerError === 'boolean' &&
+        (err as { isServerError: boolean }).isServerError
+      ) {
         toast.error('Failed to load employees');
       }
       setEmployees([]);
@@ -105,17 +110,14 @@ const OrganizationOverview: React.FC = () => {
   useEffect(() => {
     if (!organizationId || orgState.isLoading) return;
     
-    console.log("Organization ID is available, checking if should fetch data:", organizationId);
     
     // Always try to fetch employees first to determine org state
     fetchEmployees();
     
     // Only fetch attendance if we have employees or should fetch data
     if (orgState.shouldFetchData('attendance')) {
-      console.log("Fetching attendance data...");
       fetchAttendanceRecords();
     } else {
-      console.log("Skipping attendance fetch - new organization with no employees");
       setAttendanceRecords([]);
     }
   }, [organizationId, orgState.isLoading, orgState.hasEmployees, fetchEmployees, fetchAttendanceRecords, orgState]);
@@ -126,7 +128,6 @@ const OrganizationOverview: React.FC = () => {
     
     // Auto-refresh attendance records every 30 seconds
     const refreshInterval = setInterval(() => {
-      console.log('Auto-refreshing attendance records...');
       fetchAttendanceRecords();
     }, 30000); // 30 seconds
     

@@ -48,10 +48,8 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
   const getOrganizationIdFromStorage = (): string | null => {
     try {
       const userString = localStorage.getItem('user');
-      console.log('🔍 Raw user string from localStorage:', userString);
       
       if (!userString) {
-        console.log('❌ No user data in localStorage');
         return null;
       }
       
@@ -62,17 +60,13 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
       
       try {
         const userData = JSON.parse(jsonString);
-        console.log('🔍 Parsed user data:', userData);
         
         if (userData.organizationId) {
-          console.log('✅ Found organizationId:', userData.organizationId);
           return userData.organizationId;
         } else if (userData.organization?.id) {
-          console.log('✅ Found organization.id:', userData.organization.id);
           return userData.organization.id;
         } else {
           console.log('❌ No organizationId found in user data');
-          console.log('🔍 User data keys:', Object.keys(userData));
         }
       } catch (err) {
         console.error('Error parsing user data:', err);
@@ -123,7 +117,6 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
         const status = (err as { response: { status: number } }).response.status;
         // Handle 404 as expected case for new organizations
         if (status === 404) {
-          console.log('Organization not found, creating minimal organization state');
           setOrganizationState({
             id: orgId
           });

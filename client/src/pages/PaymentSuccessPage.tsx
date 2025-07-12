@@ -38,12 +38,9 @@ const PaymentSuccessPage: React.FC = () => {
       }
 
       try {
-        console.log('🔍 Verifying payment with reference:', paymentReference);
         
         // Verify payment with our backend
         const result = await SubscriptionService.verifyPayment(paymentReference);
-        
-        console.log('✅ Payment verification result:', result);
         
         if (result.success) {
           setStatus('success');
@@ -53,9 +50,6 @@ const PaymentSuccessPage: React.FC = () => {
             billingCycle: (result.data as { billingCycle?: string }).billingCycle,
             reference: (result.data as { reference?: string }).reference
           } : null);
-          
-          // Force refresh subscription data to reflect the new plan
-          console.log('🔄 Forcing subscription refresh after successful payment');
           await forceRefresh();
           
           toast.success('Payment successful! Your subscription has been activated.');

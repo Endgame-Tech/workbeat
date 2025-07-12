@@ -13,14 +13,11 @@ export const attendanceService = {
    */
   async getAllAttendanceRecords(limit = 100): Promise<AttendanceRecord[]> {
     try {
-      console.log(`Fetching attendance records with limit: ${limit}`);
       
       // Make request without organizationId in URL - let backend get it from authenticated user
       const response = await api.get(`/api/attendance?limit=${limit}`);
-      console.log('Attendance API response:', response.data);
       
       if (response.data.success && response.data.data) {
-        console.log(`Received ${response.data.data.length} attendance records`);
         return response.data.data;
       } else {
         console.warn('No attendance data in response or unsuccessful response');
@@ -62,11 +59,8 @@ export const attendanceService = {
       
       const url = `/api/attendance/employee/${employeeId}?${params.toString()}`;
       
-      console.log(`Fetching attendance records for employee: ${employeeId}`);
-      
       const response = await api.get(url);
       
-      console.log(`Received ${response.data.count} employee attendance records`);
       return response.data.data || [];
     } catch (error) {
       console.error('Error fetching employee attendance:', error);
@@ -131,8 +125,6 @@ export const attendanceService = {
       verificationMethod: 'manual'
     };
     
-    console.log('Recording attendance:', JSON.stringify(dataToSubmit));
-    
     const response = await api.post('/api/attendance', dataToSubmit);
     return response.data.data;
   } catch (error) {
@@ -166,7 +158,6 @@ export const attendanceService = {
         
         if (organizationId) {
           dataToSubmit.organizationId = organizationId;
-          console.log('Added organizationId to face attendance data:', organizationId);
         } else {
           console.error('No organization ID found for recording face attendance');
           throw new Error('Organization ID is required to record attendance');
@@ -178,18 +169,13 @@ export const attendanceService = {
       if (logData.facialCapture) {
         logData.facialCapture = '[IMAGE DATA]';
       }
-      console.log('Recording attendance with face recognition:', JSON.stringify(logData));
       
       const response = await api.post('/api/attendance/face', dataToSubmit);
-      console.log('Face attendance record created successfully:', response.data.data._id);
       
       return response.data.data;
     } catch (error) {
       console.error('Error recording attendance with face:', error);
-      
-      // If we encounter an API error, create and return a mock record for testing
-      // This helps the UI to continue working even if the backend fails
-      console.log('Using mock attendance record for testing');
+
       return {
         _id: 'mock-face-' + new Date().getTime(),
         employeeId: attendanceData.employeeId,
@@ -230,10 +216,7 @@ export const attendanceService = {
         };
       }
       
-      console.log(`Fetching today's attendance stats for organization: ${organizationId}`);
-      
       const response = await api.get(`/api/attendance/stats/today?organizationId=${organizationId}`);
-      console.log('Received attendance stats:', response.data.data);
       
       return response.data.data;
     } catch (error) {
@@ -259,8 +242,7 @@ export const attendanceService = {
    * @returns Calculated attendance statistics
    */
   calculateStatsFromRecords(attendanceRecords: AttendanceRecord[], totalEmployees: number): AttendanceStats {
-    console.log(`Calculating attendance stats locally from ${attendanceRecords.length} records for ${totalEmployees} employees`);
-    
+
     // Get today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -272,7 +254,6 @@ export const attendanceService = {
       return recordDate.getTime() === today.getTime();
     });
     
-    console.log(`Found ${todayRecords.length} records for today`);
     
     // Get unique employees who signed in today
     const uniqueEmployeesPresent = new Set(
@@ -299,9 +280,7 @@ export const attendanceService = {
     const punctualityRate = presentEmployees > 0 
       ? Math.round(((presentEmployees - lateEmployees) / presentEmployees) * 100) 
       : 0;
-    
-    console.log(`Calculated stats: Present=${presentEmployees}, Late=${lateEmployees}, Absent=${absentEmployees}, Rate=${attendanceRate}%, Punctuality=${punctualityRate}%`);
-    
+
     return {
       totalEmployees,
       presentEmployees,
@@ -321,7 +300,6 @@ export const attendanceService = {
    */
   async getAttendanceInRange(startDate: string, endDate: string): Promise<AttendanceRecord[]> {
     try {
-      console.log(`Fetching attendance records from ${startDate} to ${endDate}`);
       
       // Use the main attendance endpoint with date range parameters
       const response = await api.get(`/api/attendance`, {
@@ -333,7 +311,6 @@ export const attendanceService = {
       });
       
       if (response.data.success && response.data.data) {
-        console.log(`Received ${response.data.data.length} attendance records for date range`);
         return response.data.data;
       } else {
         console.warn('No attendance data in range response');
@@ -343,7 +320,6 @@ export const attendanceService = {
       console.error('Error fetching attendance records in range:', error);
       // Fallback to regular attendance fetch if date filtering fails
       try {
-        console.log('Falling back to regular attendance fetch...');
         const allRecords = await this.getAllAttendanceRecords(1000);
         
         // Filter records by date range
@@ -354,7 +330,6 @@ export const attendanceService = {
           return date >= startDate && date <= endDate;
         });
         
-        console.log(`Filtered ${filteredRecords.length} records from ${allRecords.length} total records`);
         return filteredRecords;
       } catch (fallbackError) {
         console.error('Fallback fetch also failed:', fallbackError);
@@ -391,12 +366,10 @@ export const attendanceService = {
         params.append('department', department);
       }
       
-      console.log(`Fetching attendance report from ${startDate} to ${endDate}`);
       
       const url = `/api/attendance/report?${params.toString()}`;
       
       const response = await api.get(url);
-      console.log(`Received attendance report with ${response.data.data.length} days of data`);
       
       return response.data.data;
     } catch (error) {
@@ -428,7 +401,6 @@ export const attendanceService = {
   async getClientLocation(): Promise<{ latitude: number; longitude: number } | null> {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        console.log('Geolocation not supported by this browser');
         resolve(null);
         return;
       }
@@ -439,7 +411,6 @@ export const attendanceService = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
           };
-          console.log('Got current location:', location);
           resolve(location);
         },
         (error) => {

@@ -55,7 +55,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   // Connection management
   const connect = useCallback(async (): Promise<boolean> => {
     if (!isAuthenticated) {
-      console.log('⏳ Waiting for authentication before connecting to WebSocket');
       return false;
     }
 
@@ -213,7 +212,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   // Auto-connect when authenticated
   useEffect(() => {
     if (autoConnect && isAuthenticated && user && !isConnected) {
-      console.log('🔌 Auto-connecting to WebSocket...');
       connect();
     }
   }, [autoConnect, isAuthenticated, user, isConnected, connect]);
@@ -221,7 +219,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   // Auto-disconnect when user logs out
   useEffect(() => {
     if (!isAuthenticated && isConnected) {
-      console.log('🔌 User logged out, disconnecting WebSocket...');
       disconnect();
     }
   }, [isAuthenticated, isConnected, disconnect]);

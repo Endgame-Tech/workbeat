@@ -81,7 +81,6 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
       e.preventDefault();
       setInstallPromptEvent(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
-      console.log('📱 PWA install prompt available');
     };
 
     // Listen for PWA installed
@@ -89,7 +88,6 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
       setIsInstalled(true);
       setIsInstallable(false);
       setInstallPromptEvent(null);
-      console.log('📱 PWA was installed');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -99,7 +97,6 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
-          console.log('📱 Service Worker registered:', registration);
           
           // Check for updates
           registration.addEventListener('updatefound', () => {
