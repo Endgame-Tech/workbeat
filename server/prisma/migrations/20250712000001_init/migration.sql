@@ -30,6 +30,8 @@ CREATE TABLE "users" (
     "lastLogin" TIMESTAMPTZ(6),
     "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0,
     "isLocked" BOOLEAN NOT NULL DEFAULT false,
+    "resetPasswordToken" VARCHAR(255),
+    "resetPasswordExpire" TIMESTAMPTZ(6),
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -89,11 +91,30 @@ CREATE TABLE "daily_attendances" (
 );
 
 -- CreateTable
+CREATE TABLE "audit_logs" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER,
+    "action" VARCHAR(100) NOT NULL,
+    "details" TEXT,
+    "ipAddress" VARCHAR(45),
+    "resourceType" VARCHAR(50) NOT NULL DEFAULT 'system',
+    "resourceId" VARCHAR(100),
+    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "departments" (
     "id" SERIAL NOT NULL,
     "organizationId" INTEGER NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "description" TEXT,
+    "parentId" INTEGER,
+    "headId" INTEGER,
+    "workingHours" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -206,6 +227,21 @@ CREATE UNIQUE INDEX "organizations_contactEmail_key" ON "organizations"("contact
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE INDEX "idx_users_email" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "idx_users_organizationId" ON "users"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "idx_audit_logs_userId" ON "audit_logs"("userId");
+
+-- CreateIndex
+CREATE INDEX "idx_audit_logs_action" ON "audit_logs"("action");
+
+-- CreateIndex
+CREATE INDEX "idx_audit_logs_createdAt" ON "audit_logs"("createdAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "employees_organizationId_employeeId_key" ON "employees"("organizationId", "employeeId");
 
 -- CreateIndex
@@ -222,6 +258,9 @@ CREATE UNIQUE INDEX "leave_balances_employeeId_leaveTypeId_year_key" ON "leave_b
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "employees"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -243,6 +282,9 @@ ALTER TABLE "daily_attendances" ADD CONSTRAINT "daily_attendances_organizationId
 
 -- AddForeignKey
 ALTER TABLE "departments" ADD CONSTRAINT "departments_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "departments" ADD CONSTRAINT "departments_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "departments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "payment_sessions" ADD CONSTRAINT "payment_sessions_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
