@@ -48,6 +48,39 @@ if (config.app.env === 'production') {
 // Connect to database
 connectDB();
 
+// Emergency schema fix on startup
+(async () => {
+  try {
+    console.log('🔧 Running emergency schema check...');
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    await prisma.$connect();
+    
+    // Check and fix missing columns
+    try {
+      // Add missing employee columns
+      await prisma.$executeRaw`
+        ALTER TABLE "employees" 
+        ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(100)
+      `;
+      
+      await prisma.$executeRaw`
+        ALTER TABLE "employees" 
+        ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(100)
+      `;
+      
+      console.log('✅ Emergency schema fix completed');
+    } catch (error) {
+      console.log('ℹ️ Schema columns may already exist:', error.message);
+    }
+    
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('❌ Emergency schema fix failed:', error.message);
+  }
+})();
+
 // Security middleware (order matters!)
 app.use(securityConfig.helmet); // Security headers
 app.use(additionalSecurity); // Custom security headers
