@@ -12,10 +12,13 @@
         "postinstall": "npx prisma generate",
         "migrate:deploy": "npx prisma migrate deploy",
         "migrate:reset": "npx prisma migrate reset --force",
+        "migrate:force": "node scripts/force-migrate.js",
+        "db:verify": "node scripts/verify-and-fix-schema.js",
+        "db:status": "node test-db-status.js",
         "db:seed": "node utils/seeder.js -i",
         "db:reset": "node utils/seeder.js -d",
         "production:start": "NODE_ENV=production node server.js",
-        "render:build": "npm install && npx prisma generate && npx prisma migrate deploy"
+        "render:build": "npm install && npx prisma generate && npx prisma migrate deploy && node scripts/verify-and-fix-schema.js"
     },
     "dependencies": {
         "@prisma/client": "^6.7.0",
