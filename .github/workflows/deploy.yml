@@ -21,7 +21,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          # Remove cache here since we have multiple package.json files
+
+      - name: Cache backend dependencies
+        uses: actions/cache@v3
+        with:
+          path: server/node_modules
+          key: ${{ runner.os }}-backend-${{ hashFiles('server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-
+
+      - name: Cache frontend dependencies
+        uses: actions/cache@v3
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-frontend-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-frontend-
 
       - name: Install backend dependencies
         run: |
