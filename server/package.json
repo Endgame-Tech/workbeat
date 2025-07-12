@@ -4,7 +4,7 @@
     "description": "Backend API for WorkBeat Attendance Platform",
     "main": "server.js",
     "scripts": {
-        "start": "node fix-schema-now.js && node server.js",
+        "start": "node emergency-minimal-server.js",
         "start:with-fix": "node fix-schema-now.js && node server.js",
         "test": "echo \"No tests yet\" && exit 0",
         "lint": "eslint .",

@@ -282,7 +282,7 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
     }
 
     try {
-      const organization = await this.get(`/api/organizations/${organizationId}`);
+      const organization = await this.get(`/organizations/${organizationId}`);
       // Cache the organization data
       await offlineDataCacheService.cacheOrganizationData(organizationId, organization as OrganizationCacheData);
       return organization as Record<string, unknown>;
