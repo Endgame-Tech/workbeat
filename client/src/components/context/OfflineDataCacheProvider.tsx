@@ -126,7 +126,7 @@ export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> =
       await refreshCacheStats();
       
       toast.success('Critical data preloaded for offline access', { id: 'preload' });
-    } catch (error) {
+    } catch {
       toast.error('Failed to preload data for offline access', { id: 'preload' });
     }
   };
