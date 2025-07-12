@@ -38,6 +38,13 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy for accurate IP detection (needed for Render/production)
+if (config.app.env === 'production') {
+  app.set('trust proxy', 1);
+} else {
+  app.set('trust proxy', true);
+}
+
 // Connect to database
 connectDB();
 
@@ -78,7 +85,11 @@ const allowedOrigins = [
 
 // In production, only allow the configured frontend URL
 const corsOrigins = config.app.env === 'production' 
-  ? [config.app.frontendUrl, 'https://workbeat.vercel.app'].filter(Boolean)
+  ? [
+      config.app.frontendUrl, 
+      'https://workbeat.vercel.app',
+      'https://workbeat-iota.vercel.app'
+    ].filter(Boolean)
   : allowedOrigins;
 
 app.use(cors({

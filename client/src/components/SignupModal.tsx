@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { X, Building2, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 // Import UI components
 import Button from './ui/Button';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/Card';
+import { useSubscriptionModal } from '../hooks/useSubscriptionModal';
 
 interface SignupModalProps {
   onClose: () => void;
@@ -21,6 +23,8 @@ interface SignupFormData {
 }
 
 const SignupModal: React.FC<SignupModalProps> = ({ onClose, isOpen, onSwitchToLogin }) => {
+  const navigate = useNavigate();
+  const { showUpgradeModal } = useSubscriptionModal();
   const [formData, setFormData] = useState<SignupFormData>({
     organizationName: '',
     adminName: '',
@@ -91,9 +95,12 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, isOpen, onSwitchToLo
         credentials: 'include',
         body: JSON.stringify({
           name: formData.organizationName,
+          industry: 'technology', // Default industry for quick signup
+          contactEmail: formData.adminEmail, // Use admin email as contact email for quick signup
+          contactPhone: '1234567890', // Default phone for quick signup  
           adminName: formData.adminName,
           adminEmail: formData.adminEmail,
-          password: formData.password
+          adminPassword: formData.password
         }),
       });
 
@@ -103,12 +110,26 @@ const SignupModal: React.FC<SignupModalProps> = ({ onClose, isOpen, onSwitchToLo
         throw new Error(data.message || 'Registration failed');
       }
 
-      toast.success('Registration successful! Please check your email to verify your account.');
+      // Store auth data
+      localStorage.setItem('token', data.data.token);
+      localStorage.setItem('user', JSON.stringify(data.data.admin));
+      localStorage.setItem('organization', JSON.stringify(data.data.organization));
+      
+      toast.success('Registration successful!');
       onClose();
       
-      // Optionally redirect to login
-      if (onSwitchToLogin) {
-        setTimeout(() => onSwitchToLogin(), 1000);
+      // Show subscription modal
+      showUpgradeModal({
+        featureName: 'Complete Setup',
+        requiredPlan: 'starter'
+      });
+      
+      // Navigate to organization dashboard
+      const organizationId = data.data.organization.id;
+      if (organizationId) {
+        navigate(`/organization/${organizationId}`);
+      } else {
+        navigate('/dashboard');
       }
 
     } catch (error: unknown) {

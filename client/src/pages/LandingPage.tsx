@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Fingerprint, Clock, CheckCircle, Shield, Users, BarChart2, UserPlus, LogIn } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
@@ -7,6 +7,7 @@ import LoginModal from '../components/LoginModal';
 import SignupModal from '../components/SignupModal';
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
 
@@ -16,6 +17,10 @@ const LandingPage: React.FC = () => {
 
   const handleSignupModalClose = () => {
     setIsSignupModalOpen(false);
+  };
+
+  const handleGetStarted = () => {
+    navigate('/register');
   };
 
   return (
@@ -45,9 +50,9 @@ const LandingPage: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsSignupModalOpen(true)}
+                onClick={handleGetStarted}
                 leftIcon={<UserPlus size={16} />}
-                className="bg-white text-primary-600 hover:bg-white/90"
+                className="bg-white text-blue-800 hover:bg-white/90"
               >
                 Get Started
               </Button>
@@ -95,7 +100,7 @@ const LandingPage: React.FC = () => {
                   <Button 
                     variant="secondary" 
                     size="lg" 
-                    onClick={() => setIsSignupModalOpen(true)}
+                    onClick={handleGetStarted}
                     className="w-full text-blue sm:min-w-[200px] hover:bg-primary-50 shadow-xl hover:shadow-2xl text-base sm:text-lg py-3 sm:py-4"
                   >
                     Start Free Trial
