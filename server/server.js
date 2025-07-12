@@ -188,6 +188,13 @@ app.use('/api/notification-queue', notificationQueueRoutes);
 // Webhook routes (should be before other middleware that might interfere)
 app.use('/api/webhooks', webhookRoutes);
 
+// Temporary: Redirect /organizations/* to /api/organizations/*
+app.use('/organizations', (req, res, next) => {
+  console.log(`🔀 Redirecting ${req.originalUrl} to /api${req.originalUrl}`);
+  req.url = `/api${req.originalUrl}`;
+  return organizationRoutes(req, res, next);
+});
+
 // Default route with health check
 app.get('/', (req, res) => {
   res.json({
