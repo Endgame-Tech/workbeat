@@ -167,4 +167,12 @@ export const OfflineDataCacheProvider: React.FC<OfflineDataCacheProviderProps> =
   );
 };
 
+export function useOfflineDataCache() {
+  const context = React.useContext(OfflineDataCacheContext);
+  if (!context) {
+    throw new Error('useOfflineDataCache must be used within an OfflineDataCacheProvider');
+  }
+  return context;
+}
+
 export default OfflineDataCacheProvider;

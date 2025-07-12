@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Wifi, WifiOff, RefreshCw, Database, ChevronDown, ChevronUp } from 'lucide-react';
-import { useOffline } from './context/OfflineContext';
+import { useOffline } from './context/useOffline';
 import { useOfflineDataCache } from './context/OfflineDataCacheProvider';
 import Button from './ui/Button';
 import OfflineCacheManager from './OfflineCacheManager';

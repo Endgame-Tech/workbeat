@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import offlineAttendanceService from '../../services/offlineAttendanceService';
 import { toast } from 'react-hot-toast';
 
-interface OfflineContextType {
+export interface OfflineContextType {
   isOnline: boolean;
   offlineMode: boolean;
   offlineStats: {
@@ -14,7 +14,7 @@ interface OfflineContextType {
   setOfflineMode: (enabled: boolean) => void;
 }
 
-const OfflineContext = createContext<OfflineContextType>({
+export const OfflineContext = createContext<OfflineContextType>({
   isOnline: true,
   offlineMode: false,
   offlineStats: { total: 0, unsynced: 0, synced: 0 },

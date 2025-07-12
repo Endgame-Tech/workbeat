@@ -1,7 +1,7 @@
 import React from 'react';
 import { Database, Download, Trash2, RefreshCw, HardDrive, Wifi, WifiOff } from 'lucide-react';
 import { useOfflineDataCache } from './context/OfflineDataCacheProvider';
-import { useOffline } from './context/OfflineContext';
+import { useOffline } from './context/useOffline';
 import Button from './ui/Button';
 
 interface OfflineCacheManagerProps {
