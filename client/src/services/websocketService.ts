@@ -60,7 +60,7 @@ class WebSocketService {
       }
 
       // Create socket connection
-      const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
+      const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_APP_API_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:5000');
       this.socket = io(wsUrl, {
         auth: { token: authToken },
         transports: ['websocket', 'polling'],

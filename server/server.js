@@ -78,7 +78,7 @@ const allowedOrigins = [
 
 // In production, only allow the configured frontend URL
 const corsOrigins = config.app.env === 'production' 
-  ? [config.app.frontendUrl].filter(Boolean)
+  ? [config.app.frontendUrl, 'https://workbeat.vercel.app'].filter(Boolean)
   : allowedOrigins;
 
 app.use(cors({
