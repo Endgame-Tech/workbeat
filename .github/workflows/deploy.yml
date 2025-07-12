@@ -27,27 +27,22 @@ jobs:
         run: |
           cd server
           npm ci
-
       - name: Install frontend dependencies
         run: |
           cd client
           npm ci
-
       - name: Run backend tests
         run: |
           cd server
           npm test
-
       - name: Run frontend tests
         run: |
           cd client
           npm test
-
       - name: Run ESLint
         run: |
           cd client
           npm run lint
-
       - name: Check TypeScript compilation
         run: |
           cd client
@@ -55,6 +50,11 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
+    permissions:
+      # Required permissions for security scanning
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,7 +68,8 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3  # Updated from v2 to v3
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
