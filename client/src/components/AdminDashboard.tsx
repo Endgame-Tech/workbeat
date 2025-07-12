@@ -1,7 +1,6 @@
 // Complete Improved AdminDashboard.tsx with better report structure
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import DashboardStats from './DashboardStats';
 import AttendanceTable from './AttendanceTable';
 import EmployeeForm from './admin/EmployeeForm';
@@ -9,7 +8,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 import LeaveManagementDashboard from './leave/LeaveManagementDashboard';
 import { ShiftManagementDashboard } from './shift/ShiftManagementDashboard';
 import { Card, CardHeader, CardContent } from './ui/Card';
-import { Layers, Settings, Calendar, Download, Users, PlusCircle, RefreshCw, FileText, BarChart3, Clock } from 'lucide-react';
+import { Calendar, Download, Users, PlusCircle, RefreshCw, FileText } from 'lucide-react';
 import Button from './ui/Button';
 import { Employee, AttendanceRecord } from '../types';
 import { employeeService } from '../services/employeeService';
@@ -63,7 +62,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrganizationId }) => {
-  const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeTab, setActiveTab] = useState<DashboardTab>(DashboardTab.OVERVIEW);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
@@ -72,6 +71,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
   const [showEmployeeForm, setShowEmployeeForm] = useState<boolean>(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [organizationId, setOrganizationId] = useState<string | null>(propOrganizationId || null);
   const [organizationName, setOrganizationName] = useState<string>('Your Organization');
@@ -324,6 +324,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
   };
 
   // Filter employees based on search term
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const filteredEmployees = employees.filter(employee => 
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -668,7 +669,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ organizationId: propOrg
             locationStr = `${record.location.latitude.toFixed(4)}, ${record.location.longitude.toFixed(4)}`;
           }
         }
-      } catch (e) {
+      } catch {
         locationStr = 'Invalid location format';
       }
       

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode } from 'react';
 import { SubscriptionPlan } from '../types/subscription.types';
 import SubscriptionModal from '../components/subscription/SubscriptionModal';
 
@@ -59,13 +59,3 @@ export const SubscriptionModalProvider: React.FC<SubscriptionModalProviderProps>
     </SubscriptionModalContext.Provider>
   );
 };
-
-export const useSubscriptionModal = (): SubscriptionModalContextType => {
-  const context = useContext(SubscriptionModalContext);
-  if (!context) {
-    throw new Error('useSubscriptionModal must be used within SubscriptionModalProvider');
-  }
-  return context;
-};
-
-export default useSubscriptionModal;

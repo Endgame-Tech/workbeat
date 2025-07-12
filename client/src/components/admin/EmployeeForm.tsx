@@ -56,7 +56,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   // Get organization ID from user in localStorage
   const [organizationId, setOrganizationId] = useState<string | undefined>();
   const [departments, setDepartments] = useState<Array<{id: string, name: string}>>([]);
-  const [organization, setOrganization] = useState<any>(null);
+  interface Organization {
+    id: string;
+    name: string;
+    city?: string;
+    address?: string;
+    // Add other fields as needed
+  }
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   
   useEffect(() => {
@@ -85,7 +92,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       accessLevel: 'employee',
       isActive: true,
       faceRecognition: {
-        faceImages: []
+        faceId: '',
+        faceImages: [],
+        lastUpdated: ''
       },
       biometrics: {
         fingerprint: {
@@ -118,7 +127,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       ]);
       
       // Transform departments to the expected format
-      const formattedDepartments = deptData.map((dept: any) => ({
+      const formattedDepartments = deptData.map((dept: { id: string; name: string }) => ({
         id: dept.id,
         name: dept.name
       }));
@@ -319,7 +328,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | number | boolean | Partial<Employee['workSchedule']> | Partial<Employee['faceRecognition']> | Partial<Employee['biometrics']> | null | undefined) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value
@@ -342,8 +351,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     setFormData((prev) => ({
       ...prev,
       workSchedule: {
-        ...prev.workSchedule,
-        days: updatedDays
+        days: updatedDays,
+        hours: prev.workSchedule && prev.workSchedule.hours
+          ? prev.workSchedule.hours
+          : { start: '09:00', end: '17:00' }
       }
     }));
     
@@ -377,8 +388,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     toast.success('Fingerprint enrolled successfully');
   };
 
-  const handleFingerprintError = (error: string) => {
-    toast.error(`Fingerprint enrollment failed: ${error}`);
+  const handleFingerprintError = (error?: Error) => {
+    toast.error(`Fingerprint enrollment failed: ${error?.message || 'Unknown error'}`);
   };
 
   const handleFaceCapture = (faceImage: string) => {
@@ -391,7 +402,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       faceRecognition: {
         ...prev.faceRecognition,
         faceImages: [...(prev.faceRecognition?.faceImages || []), faceImage],
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        faceId: prev.faceRecognition?.faceId ?? ''
       }
     }));
     
@@ -402,12 +414,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   if (biometricStep === BiometricStep.FINGERPRINT) {
     return (
       <FingerprintScanner
-        employeeId={employee?._id}
-        employeeName={formData.name}
         onSuccess={handleFingerprintSuccess}
         onError={handleFingerprintError}
         onCancel={() => setBiometricStep(BiometricStep.NONE)}
-        isEnrollment={true}
       />
     );
   }
@@ -511,7 +520,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   options={departments.map(dept => ({ value: dept.name, label: dept.name }))}
                   value={formData.department || ''}
                   onChange={(value) => handleChange('department', value)}
-                  placeholder="Select a department"
                   error={errors.department}
                 />
               ) : (
@@ -600,7 +608,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               onChange={(e) =>
                 handleChange('workSchedule', {
                   ...formData.workSchedule,
-                  hours: { ...formData.workSchedule?.hours, start: e.target.value }
+                  hours: {
+                    start: e.target.value,
+                    end: formData.workSchedule?.hours?.end ?? '17:00'
+                  }
                 })
               }
               error={errors['workSchedule.hours.start']}
@@ -614,7 +625,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               onChange={(e) =>
                 handleChange('workSchedule', {
                   ...formData.workSchedule,
-                  hours: { ...formData.workSchedule?.hours, end: e.target.value }
+                  hours: { 
+                    start: formData.workSchedule?.hours?.start ?? '09:00', 
+                    end: e.target.value 
+                  }
                 })
               }
               error={errors['workSchedule.hours.end']}

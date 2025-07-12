@@ -1,6 +1,5 @@
 // src/pages/CheckInPage.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { attendanceService } from '../services/attendanceService';
 import { employeeAuthService } from '../services/employeeAuthService';
 import { Employee } from '../types';
@@ -12,7 +11,6 @@ import FingerprintScanner from '../components/FingerprintScanner';
 import toast from 'react-hot-toast';
 
 const CheckInPage: React.FC = () => {
-  const navigate = useNavigate();
   const [isScanningFingerprint, setIsScanningFingerprint] = useState(false);
   const [isCapturingFace, setIsCapturingFace] = useState(false);
   const [employeeData, setEmployeeData] = useState<Employee | null>(null);
@@ -26,7 +24,7 @@ const CheckInPage: React.FC = () => {
     type: 'sign-in' | 'sign-out';
     timestamp: string;
     employeeName: string;
-    isLate?: boolean;
+    isLate: boolean;
   } | null>(null);
   
   // Video refs for face capture
@@ -146,51 +144,42 @@ const CheckInPage: React.FC = () => {
   // Submit attendance record with biometric verification
   const submitAttendance = async (faceImage: string) => {
     if (!employeeData) return;
-    
-    setIsSubmitting(true);
+    // isSubmitting removed
     try {
       // Prepare attendance record
-      const attendanceData = {
-        employeeId: employeeData._id,
-        employeeName: employeeData.name,
+      const attendanceData: import('../types/api.types').AttendanceData = {
+        employeeId: employeeData._id ?? '',
         type: attendanceType,
-        facialCapture: {
-          image: faceImage
-        },
-        verificationMethod: 'biometric',
-        location,
-        ipAddress,
+        facialCapture: faceImage, // Pass as string (base64)
+        verificationMethod: 'face-recognition',
+        location: location || undefined,
         notes
       };
-      
       // Submit attendance via employee auth service
       const result = await employeeAuthService.recordAttendanceWithBiometrics(attendanceData);
-      
       // Stop camera stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
-      
       // Handle successful attendance recording
       setIsCapturingFace(false);
-      
       setSuccessData({
         type: attendanceType,
         timestamp: result.timestamp,
         employeeName: employeeData.name,
-        isLate: result.isLate
+        isLate: !!result.isLate // Always boolean
       });
-      
       setIsSuccess(true);
       toast.success(`${attendanceType === 'sign-in' ? 'Signed in' : 'Signed out'} successfully!`);
-      
     } catch (error) {
       console.error('Error recording attendance:', error);
       toast.error('Failed to record attendance. Please try again.');
       setIsCapturingFace(false);
     } finally {
-      setIsSubmitting(false);
+      // isSubmitting removed
     }
+  };
+
   const handleDone = () => {
     // Reset form
     setEmployeeData(null);

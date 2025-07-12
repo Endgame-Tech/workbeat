@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
+// Type definition for BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 interface PWAContextType {
   isInstalled: boolean;
   isInstallable: boolean;
@@ -31,7 +37,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [platform, setPlatform] = useState<'desktop' | 'mobile' | 'ios' | 'unknown'>('unknown');
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
-  const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     // Check if we're running in a browser environment
@@ -42,7 +48,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
     // Detect platform
     const detectPlatform = () => {
       const userAgent = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !('MSStream' in window);
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       
       if (isIOS) return 'ios';
@@ -55,7 +61,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
     // Check if PWA is installed
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          (window.navigator as any).standalone ||
+                          ('standalone' in window.navigator && (window.navigator as Navigator & { standalone?: boolean }).standalone) ||
                           document.referrer.includes('android-app://');
       
       setIsInstalled(isStandalone);
@@ -73,7 +79,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
     // Listen for PWA install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setInstallPromptEvent(e);
+      setInstallPromptEvent(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
       console.log('📱 PWA install prompt available');
     };

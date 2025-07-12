@@ -325,7 +325,9 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                               size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onEdit && onEdit(employee);
+                                if (onEdit) {
+                                  onEdit(employee);
+                                }
                               }}
                               title="Edit"
                             >

@@ -9,7 +9,7 @@ interface WebSocketContextType {
   connectionAttempts: number;
   lastAttendanceUpdate: AttendanceUpdate | null;
   lastStatsUpdate: StatsUpdate | null;
-  onlineUsers: any[];
+  onlineUsers: { userId: string; username?: string; timestamp?: string; }[];
   // Methods
   connect: () => Promise<boolean>;
   disconnect: () => void;
@@ -22,9 +22,9 @@ interface WebSocketContextType {
   // Event handlers
   onAttendanceUpdate: (callback: (data: AttendanceUpdate) => void) => () => void;
   onStatsUpdate: (callback: (data: StatsUpdate) => void) => () => void;
-  onUserOnline: (callback: (data: any) => void) => () => void;
-  onUserOffline: (callback: (data: any) => void) => () => void;
-  onError: (callback: (error: any) => void) => () => void;
+  onUserOnline: (callback: (data: { userId: string; username?: string; timestamp?: string; }) => void) => () => void;
+  onUserOffline: (callback: (data: { userId: string; username?: string; timestamp?: string; }) => void) => () => void;
+  onError: (callback: (error: Error | string | Record<string, unknown>) => void) => () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -50,7 +50,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [lastAttendanceUpdate, setLastAttendanceUpdate] = useState<AttendanceUpdate | null>(null);
   const [lastStatsUpdate, setLastStatsUpdate] = useState<StatsUpdate | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<{ userId: string; username?: string; timestamp?: string; }[]>([]);
 
   // Connection management
   const connect = useCallback(async (): Promise<boolean> => {
@@ -140,17 +140,17 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     return () => webSocketService.off('stats_updated', callback);
   }, []);
 
-  const onUserOnline = useCallback((callback: (data: any) => void) => {
+  const onUserOnline = useCallback((callback: (data: { userId: string; username?: string; timestamp?: string; }) => void) => {
     webSocketService.on('user_online', callback);
     return () => webSocketService.off('user_online', callback);
   }, []);
 
-  const onUserOffline = useCallback((callback: (data: any) => void) => {
+  const onUserOffline = useCallback((callback: (data: { userId: string; username?: string; timestamp?: string; }) => void) => {
     webSocketService.on('user_offline', callback);
     return () => webSocketService.off('user_offline', callback);
   }, []);
 
-  const onError = useCallback((callback: (error: any) => void) => {
+  const onError = useCallback((callback: (error: Error | string | Record<string, unknown>) => void) => {
     webSocketService.on('websocket_error', callback);
     return () => webSocketService.off('websocket_error', callback);
   }, []);
@@ -175,7 +175,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       setLastStatsUpdate(data);
     });
 
-    const unsubscribeUserOnline = webSocketService.on('user_online', (data: any) => {
+    const unsubscribeUserOnline = webSocketService.on('user_online', (data: { userId: string; username?: string; timestamp?: string; }) => {
       setOnlineUsers(prev => {
         // Add user if not already in list
         if (!prev.find(u => u.userId === data.userId)) {
@@ -185,11 +185,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       });
     });
 
-    const unsubscribeUserOffline = webSocketService.on('user_offline', (data: any) => {
+    const unsubscribeUserOffline = webSocketService.on('user_offline', (data: { userId: string; username?: string; timestamp?: string; }) => {
       setOnlineUsers(prev => prev.filter(u => u.userId !== data.userId));
     });
 
-    const unsubscribeError = webSocketService.on('websocket_error', (error: any) => {
+    const unsubscribeError = webSocketService.on('websocket_error', (error: Error | string | Record<string, unknown>) => {
       console.error('❌ WebSocket error in context:', error);
       setIsConnected(false);
     });
@@ -216,7 +216,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       console.log('🔌 Auto-connecting to WebSocket...');
       connect();
     }
-  }, [autoConnect, isAuthenticated, user, isConnected]);
+  }, [autoConnect, isAuthenticated, user, isConnected, connect]);
 
   // Auto-disconnect when user logs out
   useEffect(() => {
@@ -282,7 +282,7 @@ export const useWebSocket = (): WebSocketContextType => {
 
 // Higher-order component for WebSocket integration
 export const withWebSocket = <P extends object>(Component: React.ComponentType<P>) => {
-  return React.forwardRef<any, P>((props, ref) => (
+  return React.forwardRef<React.ComponentRef<typeof Component>, P>((props, ref) => (
     <WebSocketProvider>
       <Component {...props} ref={ref} />
     </WebSocketProvider>

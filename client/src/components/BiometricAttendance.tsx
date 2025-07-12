@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from './ui/Card';
 import Button from './ui/Button';
-import { Clock, Fingerprint, Camera, UserCheck, CheckCircle } from 'lucide-react';
+import { Clock, Fingerprint, Camera, UserCheck } from 'lucide-react';
 import FingerprintScanner from './FingerprintScanner';
 import FaceCapture from './FaceCapture';
 import { Employee, AttendanceRecord } from '../types';
@@ -134,19 +134,6 @@ const handleSubmitAttendance = async () => {
   }
 };
   
-  // Function to record attendance using both biometrics
-  const recordAttendanceWithBiometrics = async (attendanceData: any): Promise<AttendanceRecord> => {
-    // In a real app, this would make an API call
-    // For now, we'll mock it by calling our existing attendance service
-    return await attendanceService.recordAttendance(
-      attendanceData.employeeId,
-      attendanceData.employeeName,
-      attendanceData.type,
-      attendanceData.ipAddress,
-      attendanceData.location,
-      attendanceData.notes
-    );
-  };
   
   // Determine what to render based on current step
   const renderContent = () => {

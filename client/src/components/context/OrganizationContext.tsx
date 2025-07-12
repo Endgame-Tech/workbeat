@@ -110,20 +110,34 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({ chil
           id: orgId
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading organization:', err);
-      
-      // Handle 404 as expected case for new organizations
-      if (err.response?.status === 404) {
-        console.log('Organization not found, creating minimal organization state');
-        setOrganizationState({
-          id: orgId
-        });
+
+      // Type guard for AxiosError
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { status?: number } }).response?.status === 'number'
+      ) {
+        const status = (err as { response: { status: number } }).response.status;
+        // Handle 404 as expected case for new organizations
+        if (status === 404) {
+          console.log('Organization not found, creating minimal organization state');
+          setOrganizationState({
+            id: orgId
+          });
+        } else {
+          // Only set error for actual server errors, not 404s
+          setError('Failed to load organization data');
+
+          // Still set the basic organization with ID
+          setOrganizationState({
+            id: orgId
+          });
+        }
       } else {
-        // Only set error for actual server errors, not 404s
         setError('Failed to load organization data');
-        
-        // Still set the basic organization with ID
         setOrganizationState({
           id: orgId
         });

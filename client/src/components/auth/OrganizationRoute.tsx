@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { organizationService } from '../../services/organizationService';
-import { toast } from 'react-hot-toast';
 
 interface OrganizationRouteProps {
   children: React.ReactNode;

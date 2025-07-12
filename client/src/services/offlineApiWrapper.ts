@@ -1,7 +1,14 @@
 // API wrapper that provides offline caching capabilities
 // Automatically caches API responses and serves cached data when offline
 
+
 import offlineDataCacheService from './offlineDataCacheService';
+
+// Utility to generate a cache key for a given URL (simple hash or encode)
+function getCacheKey(url: string): string {
+  // Simple base64 encoding for uniqueness; customize as needed
+  return btoa(unescape(encodeURIComponent(url)));
+}
 
 // Helper to check if we're online
 const isOnline = (): boolean => navigator.onLine;
@@ -35,7 +42,7 @@ export class OfflineApiWrapper {
 
     const method = options.method || 'GET';
     const fullUrl = url.startsWith('http') ? url : `${this.baseURL}${url}`;
-    const finalCacheKey = cacheKey || offlineDataCacheService.getCacheKey(fullUrl);
+    const finalCacheKey = cacheKey || getCacheKey(fullUrl);
 
     // If offline only, return cached data immediately
     if (offlineOnly) {
@@ -161,6 +168,7 @@ export class OfflineApiWrapper {
   }
 }
 
+
 // Enhanced API services with offline capabilities
 // Define a specific Employee type
 export interface Employee {
@@ -169,6 +177,26 @@ export interface Employee {
   email: string;
   position?: string;
   [key: string]: unknown; // Add more fields as needed
+}
+
+// Define EmployeeCacheData type for cached employees
+export interface EmployeeCacheData extends Partial<Employee> {
+  id: string;
+  organizationId: string;
+}
+
+// Define OrganizationCacheData for cached organizations
+export interface OrganizationCacheData extends Record<string, unknown> {
+  id: string;
+  name?: string;
+}
+
+// Define AnalyticsCacheData for cached analytics
+export interface AnalyticsCacheData extends Record<string, unknown> {
+  id: string;
+  organizationId: string;
+  type: string;
+  dateRange: string;
 }
 
 export class OfflineEmployeeService extends OfflineApiWrapper {
@@ -183,23 +211,38 @@ export class OfflineEmployeeService extends OfflineApiWrapper {
     if (!isOnline()) {
       const cachedEmployees = await offlineDataCacheService.getCachedEmployees(organizationId);
       if (cachedEmployees) {
-        return cachedEmployees;
+        // Ensure cached data matches Employee type (add default name/email if missing)
+        return cachedEmployees.map((emp: EmployeeCacheData): Employee => ({
+          ...emp,
+          id: emp.id,
+          name: emp.name || '',
+          email: emp.email || '',
+          position: emp.position
+        }));
       }
     }
 
     try {
       const employees = await this.get(`/employees`, { organizationId }) as Employee[];
-      
-      // Cache the employee data
-      await offlineDataCacheService.cacheEmployeeData(organizationId, employees);
-      
+      // Cache the employee data (convert to EmployeeCacheData[])
+      const employeesForCache: EmployeeCacheData[] = employees.map((emp) => ({
+        ...emp,
+        organizationId
+      }));
+      await offlineDataCacheService.cacheEmployeeData(organizationId, employeesForCache);
       return employees;
     } catch (error) {
       // Fallback to cached data
       const cachedEmployees = await offlineDataCacheService.getCachedEmployees(organizationId);
       if (cachedEmployees) {
         console.log('📦 Using cached employees as fallback');
-        return cachedEmployees;
+        return cachedEmployees.map((emp: EmployeeCacheData): Employee => ({
+          ...emp,
+          id: emp.id,
+          name: emp.name || '',
+          email: emp.email || '',
+          position: emp.position
+        }));
       }
       throw error;
     }
@@ -245,10 +288,8 @@ export class OfflineOrganizationService extends OfflineApiWrapper {
 
     try {
       const organization = await this.get(`/organizations/${organizationId}`);
-      
       // Cache the organization data
-      await offlineDataCacheService.cacheOrganizationData(organizationId, organization);
-      
+      await offlineDataCacheService.cacheOrganizationData(organizationId, organization as OrganizationCacheData);
       return organization as Record<string, unknown>;
     } catch (error) {
       // Fallback to cached data
@@ -301,14 +342,21 @@ export class OfflineAnalyticsService extends OfflineApiWrapper {
       });
       
       // Cache the analytics data
+      // Ensure analytics object has an 'id' property for cache compatibility
+      const analyticsForCache: AnalyticsCacheData = {
+        ...(analytics as Record<string, unknown>),
+        id: `${organizationId}-${type}-${dateRange}`,
+        organizationId,
+        type,
+        dateRange
+      };
       await offlineDataCacheService.cacheAnalyticsData(
         organizationId, 
         type, 
         dateRange, 
-        analytics
+        analyticsForCache
       );
-      
-      return analytics;
+      return analytics as Record<string, unknown>;
     } catch (error) {
       // Fallback to cached data
       const cachedAnalytics = await offlineDataCacheService.getCachedAnalytics(

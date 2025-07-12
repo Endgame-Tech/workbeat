@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import DashboardStats from '../DashboardStats';
 import AttendanceTable from '../AttendanceTable';
 import { Card, CardContent } from '../ui/Card';
-import { RefreshCw, Clock, TrendingUp, Activity, Users, Plus } from 'lucide-react';
+import { RefreshCw, Activity, Users, Plus } from 'lucide-react';
 import Button from '../ui/Button';
 import { AttendanceRecord } from '../../types';
 import { employeeService } from '../../services/employeeService';
@@ -14,7 +14,14 @@ import { toast } from 'react-hot-toast';
 
 const OrganizationOverview: React.FC = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    department: string;
+    isActive: boolean;
+    [key: string]: unknown;
+  }[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loadingAttendance, setLoadingAttendance] = useState<boolean>(false);
   const [organizationName, setOrganizationName] = useState<string>('Your Organization');
@@ -111,7 +118,7 @@ const OrganizationOverview: React.FC = () => {
       console.log("Skipping attendance fetch - new organization with no employees");
       setAttendanceRecords([]);
     }
-  }, [organizationId, orgState.isLoading, orgState.hasEmployees, fetchEmployees, fetchAttendanceRecords]);
+  }, [organizationId, orgState.isLoading, orgState.hasEmployees, fetchEmployees, fetchAttendanceRecords, orgState]);
 
   // Set up auto-refresh for attendance records
   useEffect(() => {

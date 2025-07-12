@@ -32,8 +32,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
   allowDateFilter = false
 }) => {
   const { 
-    isConnected, 
-    lastAttendanceUpdate, 
+    isConnected,  
     onAttendanceUpdate 
   } = useWebSocket();
   
@@ -94,54 +93,44 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     }
   }, [initialRecords]);
 
-  // Fetch records and employees from database if not provided as props
-  useEffect(() => {
-    if (!initialRecords && organizationId) {
-      // Only fetch records if we have an organization ID and no initial records
-      fetchAttendanceRecords();
-    }
 
-    // Only fetch employees if we have an organization ID
-    if (organizationId) {
-      fetchEmployees();
-    }
-  }, [initialRecords, organizationId]);
-
-  // Real-time attendance updates
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleAttendanceUpdate = (attendanceData: any) => {
-      console.log('📊 Real-time attendance update received in table:', attendanceData);
-      
+    // Accept real-time attendance update, map to AttendanceRecord
+    const handleAttendanceUpdate = (attendanceData: AttendanceUpdate) => {
+      // Map AttendanceUpdate to AttendanceRecord
+      const attendanceRecord: AttendanceRecord = {
+        _id: attendanceData._id ? attendanceData._id.toString() : '',
+        employeeId: attendanceData.employeeId,
+        employeeName: attendanceData.employeeName,
+        type: attendanceData.type,
+        timestamp: attendanceData.timestamp,
+        isLate: attendanceData.isLate,
+        location: attendanceData.location,
+        organizationId: attendanceData.organizationId,
+        verificationMethod: attendanceData.verificationMethod,
+        createdAt: attendanceData.createdAt ? new Date(attendanceData.createdAt) : new Date(),
+        updatedAt: attendanceData.updatedAt ? new Date(attendanceData.updatedAt) : new Date(),
+        // Add any other AttendanceRecord fields with sensible defaults if needed
+      };
+
+      console.log('📊 Real-time attendance update received in table:', attendanceRecord);
+
       // Show notification for new attendance record
-      const employeeName = attendanceData.employeeName || 'Employee';
-      const action = attendanceData.type === 'sign-in' ? 'checked in' : 'checked out';
-      const message = `${employeeName} ${action}${attendanceData.isLate ? ' (Late)' : ''}`;
-      
+      const employeeName = attendanceRecord.employeeName || 'Employee';
+      const action = attendanceRecord.type === 'sign-in' ? 'checked in' : 'checked out';
+      const message = `${employeeName} ${action}${attendanceRecord.isLate ? ' (Late)' : ''}`;
+
       setNewRecordAlert(message);
-      setTimeout(() => setNewRecordAlert(null), 5000); // Clear after 5 seconds
-      
-      // Add the new record to the top of the list if it matches current organization
-      if (attendanceData.organizationId === parseInt(organizationId || '0')) {
-        const newRecord: AttendanceRecord = {
-          id: attendanceData.id,
-          _id: attendanceData.id.toString(),
-          employeeId: attendanceData.employeeId,
-          employeeName: attendanceData.employeeName,
-          type: attendanceData.type,
-          timestamp: attendanceData.timestamp,
-          isLate: attendanceData.isLate,
-          location: attendanceData.location,
-          organizationId: attendanceData.organizationId,
-          verificationMethod: attendanceData.verificationMethod
-        };
-        
-        setRecords(prev => [newRecord, ...prev]);
+      setTimeout(() => setNewRecordAlert(null), 5000);
+
+      if (String(attendanceRecord.organizationId) === String(organizationId)) {
+        setRecords(prev => [attendanceRecord, ...prev]);
       }
     };
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates with correct type
     const unsubscribe = onAttendanceUpdate(handleAttendanceUpdate);
 
     return () => {
@@ -168,7 +157,6 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
 
       if (allowPagination && !initialRecords) {
         // Use pagination if enabled and not using initial records
-        const page = loadMore ? currentPage + 1 : 1;
 
         if (filterStartDate && filterEndDate) {
           // Use date-filtered API call
@@ -200,7 +188,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           count: data.length,
           organizationId: organizationId,
           sampleRecord: data[0] ? {
-            id: data[0]._id || data[0].id,
+            id: data[0]._id,
             employeeId: data[0].employeeId,
             organizationId: data[0].organizationId,
             type: data[0].type,
@@ -233,11 +221,15 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
 
       // Transform into a lookup map for easier access by ID
       const employeeMap: Record<string, Employee> = {};
-      data.forEach(employee => {
+      interface EmployeeMap {
+        [key: string]: Employee;
+      }
+
+      data.forEach((employee: Employee) => {
         // Map by all possible ID forms for better matching
-        if (employee.id) employeeMap[String(employee.id)] = employee;
-        if (employee._id) employeeMap[employee._id] = employee;
-        if (employee.employeeId) employeeMap[employee.employeeId] = employee;
+        if (employee.id) (employeeMap as EmployeeMap)[String(employee.id)] = employee;
+        if (employee._id) (employeeMap as EmployeeMap)[employee._id] = employee;
+        if (employee.employeeId) (employeeMap as EmployeeMap)[employee.employeeId] = employee;
       });
 
       console.log(`Loaded ${data.length} employees for organization ${organizationId}`);
@@ -816,7 +808,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
                               .join('')
                               .toUpperCase()}
                           </div>
-                          {record.facialCapture?.isLive && (
+                          {'isLive' in (record.facialCapture || {}) && (record.facialCapture as { isLive?: boolean })?.isLive && (
                             <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full p-1 border-2 border-white dark:border-gray-800" title="Live Capture">
                               <CheckCircle size={10} className="text-white" />
                             </div>

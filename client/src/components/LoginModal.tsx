@@ -13,19 +13,13 @@ interface LoginModalProps {
   onClose: () => void;
   isOpen: boolean;
 }
-
+  
 interface ApiError {
   response?: {
     data?: {
       message?: string
     }
   }
-}
-
-export interface LoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onLogin: (credentials: any) => Promise<void>;
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
@@ -35,6 +29,27 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { login, user, forgotPassword } = useAuth();
+
+  // Handle navigation after successful login
+  React.useEffect(() => {
+    // Only navigate if we have a user, not loading, and modal is open
+    if (user && !isLoading && isOpen) {
+      // Navigate based on user role
+      if (user.role === 'admin') {
+        // Get organization ID for admin navigation
+        const orgId = user.organizationId || user.organization?.id;
+        if (orgId) {
+          navigate(`/organization/${orgId}`);
+        } else {
+          console.warn('Admin user without organizationId, redirecting to dashboard');
+          navigate('/dashboard');
+        }
+      } else {
+        // Employee navigation
+        navigate('/employee');
+      }
+    }
+  }, [user, isLoading, navigate, isOpen]);
 
   if (!isOpen) return null;
 
@@ -78,26 +93,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
       setIsLoading(false);
     }
   };
-
-  // Handle navigation after successful login
-  React.useEffect(() => {
-    if (user && !isLoading) {
-      // Navigate based on user role
-      if (user.role === 'admin') {
-        // Get organization ID for admin navigation
-        const orgId = user.organizationId || user.organization?.id;
-        if (orgId) {
-          navigate(`/organization/${orgId}`);
-        } else {
-          console.warn('Admin user without organizationId, redirecting to dashboard');
-          navigate('/dashboard');
-        }
-      } else {
-        // Employee navigation
-        navigate('/employee');
-      }
-    }
-  }, [user, isLoading, navigate]);
 
   const handleForgotPassword = async () => {
     const emailForReset = prompt("Enter your email to reset password");

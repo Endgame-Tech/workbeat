@@ -28,7 +28,14 @@ interface OrganizationStats {
 }
 
 const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({ organizationId }) => {
-  const [organization, setOrganization] = useState<any>(null);
+  const [organization, setOrganization] = useState<{
+    id: string;
+    name: string;
+    industry?: string;
+    employeeCount: number;
+    settings?: Record<string, unknown>;
+    [key: string]: unknown;
+  } | null>(null);
   const [stats, setStats] = useState<OrganizationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

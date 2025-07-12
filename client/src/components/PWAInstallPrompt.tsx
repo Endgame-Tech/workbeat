@@ -27,9 +27,14 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   const [platform, setPlatform] = useState<'desktop' | 'mobile' | 'ios' | 'unknown'>('unknown');
 
   useEffect(() => {
+    // Define a custom interface for Navigator with 'standalone'
+    interface NavigatorWithStandalone extends Navigator {
+      standalone?: boolean;
+    }
+
     // Check if PWA is already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                        (window.navigator as any).standalone ||
+                        (window.navigator as NavigatorWithStandalone).standalone ||
                         document.referrer.includes('android-app://');
     
     setIsInstalled(isStandalone);
@@ -37,7 +42,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     // Detect platform
     const detectPlatform = () => {
       const userAgent = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as Window & { MSStream?: unknown }).MSStream;
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       
       if (isIOS) return 'ios';
@@ -216,12 +221,10 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         </Button>
       )}
 
-      {/* Install modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={instructions.title}
-        className="max-w-md"
       >
         <div className="space-y-4">
           {/* Icon and description */}

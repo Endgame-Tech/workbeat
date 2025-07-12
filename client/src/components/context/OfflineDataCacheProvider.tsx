@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useEffect, useState, ReactNode } from 'react';
 import offlineDataCacheService from '../../services/offlineDataCacheService';
 import { toast } from 'react-hot-toast';
 
@@ -32,8 +32,6 @@ const OfflineDataCacheContext = createContext<OfflineDataCacheContextType>({
   isCacheAvailable: false,
   lastCleanup: null
 });
-
-export const useOfflineDataCache = () => useContext(OfflineDataCacheContext);
 
 interface OfflineDataCacheProviderProps {
   children: ReactNode;

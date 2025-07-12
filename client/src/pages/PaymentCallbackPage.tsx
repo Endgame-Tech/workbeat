@@ -15,7 +15,15 @@ const PaymentCallbackPage: React.FC = () => {
   const { refresh: refreshSubscription } = useSubscription();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-  const [details, setDetails] = useState<any>(null);
+  type PaymentDetails = {
+    plan?: { name: string };
+    amount?: number;
+    billingCycle?: string;
+    message?: string;
+    reference?: string;
+    [key: string]: unknown;
+  };
+  const [details, setDetails] = useState<PaymentDetails | null>(null);
 
   useEffect(() => {
     const processPayment = async () => {
@@ -40,7 +48,18 @@ const PaymentCallbackPage: React.FC = () => {
         if (result.success) {
           setStatus('success');
           setMessage('Payment successful! Your subscription has been activated.');
-          setDetails(result.data);
+          // Map Subscription to PaymentDetails shape
+          if (result.data) {
+            const { plan, ...rest } = result.data;
+            setDetails({
+              ...rest,
+              plan: plan
+                ? { name: typeof plan === 'string' ? plan : (plan as { name: string }).name }
+                : undefined
+            });
+          } else {
+            setDetails(null);
+          }
           
           toast.success('Subscription activated successfully!');
           
@@ -65,19 +84,23 @@ const PaymentCallbackPage: React.FC = () => {
         } else {
           setStatus('error');
           setMessage(result.message || 'Payment verification failed.');
-          setDetails(result.details);
+          setDetails(result.details as PaymentDetails | null);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('❌ Payment callback error:', error);
         setStatus('error');
-        setMessage(error.message || 'An error occurred while processing your payment.');
+        if (error instanceof Error) {
+          setMessage(error.message || 'An error occurred while processing your payment.');
+        } else {
+          setMessage('An error occurred while processing your payment.');
+        }
         
         toast.error('Payment processing failed. Please contact support if your payment was deducted.');
       }
     };
 
     processPayment();
-  }, [searchParams, navigate, user]);
+  }, [searchParams, navigate, user, refreshSubscription]);
 
   const handleRetryPayment = () => {
     // Navigate back to subscription page to retry

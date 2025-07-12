@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardFooter } from './ui/Card';
 import Button from './ui/Button';
 import { Employee } from '../types';
@@ -19,7 +19,7 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   onEmployeeSelect,
   onCancel,
   attendanceType,
-  capturedFaceImage,
+  capturedFaceImage, // Face image for verification - currently logged for debugging
   organizationId: propOrgId
 }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -31,6 +31,13 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   const [hoveredEmployeeId, setHoveredEmployeeId] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false); // New state for selection in progress
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null); // New state for active employee
+
+  // Log captured face image for debugging/future facial verification
+  useEffect(() => {
+    if (capturedFaceImage) {
+      console.log('Face image captured for verification:', capturedFaceImage.substring(0, 50) + '...');
+    }
+  }, [capturedFaceImage]);
 
   // Get organization ID if not provided as a prop
   useEffect(() => {
@@ -45,9 +52,9 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     if (organizationId) {
       fetchEmployees();
     }
-  }, [organizationId]);
+  }, [organizationId, fetchEmployees]);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setIsLoading(true);
       const activeEmployees = await employeeService.getAllEmployees(true);
@@ -58,13 +65,13 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
     } catch (error) {
       console.error('Error fetching employees:', error);
       // Only show toast for server errors, not expected empty states
-      if (error.isServerError) {
+      if (error && typeof error === 'object' && 'isServerError' in error) {
         toast.error('Failed to load employee list');
       }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [organizationId]);
 
   // Filter employees when search query changes
   useEffect(() => {

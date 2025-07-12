@@ -28,9 +28,10 @@ export const attendanceService = {
       }
     } catch (error) {
       console.error('Error fetching attendance records:', error);
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response: { data?: unknown; status?: unknown } };
+        console.error('Error response data:', err.response.data);
+        console.error('Error response status:', err.response.status);
       }
       return [];
     }
@@ -145,7 +146,17 @@ export const attendanceService = {
    * @param attendanceData Attendance data including face image
    * @returns Created attendance record
    */
-  async recordAttendanceWithFace(attendanceData: any): Promise<AttendanceRecord> {
+  async recordAttendanceWithFace(attendanceData: {
+    employeeId: string;
+    employeeName?: string;
+    type: 'sign-in' | 'sign-out';
+    timestamp?: Date | string;
+    notes?: string;
+    location?: { latitude: number; longitude: number };
+    facialCapture?: Blob | string;
+    organizationId?: string;
+    [key: string]: unknown;
+  }): Promise<AttendanceRecord> {
     try {
       // Ensure the organization ID is included
       const dataToSubmit = { ...attendanceData };
@@ -337,9 +348,8 @@ export const attendanceService = {
         
         // Filter records by date range
         const filteredRecords = allRecords.filter(record => {
-          const recordDate = record.date || record.timestamp;
+          const recordDate = record.timestamp;
           if (!recordDate) return false;
-          
           const date = new Date(recordDate).toISOString().split('T')[0];
           return date >= startDate && date <= endDate;
         });

@@ -7,12 +7,6 @@
       "Bash(node:*)",
       "Bash(npx tsc:*)",
       "Bash(cd:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
       "Bash(npm install:*)",
       "Bash(npm audit:*)",
       "Bash(curl:*)",
@@ -21,11 +15,9 @@
       "Bash(dpkg:*)",
       "Bash(npx prisma generate:*)",
       "Bash(ls:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
-      "Bash(cd:*)",
       "Bash(npx prisma:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": []
   }

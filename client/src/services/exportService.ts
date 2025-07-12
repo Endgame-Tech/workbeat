@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
-import { AnalyticsData, DetailedAttendanceStats, AttendanceRecord, ExecutiveSummary, OperationalIntelligence, Employee } from '../types';
+import { AnalyticsData, AttendanceRecord, ExecutiveSummary, OperationalIntelligence } from '../types';
 
 // Enhanced data processing utilities
 class DataProcessor {
@@ -48,7 +48,7 @@ class DataProcessor {
 
   static generateOperationalIntelligence(analytics: AnalyticsData, records: AttendanceRecord[]): OperationalIntelligence {
     return {
-      dailyAlerts: this.generateDailyAlerts(analytics, records),
+      dailyAlerts: this.generateDailyAlerts(analytics),
       patternDetection: {
         unusualPatterns: this.detectUnusualPatterns(analytics),
         emergingTrends: this.identifyEmergingTrends(analytics),
@@ -115,7 +115,7 @@ class DataProcessor {
     return 'stable';
   }
 
-  private static calculateWeekOverWeekChange(weeklyTrends: any[]): number {
+  private static calculateWeekOverWeekChange(weeklyTrends: { attendance: number; punctuality: number; avgHours: number; week: string; overtime: number; productivity: number; anomalies: string[]; }[]): number {
     if (weeklyTrends.length < 2) return 0;
     
     const current = weeklyTrends[weeklyTrends.length - 1];
@@ -124,7 +124,7 @@ class DataProcessor {
     return Math.round(((current.attendance - previous.attendance) / previous.attendance) * 100);
   }
 
-  private static calculateMonthOverMonthChange(weeklyTrends: any[]): number {
+  private static calculateMonthOverMonthChange(weeklyTrends: { attendance: number; punctuality: number; avgHours: number; week: string; overtime: number; productivity: number; anomalies: string[]; }[]): number {
     if (weeklyTrends.length < 4) return 0;
     
     const recentMonth = weeklyTrends.slice(-4).reduce((sum, week) => sum + week.attendance, 0) / 4;
@@ -224,7 +224,12 @@ class DataProcessor {
     return actions;
   }
 
-  private static generateDepartmentHighlights(departmentStats: any[]): any {
+  private static generateDepartmentHighlights(departmentStats: AnalyticsData['departmentStats']): {
+    bestPerforming: string;
+    needsAttention: string;
+    mostImproved: string;
+    riskiest: string;
+  } {
     const sortedByAttendance = [...departmentStats].sort((a, b) => b.avgAttendanceRate - a.avgAttendanceRate);
     const sortedByImprovement = [...departmentStats].sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
     
@@ -236,7 +241,12 @@ class DataProcessor {
     };
   }
 
-  private static generateEmployeeInsights(topPerformers: any[]): any {
+  private static generateEmployeeInsights(topPerformers: AnalyticsData['topPerformers']): {
+    topPerformers: string[];
+    riskEmployees: string[];
+    newHires: string[];
+    improvingEmployees: string[];
+  } {
     const improving = topPerformers.filter(p => p.improvementTrend === 'improving');
     const atRisk = topPerformers.filter(p => p.improvementTrend === 'declining');
     
@@ -248,8 +258,8 @@ class DataProcessor {
     };
   }
 
-  private static generateDailyAlerts(analytics: AnalyticsData, records: AttendanceRecord[]): any[] {
-    const alerts: any[] = [];
+  private static generateDailyAlerts(analytics: AnalyticsData): OperationalIntelligence['dailyAlerts'] {
+    const alerts: OperationalIntelligence['dailyAlerts'] = [];
     
     // High late arrival rate alert
     const totalLateArrivals = analytics.departmentStats.reduce((sum, dept) => sum + dept.lateArrivals, 0);
@@ -336,21 +346,21 @@ class DataProcessor {
     return factors;
   }
 
-  private static identifyOverstaffedHours(timePatterns: any[]): number[] {
+  private static identifyOverstaffedHours(timePatterns: AnalyticsData['timePatterns']): number[] {
     const avgEmployees = timePatterns.reduce((sum, pattern) => sum + pattern.avgEmployees, 0) / timePatterns.length;
     return timePatterns
       .filter(pattern => pattern.avgEmployees > avgEmployees * 1.3)
       .map(pattern => pattern.hour);
   }
 
-  private static identifyUnderstaffedHours(timePatterns: any[]): number[] {
+  private static identifyUnderstaffedHours(timePatterns: AnalyticsData['timePatterns']): number[] {
     const avgEmployees = timePatterns.reduce((sum, pattern) => sum + pattern.avgEmployees, 0) / timePatterns.length;
     return timePatterns
       .filter(pattern => pattern.avgEmployees < avgEmployees * 0.7)
       .map(pattern => pattern.hour);
   }
 
-  private static calculateOptimalShiftTimes(timePatterns: any[]): string[] {
+  private static calculateOptimalShiftTimes(timePatterns: AnalyticsData['timePatterns']): string[] {
     const optimalTimes: string[] = [];
     
     // Find hours with good balance of check-ins and productivity
@@ -367,7 +377,6 @@ class DataProcessor {
   }
 
   private static calculateCapacityUtilization(analytics: AnalyticsData): number {
-    const totalEmployees = analytics.departmentStats.reduce((sum, dept) => sum + dept.totalEmployees, 0);
     const avgAttendance = analytics.departmentStats.reduce((sum, dept) => sum + dept.avgAttendanceRate, 0) / analytics.departmentStats.length;
     
     return Math.round(avgAttendance);
@@ -903,7 +912,7 @@ class ExportService {
     
     const displayRecords = records.slice(0, 20);
     
-    displayRecords.forEach((record, index) => {
+    displayRecords.forEach((record) => {
       if (yPosition > 250) {
         pdf.addPage();
         yPosition = 30;

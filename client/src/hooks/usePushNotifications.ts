@@ -7,7 +7,7 @@ interface UsePushNotificationsReturn {
   isInitialized: boolean;
   isLoading: boolean;
   requestPermission: () => Promise<boolean>;
-  showNotification: (title: string, body: string, options?: any) => Promise<boolean>;
+  showNotification: (title: string, body: string, options?: NotificationOptions) => Promise<boolean>;
   showAttendanceNotification: (
     employeeName: string, 
     type: 'sign-in' | 'sign-out', 
@@ -39,7 +39,7 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
         const initialized = await pushNotificationService.initialize();
         setIsInitialized(initialized);
         setIsSupported(pushNotificationService.isNotificationSupported());
-        setPermission(pushNotificationService.getPermissionStatus());
+        setPermission(Notification.permission);
         
         console.log('🔔 Push notification service initialized:', initialized);
       } catch (error) {
@@ -63,7 +63,11 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     
     try {
       const granted = await pushNotificationService.requestPermission();
-      setPermission(pushNotificationService.getPermissionStatus());
+      // Extract the permission string from the status object
+      const status = pushNotificationService.getPermissionStatus();
+      if (status.granted) setPermission('granted');
+      else if (status.denied) setPermission('denied');
+      else setPermission('default');
       return granted;
     } catch (error) {
       console.error('❌ Failed to request notification permission:', error);
@@ -77,17 +81,22 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
   const showNotification = useCallback(async (
     title: string, 
     body: string, 
-    options?: any
+    options?: NotificationOptions
   ): Promise<boolean> => {
     if (permission !== 'granted') {
       console.warn('🔔 Cannot show notification: permission not granted');
       return false;
     }
 
-    return await pushNotificationService.showServiceWorkerNotification({
+    // Filter out null for silent to satisfy PushNotificationOptions type
+    const filteredOptions = options
+      ? { ...options, silent: options.silent === null ? undefined : options.silent }
+      : undefined;
+
+    return await pushNotificationService.showNotification({
       title,
       body,
-      ...options
+      ...(filteredOptions || {})
     });
   }, [permission]);
 
@@ -100,12 +109,13 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
   ): Promise<boolean> => {
     if (permission !== 'granted') return false;
     
-    return await pushNotificationService.showAttendanceNotification(
-      employeeName, 
-      type, 
-      isLate, 
-      location
-    );
+    return await pushNotificationService.showAttendanceNotification({
+      employeeName,
+      type,
+      isLate,
+      organizationName: location,
+      timestamp: new Date().toISOString()
+    });
   }, [permission]);
 
   // Show system notification
@@ -116,7 +126,11 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
   ): Promise<boolean> => {
     if (permission !== 'granted') return false;
     
-    return await pushNotificationService.showSystemNotification(title, message, type);
+    // Combine title and message for the message argument, since showSystemNotification expects (message, type)
+    const fullMessage = title ? `${title}\n${message}` : message;
+    // Only pass message and type (type may need to be mapped if 'success' is not supported)
+    const mappedType = type === 'success' ? 'info' : type;
+    return await pushNotificationService.showSystemNotification(fullMessage, mappedType as 'info' | 'warning' | 'error');
   }, [permission]);
 
   // Show connection status notification
@@ -125,14 +139,23 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
   ): Promise<boolean> => {
     if (permission !== 'granted') return false;
     
-    return await pushNotificationService.showConnectionNotification(isConnected);
+    return await pushNotificationService.showOrganizationNotification({
+      title: isConnected ? 'Connected to Organization' : 'Disconnected from Organization',
+      message: isConnected
+        ? 'You are now connected to your organization.'
+        : 'You have been disconnected from your organization.',
+      type: isConnected ? 'success' : 'warning'
+    });
   }, [permission]);
 
   // Test notification
   const testNotification = useCallback(async (): Promise<boolean> => {
     if (permission !== 'granted') return false;
     
-    return await pushNotificationService.testNotification();
+    return await pushNotificationService.showNotification({
+      title: 'Test Notification',
+      body: 'This is a test notification from WorkBeat.'
+    });
   }, [permission]);
 
   // Clear notifications

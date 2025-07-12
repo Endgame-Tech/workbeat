@@ -13,17 +13,6 @@ interface UpdateUserData {
   role?: string;
 }
 
-interface UserData {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  organization?: {
-    id: string;
-    name?: string;
-  };
-  organizationId?: string; // May be directly in the user object
-}
 
 // Auth service for user authentication
 export const authService = {

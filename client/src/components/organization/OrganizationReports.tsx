@@ -30,13 +30,6 @@ interface EmployeeStat {
   averageArrivalTime: string;
   averageDepartureTime: string;
   attendanceDates: Set<string>;
-  monthlyAttendance: Record<string, {
-    present: number;
-    late: number;
-    absent: number;
-    workHours: number;
-  }>;
-  recordsByDate: Record<string, AttendanceRecord[]>;
 }
 
 const OrganizationReports: React.FC = () => {
@@ -49,6 +42,8 @@ const OrganizationReports: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [exportingReport, setExportingReport] = useState<boolean>(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState<ReportType | null>(null);
+
+  // Report format and custom date range state
   const [reportFormat, setReportFormat] = useState<ReportFormat>(ReportFormat.EMPLOYEE_SUMMARY);
   const [gridStartDate, setGridStartDate] = useState<string>(
     new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -56,6 +51,62 @@ const OrganizationReports: React.FC = () => {
   const [gridEndDate, setGridEndDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+
+  // --- EmployeeStat computation ---
+  const computeEmployeeStats = useCallback((): Record<string, EmployeeStat> => {
+    const stats: Record<string, EmployeeStat> = {};
+    const recordsByEmployee: Record<string, AttendanceRecord[]> = {};
+    attendanceRecords.forEach(record => {
+      if (!recordsByEmployee[record.employeeId]) recordsByEmployee[record.employeeId] = [];
+      recordsByEmployee[record.employeeId].push(record);
+    });
+    Object.entries(recordsByEmployee).forEach(([employeeId, records]) => {
+      let totalSignIns = 0;
+      let onTime = 0;
+      let late = 0;
+      let totalHoursWorked = 0;
+      const arrivalTimes: number[] = [];
+      const departureTimes: number[] = [];
+      const attendanceDates = new Set<string>();
+      // Group by date
+      const recordsByDate: Record<string, AttendanceRecord[]> = {};
+      records.forEach(r => {
+        const dateStr = new Date(r.timestamp).toISOString().split('T')[0];
+        attendanceDates.add(dateStr);
+        if (!recordsByDate[dateStr]) recordsByDate[dateStr] = [];
+        recordsByDate[dateStr].push(r);
+      });
+      // For each date, find sign-in and sign-out
+      Object.values(recordsByDate).forEach(dayRecords => {
+        const signIn = dayRecords.find(r => r.type === 'sign-in');
+        const signOut = dayRecords.find(r => r.type === 'sign-out');
+        if (signIn) {
+          totalSignIns++;
+          if (signIn.isLate) late++;
+          else onTime++;
+          arrivalTimes.push(new Date(signIn.timestamp).getTime());
+        }
+        if (signOut) {
+          departureTimes.push(new Date(signOut.timestamp).getTime());
+        }
+        if (signIn && signOut) {
+          const hours = (new Date(signOut.timestamp).getTime() - new Date(signIn.timestamp).getTime()) / (1000 * 60 * 60);
+          if (hours > 0 && hours < 24) totalHoursWorked += hours;
+        }
+      });
+      const avg = (arr: number[]) => arr.length ? new Date(Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)).toLocaleTimeString() : '-';
+      stats[employeeId] = {
+        totalSignIns,
+        onTime,
+        late,
+        totalHoursWorked: Number(totalHoursWorked.toFixed(2)),
+        averageArrivalTime: avg(arrivalTimes),
+        averageDepartureTime: avg(departureTimes),
+        attendanceDates
+      };
+    });
+    return stats;
+  }, [attendanceRecords]);
 
   // Extract organization name on mount
   useEffect(() => {
@@ -227,25 +278,51 @@ const OrganizationReports: React.FC = () => {
     reportType?: ReportType,
     formatType: string = 'default'
   ) => {
-    // Create the CSV content
     const csvContent = csvRows.join('\n');
-    
-    // Create a download link and trigger download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    
-    // Set filename based on report type and format
     const datePart = new Date().toISOString().split('T')[0];
     const reportTypeName = reportType ? `_${reportType.toLowerCase()}` : '';
     const formatName = formatType ? `_${formatType}` : '';
-    
     link.setAttribute('download', `${organizationName}_attendance${reportTypeName}${formatName}_${datePart}.csv`);
-    
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Export employee summary stats as CSV
+  const exportEmployeeStats = () => {
+    const stats = computeEmployeeStats();
+    const headers = [
+      'Employee ID',
+      'Employee Name',
+      'Total Sign-Ins',
+      'On Time',
+      'Late',
+      'Total Hours Worked',
+      'Average Arrival Time',
+      'Average Departure Time',
+      'Attendance Days'
+    ];
+    const csvRows = [headers.join(',')];
+    Object.entries(stats).forEach(([employeeId, stat]) => {
+      const emp = employees.find(e => e.employeeId === employeeId || e._id === employeeId || e.id?.toString() === employeeId);
+      csvRows.push([
+        employeeId,
+        emp?.name || '-',
+        stat.totalSignIns,
+        stat.onTime,
+        stat.late,
+        stat.totalHoursWorked,
+        stat.averageArrivalTime,
+        stat.averageDepartureTime,
+        stat.attendanceDates.size
+      ].map(escapeCsvValue).join(','));
+    });
+    downloadCsv(csvRows, undefined, 'employee_summary');
+    toast.success('Employee summary exported');
   };
 
   // Generate basic attendance report
@@ -307,29 +384,38 @@ const OrganizationReports: React.FC = () => {
     downloadCsv(csvRows, undefined, 'detailed');
   };
 
-  // Generate and export attendance report
-  const generateReport = async (reportType: ReportType) => {
+  // Generate and export attendance report with support for custom format and date range
+  const generateReport = async (reportType: ReportType, customFormat?: ReportFormat, customStart?: string, customEnd?: string) => {
     setSelectedReportPeriod(reportType);
     setExportingReport(true);
-    
     try {
       // First ensure we have all employees data
       const employeesData = await fetchEmployees();
-      
-      // Get date range based on report type
-      const { startDate, endDate } = getReportDateRange(reportType);
-      
+      // Use custom date range if provided, else use preset
+      let startDate: Date, endDate: Date;
+      if (customStart && customEnd) {
+        startDate = new Date(customStart);
+        endDate = new Date(customEnd);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        ({ startDate, endDate } = getReportDateRange(reportType));
+      }
       // Fetch attendance records for the specified period
       const records = await fetchAttendanceRecords(startDate, endDate);
-      
       if (records.length === 0) {
         toast.error(`No attendance records found for ${reportType.toLowerCase()} report period`);
         return;
       }
-      
-      // Export the data to CSV
-      exportAttendanceData(records, employeesData);
-      
+      // Export based on selected format
+      if ((customFormat || reportFormat) === ReportFormat.EMPLOYEE_SUMMARY) {
+        // Use only records in range for summary
+        const prevRecords = attendanceRecords;
+        setAttendanceRecords(records); // temporarily set for summary export
+        exportEmployeeStats();
+        setAttendanceRecords(prevRecords); // restore
+      } else {
+        exportAttendanceData(records, employeesData);
+      }
       toast.success(`${reportType} report generated successfully`);
     } catch (error) {
       console.error(`Error generating ${reportType} report:`, error);
@@ -352,7 +438,6 @@ const OrganizationReports: React.FC = () => {
             Generate and export detailed attendance reports
           </p>
         </div>
-        
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
@@ -370,15 +455,16 @@ const OrganizationReports: React.FC = () => {
         </div>
       </div>
 
-      {/* Report Controls */}
+
+      {/* Report Controls: Format and Date Range */}
       <Card variant="elevated" className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-            Export Current Data
+            Export/Generate Report
           </h3>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center space-x-2">
               <input 
                 type="checkbox" 
@@ -391,7 +477,6 @@ const OrganizationReports: React.FC = () => {
                 Auto-refresh data
               </label>
             </div>
-            
             <div className="flex items-center gap-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
                 {attendanceRecords.length} records available
@@ -407,6 +492,102 @@ const OrganizationReports: React.FC = () => {
               </Button>
             </div>
           </div>
+          {/* Report format and date range controls */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="reportFormat" className="text-sm font-medium">Report Format:</label>
+              <select
+                id="reportFormat"
+                value={reportFormat}
+                onChange={e => setReportFormat(e.target.value as ReportFormat)}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                {Object.values(ReportFormat).map(fmt => (
+                  <option key={fmt} value={fmt}>{fmt}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="gridStartDate" className="text-sm font-medium">Start Date:</label>
+              <input
+                id="gridStartDate"
+                type="date"
+                value={gridStartDate}
+                onChange={e => setGridStartDate(e.target.value)}
+                className="border rounded px-2 py-1 text-sm"
+                max={gridEndDate}
+              />
+              <label htmlFor="gridEndDate" className="text-sm font-medium">End Date:</label>
+              <input
+                id="gridEndDate"
+                type="date"
+                value={gridEndDate}
+                onChange={e => setGridEndDate(e.target.value)}
+                className="border rounded px-2 py-1 text-sm"
+                min={gridStartDate}
+                max={new Date().toISOString().split('T')[0]}
+              />
+              <Button
+                variant="primary"
+                leftIcon={<FileText size={16} />}
+                onClick={() => generateReport(ReportType.MONTHLY, reportFormat, gridStartDate, gridEndDate)}
+                isLoading={exportingReport && selectedReportPeriod === ReportType.MONTHLY}
+                className="rounded-xl"
+              >
+                Generate Custom Report
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Employee Summary Table and Export */}
+      <Card variant="elevated" className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 flex flex-row items-center justify-between">
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Employee Attendance Summary
+          </h3>
+          <Button 
+            variant="primary"
+            leftIcon={<Download size={16} />}
+            onClick={exportEmployeeStats}
+            className="rounded-xl"
+          >
+            Export Summary
+          </Button>
+        </CardHeader>
+        <CardContent className="p-6 overflow-x-auto">
+          <table className="min-w-full text-sm border">
+            <thead>
+              <tr className="bg-neutral-100 dark:bg-neutral-800">
+                <th className="px-2 py-1 border">Employee</th>
+                <th className="px-2 py-1 border">Sign-Ins</th>
+                <th className="px-2 py-1 border">On Time</th>
+                <th className="px-2 py-1 border">Late</th>
+                <th className="px-2 py-1 border">Total Hours</th>
+                <th className="px-2 py-1 border">Avg Arrival</th>
+                <th className="px-2 py-1 border">Avg Departure</th>
+                <th className="px-2 py-1 border">Days Present</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(computeEmployeeStats()).map(([employeeId, stat]) => {
+                const emp = employees.find(e => e.employeeId === employeeId || e._id === employeeId || e.id?.toString() === employeeId);
+                return (
+                  <tr key={employeeId}>
+                    <td className="px-2 py-1 border">{emp?.name || employeeId}</td>
+                    <td className="px-2 py-1 border text-center">{stat.totalSignIns}</td>
+                    <td className="px-2 py-1 border text-center">{stat.onTime}</td>
+                    <td className="px-2 py-1 border text-center">{stat.late}</td>
+                    <td className="px-2 py-1 border text-center">{stat.totalHoursWorked}</td>
+                    <td className="px-2 py-1 border text-center">{stat.averageArrivalTime}</td>
+                    <td className="px-2 py-1 border text-center">{stat.averageDepartureTime}</td>
+                    <td className="px-2 py-1 border text-center">{stat.attendanceDates.size}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
 
@@ -427,7 +608,7 @@ const OrganizationReports: React.FC = () => {
               <Button 
                 variant="primary" 
                 className="w-full"
-                onClick={() => generateReport(period)}
+                onClick={() => generateReport(period, reportFormat)}
                 isLoading={exportingReport && selectedReportPeriod === period}
                 leftIcon={<FileText size={16} />}
               >

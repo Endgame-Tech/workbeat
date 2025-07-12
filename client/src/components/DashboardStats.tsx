@@ -13,6 +13,7 @@ import {
 import { AttendanceRecord, AttendanceStats } from '../types';
 import { attendanceService } from '../services/attendanceService';
 import { useWebSocket } from './context/WebSocketProvider';
+import { AttendanceUpdate, StatsUpdate } from '../services/websocketService';
 
 interface DashboardStatsProps {
   employeeCount?: number;
@@ -25,8 +26,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 }) => {
   const { 
     isConnected, 
-    lastAttendanceUpdate, 
-    lastStatsUpdate,
     onAttendanceUpdate,
     onStatsUpdate 
   } = useWebSocket();
@@ -45,7 +44,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   
   useEffect(() => {
     fetchAttendanceStats();
-  }, []);
+  }, [fetchAttendanceStats]);
   
   // Update stats when props change
   useEffect(() => {
@@ -72,13 +71,13 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleAttendanceUpdate = (attendanceData: any) => {
+    const handleAttendanceUpdate = (attendanceData: AttendanceUpdate) => {
       console.log('📊 Real-time attendance update received:', attendanceData);
       // Refresh stats when attendance changes
       fetchAttendanceStats();
     };
 
-    const handleStatsUpdate = (statsData: any) => {
+    const handleStatsUpdate = (statsData: StatsUpdate) => {
       console.log('📈 Real-time stats update received:', statsData);
       // Refresh stats when stats trigger is received
       fetchAttendanceStats();

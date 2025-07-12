@@ -41,23 +41,6 @@ function App() {
     initializeApp();
   }, []);
 
-  const handleLogin = async (credentials) => {
-    try {
-      const user = await authService.login(credentials.email, credentials.password);
-      setCurrentUser(user);
-      setShowLoginModal(false);
-      toast.success('Login successful!');
-      
-      // Redirect logic is now handled by LoginModal component
-      // No need to duplicate it here
-    } catch (error) {
-      toast.error(
-        error && typeof error === 'object' && 'message' in error
-          ? (error as { message: string }).message
-          : 'Login failed'
-      );
-    }
-  };
 
   const handleLogout = () => {
     authService.logout();
@@ -71,15 +54,6 @@ function App() {
     setIsDarkMode(newTheme === 'dark');
   };
 
-  const toggleUserRole = () => {
-    if (currentUser) {
-      const newRole = currentUser.role === 'admin' ? 'employee' : 'admin';
-      const updatedUser = { ...currentUser, role: newRole };
-      setCurrentUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      toast.success(`Switched to ${newRole} role`);
-    }
-  };
 
   if (isLoading) {
     return (

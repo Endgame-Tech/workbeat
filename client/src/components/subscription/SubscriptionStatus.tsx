@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Crown, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, Crown, Calendar, Users, XCircle } from 'lucide-react';
 import { useSubscription } from '../../hooks/useSubscription';
 import { SubscriptionService } from '../../services/subscriptionService';
 import Button from '../ui/Button';
@@ -71,10 +71,9 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
     return (
       <div className="flex items-center gap-3">
         <Badge 
-          variant={statusColor === 'green' ? 'success' : statusColor === 'amber' ? 'warning' : 'error'}
-        >
-          {planName}
-        </Badge>
+          type={statusColor === 'green' ? 'success' : statusColor === 'amber' ? 'warning' : 'danger'}
+          text={planName}
+        />
         
         {subscription.status === 'trial' && daysRemaining <= 7 && (
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
@@ -135,10 +134,9 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
           </div>
 
           <Badge 
-            variant={statusColor === 'green' ? 'success' : statusColor === 'amber' ? 'warning' : 'error'}
-          >
-            {isActive ? 'Active' : 'Inactive'}
-          </Badge>
+            type={statusColor === 'green' ? 'success' : statusColor === 'amber' ? 'warning' : 'danger'}
+            text={isActive ? 'Active' : 'Inactive'}
+          />
         </div>
 
         {showDetails && (

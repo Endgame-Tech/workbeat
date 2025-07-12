@@ -35,9 +35,10 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     initCamera();
     
     // Clean up camera when component unmounts
+    const currentVideo = videoRef.current;
     return () => {
-      if (videoRef.current) {
-        simpleFaceCaptureService.stopCamera(videoRef.current);
+      if (currentVideo) {
+        simpleFaceCaptureService.stopCamera(currentVideo);
       }
     };
   }, []);
@@ -47,6 +48,14 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
     setCountdown(3);
   };
   
+  // Capture image from video
+  const handleCapture = React.useCallback(() => {
+    if (!videoRef.current || !isCameraReady) return;
+    
+    const imageData = simpleFaceCaptureService.captureImage(videoRef.current);
+    setCapturedImage(imageData);
+  }, [isCameraReady]);
+
   useEffect(() => {
     if (countdown === null) return;
     
@@ -60,15 +69,7 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({
       // Capture image when countdown reaches 0
       handleCapture();
     }
-  }, [countdown]);
-
-  // Capture image from video
-  const handleCapture = () => {
-    if (!videoRef.current || !isCameraReady) return;
-    
-    const imageData = simpleFaceCaptureService.captureImage(videoRef.current);
-    setCapturedImage(imageData);
-  };
+  }, [countdown, handleCapture]);
 
   // Reset capture to try again
   const handleRetake = () => {

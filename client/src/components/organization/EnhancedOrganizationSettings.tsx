@@ -13,18 +13,14 @@ import {
   Palette,
   FileText,
   MapPin,
-  Phone,
-  Mail,
   Calendar,
   AlertTriangle,
   Save,
   Plus,
   Trash2,
   Edit3,
-  Camera,
-  Link
 } from 'lucide-react';
-import { Card, CardHeader, CardContent, CardFooter } from '../ui/Card';
+import { Card } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
@@ -49,52 +45,49 @@ interface Department {
   isActive: boolean;
 }
 
-interface AttendancePolicy {
-  gracePeriodsMinutes: number;
-  lateThresholdMinutes: number;
-  earlyDepartureMinutes: number;
-  minimumHoursPerDay: number;
-  maximumHoursPerDay: number;
-  overtimeThresholdHours: number;
-  requiresApprovalForOvertime: boolean;
-  allowEarlyDeparture: boolean;
-  strictWorkingHours: boolean;
-  autoMarkLateAfterMinutes: number;
-}
 
-interface SecuritySettings {
-  ipWhitelistEnabled: boolean;
-  allowedIPs: string[];
-  geofencingEnabled: boolean;
-  geofenceRadius: number;
-  geofenceLatitude?: number;
-  geofenceLongitude?: number;
-  sessionTimeoutMinutes: number;
-  maxConcurrentSessions: number;
-  requirePasswordChange: boolean;
-  passwordExpiryDays: number;
-  twoFactorRequired: boolean;
-}
 
-interface NotificationSettings {
-  emailNotifications: boolean;
-  smsNotifications: boolean;
-  lateArrivalAlerts: boolean;
-  absenceAlerts: boolean;
-  overtimeAlerts: boolean;
-  leaveRequestAlerts: boolean;
-  systemMaintenanceAlerts: boolean;
-  weeklyReports: boolean;
-  monthlyReports: boolean;
-  customReports: boolean;
-}
 
 const EnhancedOrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizationId: propOrganizationId }) => {
   const { organizationId: paramOrganizationId } = useParams<{ organizationId: string }>();
   const organizationId = propOrganizationId || paramOrganizationId;
   const { updateBranding } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
-  const [organization, setOrganization] = useState<any>(null);
+  const [organization, setOrganization] = useState<{
+    name?: string;
+    industry?: string;
+    website?: string;
+    registrationNumber?: string;
+    description?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    settings?: {
+      appearance?: {
+        logoUrl?: string;
+        primaryColor?: string;
+        secondaryColor?: string;
+        accentColor?: string;
+        backgroundColor?: string;
+        textColor?: string;
+        borderColor?: string;
+        darkModeEnabled?: boolean;
+        customBranding?: boolean;
+        companyName?: string;
+      };
+      attendancePolicy?: Record<string, unknown>;
+      security?: Record<string, unknown>;
+      notifications?: Record<string, unknown>;
+      localization?: Record<string, unknown>;
+      workingHours?: Record<string, unknown>;
+      biometricRequirements?: Record<string, unknown>;
+      integrations?: Record<string, unknown>;
+    };
+    [key: string]: unknown;
+  } | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +107,18 @@ const EnhancedOrganizationSettings: React.FC<OrganizationSettingsProps> = ({ org
   ];
 
   // Memoized branding update function
-  const updateBrandingMemo = useCallback((appearanceSettings: any) => {
+  const updateBrandingMemo = useCallback((appearanceSettings: {
+    logoUrl?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    borderColor?: string;
+    darkModeEnabled?: boolean;
+    customBranding?: boolean;
+    companyName?: string;
+  }) => {
     updateBranding(appearanceSettings);
   }, [updateBranding]);
 
@@ -159,8 +163,9 @@ const EnhancedOrganizationSettings: React.FC<OrganizationSettingsProps> = ({ org
     fetchData();
   }, [organizationId]); // Removed updateBranding dependency to prevent re-fetching on branding changes
 
-  const handleChange = (field: string, value: any) => {
-    setOrganization((prev: any) => {
+  const handleChange = (field: string, value: string | number | boolean | string[]) => {
+    setOrganization((prev) => {
+      if (!prev) return prev;
       if (field.includes('.')) {
         const keys = field.split('.');
         const newObj = JSON.parse(JSON.stringify(prev)); // Deep clone to avoid mutation issues
@@ -215,10 +220,10 @@ const EnhancedOrganizationSettings: React.FC<OrganizationSettingsProps> = ({ org
           section.toLowerCase().includes('security') ||
           section.toLowerCase().includes('advanced')) {
         const updatedData = await organizationService.updateSettings(organizationId, organization.settings || {});
-        setOrganization((prev: any) => ({
+        setOrganization((prev) => prev ? ({
           ...prev,
           settings: updatedData
-        }));
+        }) : null);
       } else {
         // For profile and other basic organization data
         const updatedData = await organizationService.updateOrganization(organizationId, organization);
@@ -329,10 +334,10 @@ const EnhancedOrganizationSettings: React.FC<OrganizationSettingsProps> = ({ org
 
     try {
       const resetData = await organizationService.resetSettings(organizationId);
-      setOrganization((prev: any) => ({
+      setOrganization((prev) => prev ? ({
         ...prev,
         settings: resetData
-      }));
+      }) : null);
       toast.success('All settings reset to defaults successfully');
       // Reload the page to apply default branding
       window.location.reload();

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import pushNotificationService from '../../services/pushNotificationService';
 import { useWebSocket } from './WebSocketProvider';
 import { useAuth } from './AuthContext';
@@ -23,7 +23,13 @@ interface NotificationContextType {
   showTestNotification: () => Promise<void>;
   clearAllNotifications: () => Promise<void>;
   // Notification methods
-  showAttendanceNotification: (data: any) => Promise<boolean>;
+  showAttendanceNotification: (data: {
+    employeeName: string;
+    type: 'sign-in' | 'sign-out';
+    isLate?: boolean;
+    timestamp: string;
+    organizationName?: string;
+  }) => Promise<boolean>;
   showSystemNotification: (message: string, type?: 'info' | 'warning' | 'error') => Promise<boolean>;
 }
 
@@ -52,6 +58,37 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     sound: true,
     vibration: true
   });
+
+  // Request notification permission
+  const requestPermission = useCallback(async (): Promise<boolean> => {
+    if (!isSupported) {
+      console.warn('🔔 Cannot request permission: notifications not supported');
+      return false;
+    }
+
+    try {
+      const granted = await pushNotificationService.setup();
+      setHasPermission(granted);
+      setIsInitialized(granted);
+
+      if (granted) {
+        console.log('🔔 Push notification permission granted and service initialized');
+        
+        // Show welcome notification
+        await pushNotificationService.showSystemNotification(
+          'Push notifications are now enabled for WorkBeat!',
+          'info'
+        );
+      } else {
+        console.warn('🔔 Push notification permission denied');
+      }
+
+      return granted;
+    } catch (error) {
+      console.error('🔔 Error requesting notification permission:', error);
+      return false;
+    }
+  }, [isSupported]);
 
   // Initialize notification service
   useEffect(() => {
@@ -100,38 +137,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [autoSetup, isAuthenticated, isSupported, hasPermission, preferences.enabled]);
-
-  // Request notification permission
-  const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (!isSupported) {
-      console.warn('🔔 Cannot request permission: notifications not supported');
-      return false;
-    }
-
-    try {
-      const granted = await pushNotificationService.setup();
-      setHasPermission(granted);
-      setIsInitialized(granted);
-
-      if (granted) {
-        console.log('🔔 Push notification permission granted and service initialized');
-        
-        // Show welcome notification
-        await pushNotificationService.showSystemNotification(
-          'Push notifications are now enabled for WorkBeat!',
-          'info'
-        );
-      } else {
-        console.warn('🔔 Push notification permission denied');
-      }
-
-      return granted;
-    } catch (error) {
-      console.error('🔔 Error requesting notification permission:', error);
-      return false;
-    }
-  }, [isSupported]);
+  }, [autoSetup, isAuthenticated, isSupported, hasPermission, preferences.enabled, requestPermission]);
 
   // Update notification preferences
   const updatePreferences = useCallback((newPrefs: Partial<NotificationPreferences>) => {
@@ -210,7 +216,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       return;
     }
 
-    const handleAttendanceUpdate = async (attendanceData: any) => {
+    interface AttendanceUpdateData {
+      employeeName: string;
+      type: 'sign-in' | 'sign-out';
+      isLate?: boolean;
+      timestamp: string;
+      organizationName?: string;
+    }
+
+    const handleAttendanceUpdate = async (attendanceData: AttendanceUpdateData) => {
       console.log('🔔 Processing attendance notification:', attendanceData);
       
       // Show notification for attendance updates
@@ -219,7 +233,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         type: attendanceData.type,
         isLate: attendanceData.isLate,
         timestamp: attendanceData.timestamp,
-        organizationName: user?.organizationName
+        organizationName: user?.organization?.name
       });
     };
 
@@ -235,7 +249,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     preferences, 
     onAttendanceUpdate, 
     showAttendanceNotification,
-    user?.organizationName
+    user?.organization?.name
   ]);
 
   // Handle service worker messages
@@ -288,15 +302,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       {children}
     </NotificationContext.Provider>
   );
-};
-
-// Custom hook to use notification context
-export const useNotifications = (): NotificationContextType => {
-  const context = useContext(NotificationContext);
-  if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
-  }
-  return context;
 };
 
 export default NotificationProvider;

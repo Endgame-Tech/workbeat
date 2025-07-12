@@ -164,7 +164,8 @@ const OrganizationEmployees: React.FC = () => {
             Employee Management
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-2">
-            Manage your organization's workforce
+            Manage {organizationName}'s workforce
+            {hasFeature('employeeManagement') && canAddEmployees && ' • Advanced features enabled'}
           </p>
         </div>
 

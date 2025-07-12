@@ -48,7 +48,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Initialize branding on mount
   useEffect(() => {
     brandingService.initializeBranding(branding);
-  }, []);
+  }, [branding]);
 
   return (
     <ThemeContext.Provider value={{ 

@@ -3,13 +3,11 @@ import { useParams, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { authService } from '../../services/authService';
 import { useTheme } from '../context/ThemeProvider';
-import { Card, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { 
   Layers, 
   Settings, 
   Calendar, 
-  Download, 
   Users, 
   RefreshCw, 
   FileText, 
@@ -17,13 +15,11 @@ import {
   Clock,
   Menu,
   X,
-  ChevronLeft,
   UserCog,
   LogOut,
   Moon,
   Sun,
-  ChevronRight,
-  Crown
+  ChevronRight
 } from 'lucide-react';
 import SubscriptionStatus from '../subscription/SubscriptionStatus';
 import { useSubscription } from '../../hooks/useSubscription';
@@ -40,8 +36,14 @@ const OrganizationLayout: React.FC<OrganizationLayoutProps> = ({ children }) => 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [organizationName, setOrganizationName] = useState<string>('Your Organization');
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const { plan, daysRemaining, subscription } = useSubscription();
+  const [currentUser, setCurrentUser] = useState<{
+    name?: string;
+    role?: string;
+    email?: string;
+    id?: string;
+  } | null>(null);
+  // Subscription hook is available but not used in this component
+  useSubscription();
 
   // Extract organization name and user data on mount
   useEffect(() => {
@@ -159,28 +161,7 @@ const OrganizationLayout: React.FC<OrganizationLayoutProps> = ({ children }) => 
     setMobileMenuOpen(false); // Close mobile menu after navigation
   };
 
-  // Handle back navigation
-  const handleBack = () => {
-    navigate('/dashboard');
-  };
 
-  // Quick actions
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'refresh':
-        window.location.reload();
-        break;
-      case 'export':
-        // This would be handled by the specific page component
-        toast.info('Export functionality available in Reports section');
-        break;
-      case 'settings':
-        navigate(`/organization/${organizationId}/settings`);
-        break;
-      default:
-        break;
-    }
-  };
 
   // Role switching function
   const handleRoleSwitch = () => {

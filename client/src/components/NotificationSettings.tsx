@@ -13,7 +13,6 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ className }
   const {
     isSupported,
     permission,
-    isInitialized,
     isLoading,
     requestPermission,
     testNotification,

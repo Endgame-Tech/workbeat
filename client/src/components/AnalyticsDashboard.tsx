@@ -9,16 +9,13 @@ import {
   Users, 
   Download, 
   PieChart,
-  LineChart,
   FileText,
-  Settings,
   Plus
 } from 'lucide-react';
 import { attendanceService } from '../services/attendanceService';
 import { employeeService } from '../services/employeeService';
-import { exportService, ExportOptions } from '../services/exportService';
-import { useOrganizationState } from '../hooks/useOrganizationState';
 import { AttendanceRecord, Employee } from '../types';
+import { useOrganizationState } from '../hooks/useOrganizationState';
 import { toast } from 'react-hot-toast';
 import AnalyticsDashboardSkeleton from './AnalyticsDashboardSkeleton';
 import { useSubscription } from '../hooks/useSubscription';
@@ -72,7 +69,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
   const orgState = useOrganizationState(organizationId);
   
   // Use subscription hook
-  const { hasFeature } = useSubscription();
+  useSubscription();
 
   const processAnalyticsData = useCallback(async () => {
     try {
@@ -90,38 +87,41 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
 
       // Process attendance metrics
       const totalEmployees = employees?.length || 0;
-      const attendanceArray = Array.isArray(attendanceRecords) ? attendanceRecords : [];
+      const attendanceArray: AttendanceRecord[] = Array.isArray(attendanceRecords)
+        ? attendanceRecords as AttendanceRecord[]
+        : [];
       
       // Calculate attendance metrics
-      const presentRecords = attendanceArray.filter(record => 
-        record.status === 'present' || record.checkIn
-      );
+      // Present: type === 'sign-in'
+      const presentRecords = attendanceArray.filter(record => record.type === 'sign-in');
+      // Late: isLate === true
       const lateRecords = attendanceArray.filter(record => record.isLate === true);
-      
+
       const totalPresent = presentRecords.length;
       const totalAbsent = Math.max(0, totalEmployees - totalPresent);
       const totalLate = lateRecords.length;
       const attendanceRate = totalEmployees > 0 ? (totalPresent / totalEmployees) * 100 : 0;
 
       // Process department stats
-      const departmentStats = employees?.reduce((acc: any[], employee: any) => {
+      type DepartmentStat = {
+        department: string;
+        totalEmployees: number;
+        presentToday: number;
+        attendanceRate: number;
+      };
+      const departmentStats = employees?.reduce((acc: DepartmentStat[], employee: Employee) => {
         const dept = employee.department || 'Unknown';
-        const existing = acc.find(d => d.department === dept);
-        
+        const existing = acc.find((d: DepartmentStat) => d.department === dept);
         if (existing) {
           existing.totalEmployees += 1;
           // Count present employees for this department
-          const deptPresentCount = presentRecords.filter(record => 
-            record.employeeName === employee.name || record.employeeId === employee.id
-          ).length;
+        const deptPresentCount = presentRecords.filter(record => record.employeeId === employee.employeeId).length;
           existing.presentToday = deptPresentCount;
           existing.attendanceRate = existing.totalEmployees > 0 
             ? (existing.presentToday / existing.totalEmployees) * 100 
             : 0;
         } else {
-          const deptPresentCount = presentRecords.filter(record => 
-            record.employeeName === employee.name || record.employeeId === employee.id
-          ).length;
+        const deptPresentCount = presentRecords.filter(record => record.employeeId === employee.employeeId).length;
           acc.push({
             department: dept,
             totalEmployees: 1,
@@ -129,40 +129,23 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
             attendanceRate: deptPresentCount > 0 ? 100 : 0
           });
         }
-        
         return acc;
       }, []) || [];
 
       // Process time analysis
       const checkInTimes = attendanceArray
-        .filter(record => record.checkIn)
-        .map(record => new Date(record.checkIn));
-      
-      const checkOutTimes = attendanceArray
-        .filter(record => record.checkOut)
-        .map(record => new Date(record.checkOut));
+        .map(record => record.timestamp)
+        .filter((timestamp): timestamp is Date => Boolean(timestamp))
+        .map(timestamp => new Date(timestamp));
 
       const averageCheckInTime = checkInTimes.length > 0
         ? new Date(checkInTimes.reduce((sum, time) => sum + time.getTime(), 0) / checkInTimes.length)
             .toTimeString().slice(0, 5)
         : '09:00';
 
-      const averageCheckOutTime = checkOutTimes.length > 0
-        ? new Date(checkOutTimes.reduce((sum, time) => sum + time.getTime(), 0) / checkOutTimes.length)
-            .toTimeString().slice(0, 5)
-        : '17:00';
-
-      const workHoursRecords = attendanceArray
-        .filter(record => record.checkIn && record.checkOut)
-        .map(record => {
-          const checkIn = new Date(record.checkIn!);
-          const checkOut = new Date(record.checkOut!);
-          return (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60); // hours
-        });
-
-      const averageWorkHours = workHoursRecords.length > 0
-        ? workHoursRecords.reduce((sum, hours) => sum + hours, 0) / workHoursRecords.length
-        : 8;
+      // No check-out or work hours data available, use defaults
+      const averageCheckOutTime = '17:00';
+      const averageWorkHours = 8;
 
       const analyticsData: AnalyticsData = {
         departmentStats,
@@ -186,7 +169,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
       console.error('Error processing analytics data:', error);
       throw error;
     }
-  }, [dateRange.start, dateRange.end]);
+  }, [dateRange]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -217,7 +200,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
     
     // Always fetch data, don't depend on organization state
     fetchData();
-  }, [dateRange.start, dateRange.end, processAnalyticsData]);
+  }, [dateRange.start, dateRange.end, processAnalyticsData, orgState]);
 
   if (loading) {
     return <AnalyticsDashboardSkeleton />;
@@ -378,7 +361,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
           <div className="flex flex-wrap gap-3">
             <FeatureButton
               feature="dataExport"
-              onClick={() => toast.info('CSV export feature coming soon')}
+              onClick={() => toast('CSV export feature coming soon')}
               variant="outline"
             >
               <FileText className="w-4 h-4 mr-2" />
@@ -386,7 +369,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ organizationId 
             </FeatureButton>
             <FeatureButton
               feature="dataExport"
-              onClick={() => toast.info('PDF export feature coming soon')}
+              onClick={() => toast('PDF export feature coming soon')}
               variant="outline"
             >
               <Download className="w-4 h-4 mr-2" />

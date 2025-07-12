@@ -5,7 +5,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Select from '../ui/Select';
-import { Check, Crown, Users, Clock } from 'lucide-react';
+import { Check, Users } from 'lucide-react';
 import { SubscriptionPlan, PLAN_NAMES, PLAN_PRICES, SUBSCRIPTION_FEATURES } from '../../types/subscription.types';
 import { SubscriptionService } from '../../services/subscriptionService';
 import api from '../../services/api';
@@ -72,7 +72,7 @@ const OrganizationRegistration: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
   
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string) => {
     setFormData((prev) => {
       // Handle nested address fields
       if (field.startsWith('address.')) {
@@ -143,7 +143,12 @@ const OrganizationRegistration: React.FC = () => {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error(error.response?.data?.message || 'Registration failed');
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response?: { data?: { message?: string } } };
+        toast.error(err.response?.data?.message || 'Registration failed');
+      } else {
+        toast.error('Registration failed');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -197,7 +202,7 @@ const OrganizationRegistration: React.FC = () => {
     toast.success('Account created! Redirecting to payment...');
     
     // Redirect to Paystack payment page
-    window.location.href = paymentData.paymentSession.paymentUrl;
+    window.location.href = paymentData.paymentUrl!;
   };
   
   return (

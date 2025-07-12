@@ -14,7 +14,29 @@ interface OrganizationSettingsProps {
 const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizationId: propOrganizationId }) => {
   const { organizationId: paramOrganizationId } = useParams<{ organizationId: string }>();
   const organizationId = propOrganizationId || paramOrganizationId;
-  const [organization, setOrganization] = useState(null);
+  interface Organization {
+    name: string;
+    contactEmail: string;
+    contactPhone: string;
+    settings: {
+      workingHours: {
+        default: {
+          start: string;
+          end: string;
+        };
+      };
+      gracePeriodsMinutes: number;
+      biometricRequirements: {
+        requireFingerprint: boolean;
+        requireFacial: boolean;
+      };
+      primaryColor?: string;
+      secondaryColor?: string;
+      logoUrl?: string;
+    };
+  }
+  
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -42,41 +64,35 @@ const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizatio
     fetchOrganization();
   }, [organizationId]);
 
-  const handleChange = (field: string, value: any) => {
+  // Helper for deep update with type safety
+  function updateDeep<T>(obj: T, path: string[], value: unknown): T {
+    if (path.length === 0) return obj;
+    const [key, ...rest] = path;
+    if (rest.length === 0) {
+      return { ...obj, [key]: value };
+    }
+    return {
+      ...obj,
+      [key]: updateDeep((obj as Record<string, unknown>)[key] ?? {}, rest, value)
+    };
+  }
+
+  const handleChange = (field: string, value: string | number | boolean) => {
     setOrganization((prev) => {
-      // Handle nested fields with dot notation
+      if (!prev) return prev;
       if (field.includes('.')) {
-        const [parent, child, subchild] = field.split('.');
-        
-        if (subchild) {
-          return {
-            ...prev,
-            [parent]: {
-              ...prev[parent],
-              [child]: {
-                ...prev[parent][child],
-                [subchild]: value
-              }
-            }
-          };
-        }
-        
+        const path = field.split('.');
+        return updateDeep(prev, path, value) as typeof prev;
+      }
+      // Top-level fields: use keyof Organization for type safety
+      if ((Object.keys(prev) as Array<keyof typeof prev>).includes(field as keyof typeof prev)) {
         return {
           ...prev,
-          [parent]: {
-            ...prev[parent],
-            [child]: value
-          }
+          [field]: value
         };
       }
-      
-      // Handle regular fields
-      return {
-        ...prev,
-        [field]: value
-      };
+      return prev;
     });
-    
     // Clear error when field is updated
     if (errors[field]) {
       setErrors((prev) => ({
@@ -97,8 +113,20 @@ const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ organizatio
     setIsSubmitting(true);
     
     try {
-      const updatedData = await organizationService.updateOrganization(organizationId, organization);
-      setOrganization(updatedData);
+      if (!organization) {
+        toast.error('Organization data is missing');
+        setIsSubmitting(false);
+        return;
+      }
+      // Map Organization to RegisterOrganizationData
+      const registerOrganizationData = {
+        name: organization.name,
+        email: organization.contactEmail, // Map contactEmail to email
+        phone: organization.contactPhone,
+        // Add other fields if needed, e.g. address: organization.address,
+      };
+      const updatedData = await organizationService.updateOrganization(organizationId, registerOrganizationData);
+      setOrganization((prev) => prev ? { ...prev, ...updatedData } : updatedData);
       toast.success('Organization settings updated successfully');
     } catch (error) {
       console.error('Error updating organization:', error);

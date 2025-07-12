@@ -48,7 +48,7 @@ export const useOrganizationState = (organizationId?: string) => {
         isLoading: false,
         lastChecked: new Date()
       };
-    } catch (error) {
+    } catch {
       // If we can't fetch employees, assume it's a new organization
       setState({
         hasEmployees: false,
@@ -66,14 +66,14 @@ export const useOrganizationState = (organizationId?: string) => {
         lastChecked: new Date()
       };
     }
-  }, [organizationId, state.lastChecked]);
+  }, [organizationId, state]);
 
   // Check state on mount
   useEffect(() => {
     if (organizationId) {
       checkOrganizationState();
     }
-  }, [organizationId]);
+  }, [organizationId, checkOrganizationState]);
 
   const shouldFetchData = useCallback((dataType: 'attendance' | 'analytics' | 'leave') => {
     // Don't fetch data if we're still loading the organization state
