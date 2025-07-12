@@ -167,6 +167,12 @@ app.get('/api/health/db', async (req, res) => {
     // Test if users table with resetPasswordToken exists
     const userCount = await prisma.user.count();
     
+    // Test resetPasswordToken field specifically
+    await prisma.user.findMany({
+      where: { resetPasswordToken: { not: null } },
+      take: 1
+    });
+    
     await prisma.$disconnect();
     
     res.json({
@@ -174,6 +180,7 @@ app.get('/api/health/db', async (req, res) => {
       database: 'connected',
       organizations: orgCount,
       users: userCount,
+      resetPasswordTokenField: 'accessible',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -181,6 +188,51 @@ app.get('/api/health/db', async (req, res) => {
     res.status(500).json({
       status: 'unhealthy',
       database: 'failed',
+      error: error.message,
+      resetPasswordTokenField: error.message.includes('resetPasswordToken') ? 'missing' : 'unknown',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Schema fix endpoint (emergency use)
+app.post('/api/admin/fix-schema', async (req, res) => {
+  try {
+    const { prisma } = require('./config/db');
+    
+    console.log('🚨 Manual schema fix requested...');
+    
+    await prisma.$connect();
+    
+    // Add missing columns
+    await prisma.$executeRaw`
+      ALTER TABLE "users" 
+      ADD COLUMN IF NOT EXISTS "resetPasswordToken" VARCHAR(255)
+    `;
+    
+    await prisma.$executeRaw`
+      ALTER TABLE "users" 
+      ADD COLUMN IF NOT EXISTS "resetPasswordExpire" TIMESTAMPTZ(6)
+    `;
+    
+    // Test the fix
+    await prisma.user.findMany({
+      where: { resetPasswordToken: { not: null } },
+      take: 1
+    });
+    
+    await prisma.$disconnect();
+    
+    res.json({
+      status: 'success',
+      message: 'Schema fixed successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Schema fix failed:', error);
+    res.status(500).json({
+      status: 'failed',
       error: error.message,
       timestamp: new Date().toISOString()
     });
