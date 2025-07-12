@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
+# Copy Prisma schema first (needed for prisma generate in postinstall)
+COPY prisma ./prisma
+
 # Install dependencies
 RUN npm ci --only=production
 
