@@ -17,65 +17,94 @@ class WebSocketService {
 
   // Initialize Socket.IO server
   initialize(server) {
-    this.io = new Server(server, {
-      cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:5173",
-        methods: ["GET", "POST"],
-        credentials: true
-      },
-      transports: ['websocket', 'polling'],
-      pingTimeout: 60000,
-      pingInterval: 25000
-    });
+    try {
+      console.log('🔌 Creating Socket.IO server...');
+      console.log('📊 CORS origin:', process.env.FRONTEND_URL || "http://localhost:5173");
+      
+      this.io = new Server(server, {
+        cors: {
+          origin: process.env.FRONTEND_URL || "http://localhost:5173",
+          methods: ["GET", "POST"],
+          credentials: true
+        },
+        transports: ['websocket', 'polling'],
+        pingTimeout: 60000,
+        pingInterval: 25000
+      });
 
-    this.setupMiddleware();
-    this.setupEventHandlers();
-    
-    console.log('🔌 WebSocket service initialized');
+      console.log('✅ Socket.IO server created successfully');
+      console.log('🔧 Setting up middleware...');
+      this.setupMiddleware();
+      
+      console.log('📡 Setting up event handlers...');
+      this.setupEventHandlers();
+      
+      console.log('🔌 WebSocket service initialized successfully');
+    } catch (error) {
+      console.error('❌ Error during WebSocket initialization:', error);
+      throw error;
+    }
   }
 
   // Setup authentication middleware
   setupMiddleware() {
-    this.io.use(async (socket, next) => {
-      try {
-        // Get token from handshake auth or cookies
-        const token = socket.handshake.auth.token || 
-                     socket.handshake.headers.cookie?.split('token=')[1]?.split(';')[0];
+    try {
+      console.log('🔧 Setting up WebSocket authentication middleware...');
+      
+      this.io.use(async (socket, next) => {
+        try {
+          // Get token from handshake auth or cookies
+          const token = socket.handshake.auth.token || 
+                       socket.handshake.headers.cookie?.split('token=')[1]?.split(';')[0];
 
-        if (!token) {
-          throw new Error('No authentication token provided');
-        }
-
-        // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Get user from database
-        const user = await prisma.user.findUnique({
-          where: { id: parseInt(decoded.id) },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            organizationId: true
+          if (!token) {
+            console.log('❌ No authentication token provided for socket connection');
+            throw new Error('No authentication token provided');
           }
-        });
 
-        if (!user) {
-          throw new Error('User not found');
+          // Check JWT_SECRET is available
+          if (!process.env.JWT_SECRET) {
+            console.error('❌ JWT_SECRET environment variable is not set');
+            throw new Error('JWT_SECRET not configured');
+          }
+
+          // Verify JWT token
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          
+          // Get user from database
+          const user = await prisma.user.findUnique({
+            where: { id: parseInt(decoded.id) },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              organizationId: true
+            }
+          });
+
+          if (!user) {
+            console.log(`❌ User not found for ID: ${decoded.id}`);
+            throw new Error('User not found');
+          }
+
+          // Attach user to socket
+          socket.user = user;
+          socket.organizationId = user.organizationId;
+          
+          console.log(`🔐 User authenticated: ${user.name} (${user.email})`);
+          next();
+        } catch (error) {
+          console.error('❌ Socket authentication failed:', error.message);
+          next(new Error('Authentication failed'));
         }
-
-        // Attach user to socket
-        socket.user = user;
-        socket.organizationId = user.organizationId;
-        
-        console.log(`🔐 User authenticated: ${user.name} (${user.email})`);
-        next();
-      } catch (error) {
-        console.error('❌ Socket authentication failed:', error.message);
-        next(new Error('Authentication failed'));
-      }
-    });
+      });
+      
+      console.log('✅ WebSocket authentication middleware set up successfully');
+    } catch (error) {
+      console.error('❌ Error setting up WebSocket middleware:', error);
+      throw error;
+    }
   }
 
   // Setup event handlers

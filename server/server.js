@@ -357,7 +357,28 @@ handleUnhandledRejection();
 handleUncaughtException();
 
 // Initialize WebSocket service
-webSocketService.initialize(server);
+(async () => {
+  try {
+    console.log('🔌 Initializing WebSocket service...');
+    console.log('📊 Environment check:', {
+      JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Missing',
+      FRONTEND_URL: process.env.FRONTEND_URL || 'Using default',
+      DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Missing'
+    });
+    
+    // Test database connection before WebSocket initialization
+    console.log('🔍 Testing database connection...');
+    await prisma.$connect();
+    console.log('✅ Database connection established');
+    
+    webSocketService.initialize(server);
+    console.log('✅ WebSocket service initialized successfully');
+  } catch (error) {
+    console.error('❌ WebSocket initialization failed:', error);
+    console.error('Stack trace:', error.stack);
+    // Don't exit the process, but log the error clearly
+  }
+})();
 
 // Add WebSocket statistics endpoint
 app.get('/api/websocket/stats', (req, res) => {
