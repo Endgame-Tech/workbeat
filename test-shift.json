@@ -1,7 +1,0 @@
-{
-  "name": "Evening Shift",
-  "startTime": "18:00",
-  "endTime": "02:00",
-  "breakDuration": 30,
-  "daysOfWeek": ["monday", "tuesday", "wednesday", "thursday", "friday"]
-}
