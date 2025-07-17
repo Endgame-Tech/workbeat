@@ -20,15 +20,19 @@ export const attendanceService = {
       if (response.data.success && response.data.data) {
         return response.data.data;
       } else {
-        console.warn('No attendance data in response or unsuccessful response');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('No attendance data in response or unsuccessful response');
+        }
         return [];
       }
     } catch (error) {
-      console.error('Error fetching attendance records:', error);
-      if (typeof error === 'object' && error !== null && 'response' in error) {
-        const err = error as { response: { data?: unknown; status?: unknown } };
-        console.error('Error response data:', err.response.data);
-        console.error('Error response status:', err.response.status);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching attendance records:', error);
+        if (typeof error === 'object' && error !== null && 'response' in error) {
+          const err = error as { response: { data?: unknown; status?: unknown } };
+          console.error('Error response data:', err.response.data);
+          console.error('Error response status:', err.response.status);
+        }
       }
       return [];
     }
@@ -47,7 +51,9 @@ export const attendanceService = {
       const organizationId = employeeService.getCurrentOrganizationId();
       
       if (!organizationId) {
-        console.warn('No organization ID found for fetching employee attendance');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('No organization ID found for fetching employee attendance');
+        }
         return [];
       }
       
@@ -63,7 +69,9 @@ export const attendanceService = {
       
       return response.data.data || [];
     } catch (error) {
-      console.error('Error fetching employee attendance:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching employee attendance:', error);
+      }
       return [];
     }
   },
@@ -128,7 +136,9 @@ export const attendanceService = {
     const response = await api.post('/api/attendance', dataToSubmit);
     return response.data.data;
   } catch (error) {
-    console.error('Error recording attendance:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error recording attendance:', error);
+    }
     throw error;
   }
 },
@@ -159,22 +169,20 @@ export const attendanceService = {
         if (organizationId) {
           dataToSubmit.organizationId = organizationId;
         } else {
-          console.error('No organization ID found for recording face attendance');
+          if (process.env.NODE_ENV === 'development') {
+            console.error('No organization ID found for recording face attendance');
+          }
           throw new Error('Organization ID is required to record attendance');
         }
-      }
-      
-      // Logging the request (without the actual image data for brevity)
-      const logData = { ...dataToSubmit };
-      if (logData.facialCapture) {
-        logData.facialCapture = '[IMAGE DATA]';
       }
       
       const response = await api.post('/api/attendance/face', dataToSubmit);
       
       return response.data.data;
     } catch (error) {
-      console.error('Error recording attendance with face:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error recording attendance with face:', error);
+      }
 
       return {
         _id: 'mock-face-' + new Date().getTime(),
@@ -204,7 +212,9 @@ export const attendanceService = {
       const organizationId = employeeService.getCurrentOrganizationId();
       
       if (!organizationId) {
-        console.warn('No organization ID found for fetching today stats');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('No organization ID found for fetching today stats');
+        }
         return {
           totalEmployees: 0,
           presentEmployees: 0,
@@ -220,7 +230,9 @@ export const attendanceService = {
       
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching today stats:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching today stats:', error);
+      }
       // Return default empty stats object on error
       return {
         totalEmployees: 0,
@@ -313,11 +325,15 @@ export const attendanceService = {
       if (response.data.success && response.data.data) {
         return response.data.data;
       } else {
-        console.warn('No attendance data in range response');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('No attendance data in range response');
+        }
         return [];
       }
     } catch (error) {
-      console.error('Error fetching attendance records in range:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching attendance records in range:', error);
+      }
       // Fallback to regular attendance fetch if date filtering fails
       try {
         const allRecords = await this.getAllAttendanceRecords(1000);
@@ -332,7 +348,9 @@ export const attendanceService = {
         
         return filteredRecords;
       } catch (fallbackError) {
-        console.error('Fallback fetch also failed:', fallbackError);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Fallback fetch also failed:', fallbackError);
+        }
         return [];
       }
     }
@@ -351,7 +369,9 @@ export const attendanceService = {
       const organizationId = employeeService.getCurrentOrganizationId();
       
       if (!organizationId) {
-        console.warn('No organization ID found for fetching attendance report');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('No organization ID found for fetching attendance report');
+        }
         return [];
       }
       
@@ -373,7 +393,9 @@ export const attendanceService = {
       
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching attendance report:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching attendance report:', error);
+      }
       return [];
     }
   },
@@ -389,7 +411,9 @@ export const attendanceService = {
       const data = await response.json();
       return data.ip;
     } catch (error) {
-      console.error('Error getting IP address:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error getting IP address:', error);
+      }
       return '';
     }
   },
@@ -414,7 +438,9 @@ export const attendanceService = {
           resolve(location);
         },
         (error) => {
-          console.error('Error getting location:', error.message);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error getting location:', error.message);
+          }
           resolve(null);
         }
       );

@@ -15,7 +15,9 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
       try {
         workSchedule = JSON.parse(employee.workSchedule);
       } catch (error) {
-        console.error('🕒 Error parsing work schedule string:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('🕒 Error parsing work schedule string:', error);
+        }
         
         // Try to extract times using regex if JSON.parse fails
         if (typeof employee.workSchedule === 'string' && (employee.workSchedule as string).includes('start')) {
@@ -30,7 +32,9 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
               workSchedule = { start: "09:00" };
             }
           } catch (e) {
-            console.error("🕒 LATENESS CHECK - Error in regex parsing:", e);
+            if (process.env.NODE_ENV === 'development') {
+              console.error("🕒 LATENESS CHECK - Error in regex parsing:", e);
+            }
             workSchedule = { start: "09:00" };
           }
         } else {
@@ -89,7 +93,9 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
     }
     
     if (!startTime) {
-      console.warn('🕒 LATENESS CHECK - Could not determine start time');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('🕒 LATENESS CHECK - Could not determine start time');
+      }
       return false;
     }
     
@@ -97,7 +103,9 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
     const [startHour, startMinute] = startTime.split(':').map(Number);
     
     if (isNaN(startHour) || isNaN(startMinute)) {
-      console.error(`🕒 LATENESS CHECK - Invalid start time format: ${startTime}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`🕒 LATENESS CHECK - Invalid start time format: ${startTime}`);
+      }
       return false;
     }
     
@@ -114,7 +122,9 @@ const checkIfLate = (employee: Employee, signInTime: Date): boolean => {
     
     return isLate;
   } catch (error) {
-    console.error('🕒 LATENESS CHECK - Error in lateness detection:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('🕒 LATENESS CHECK - Error in lateness detection:', error);
+    }
     return false; // Default to not late if there's an error
   }
 };
@@ -126,12 +136,16 @@ export const employeeAuthService = {
       
       // Essential validation
       if (!attendanceData.employeeId) {
-        console.error("📝 Missing employeeId in attendance data");
+        if (process.env.NODE_ENV === 'development') {
+          console.error("📝 Missing employeeId in attendance data");
+        }
         throw new Error('Required field missing: employeeId is required');
       }
       
       if (!attendanceData.type) {
-        console.error("📝 Missing type in attendance data");
+        if (process.env.NODE_ENV === 'development') {
+          console.error("📝 Missing type in attendance data");
+        }
         throw new Error('Required field missing: type is required');
       }
       
@@ -148,10 +162,14 @@ export const employeeAuthService = {
             // Calculate lateness using our improved function
             isLate = checkIfLate(employee, signInTime);
           } else {
-            console.warn("📝 Could not fetch employee details for lateness check");
+            if (process.env.NODE_ENV === 'development') {
+              console.warn("📝 Could not fetch employee details for lateness check");
+            }
           }
         } catch (error) {
-          console.error("📝 Error during lateness check:", error);
+          if (process.env.NODE_ENV === 'development') {
+            console.error("📝 Error during lateness check:", error);
+          }
         }
       }
       
@@ -162,12 +180,16 @@ export const employeeAuthService = {
           const user = JSON.parse(localStorage.getItem('user') || '{}');
           organizationId = user.organizationId;
         } catch (error) {
-          console.error("📝 Error getting organization ID from localStorage:", error);
+          if (process.env.NODE_ENV === 'development') {
+            console.error("📝 Error getting organization ID from localStorage:", error);
+          }
         }
       }
       
       if (!organizationId) {
-        console.error("📝 No organization ID found");
+        if (process.env.NODE_ENV === 'development') {
+          console.error("📝 No organization ID found");
+        }
         throw new Error('Organization ID not found. Please log in again.');
       }
       
@@ -195,7 +217,9 @@ export const employeeAuthService = {
       
       return responseData;
     } catch (error) {
-      console.error('📝 Error recording attendance with face:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('📝 Error recording attendance with face:', error);
+      }
       throw error; // Let the calling code handle errors
     }
   },
@@ -206,7 +230,9 @@ export const employeeAuthService = {
       const response = await api.get(`/api/biometrics/fingerprint/employee/${fingerprintId}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error getting employee by fingerprint:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error getting employee by fingerprint:', error);
+      }
       return null;
     }
   },
@@ -223,7 +249,9 @@ export const employeeAuthService = {
       return response.data.data;
     } catch (error) {
       const apiError = error as ApiError;
-      console.error('Error recording attendance with biometrics:', apiError.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error recording attendance with biometrics:', apiError.message);
+      }
       throw error;
     }
   },
@@ -249,7 +277,9 @@ export const employeeAuthService = {
       return response.data.data;
     } catch (error) {
       const apiError = error as ApiError;
-      console.error('Error enrolling fingerprint:', apiError.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error enrolling fingerprint:', apiError.message);
+      }
       throw error;
     }
   },
@@ -264,7 +294,9 @@ export const employeeAuthService = {
       return response.data;
     } catch (error) {
       const apiError = error as ApiError;
-      console.error('Error verifying fingerprint:', apiError.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error verifying fingerprint:', apiError.message);
+      }
       throw error;
     }
   },
@@ -277,7 +309,9 @@ export const employeeAuthService = {
       
       return response.data.data;
     } catch (error) {
-      console.error('Error getting fingerprint challenge:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error getting fingerprint challenge:', error);
+      }
       throw error;
     }
   },
@@ -301,7 +335,9 @@ export const employeeAuthService = {
       
       return response.data.data;
     } catch (error) {
-      console.error('Error getting fingerprint enrollment challenge:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error getting fingerprint enrollment challenge:', error);
+      }
       throw error;
     }
   },
@@ -325,7 +361,9 @@ export const employeeAuthService = {
       
       return response.data.success;
     } catch (error) {
-      console.error('Error deleting fingerprint:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting fingerprint:', error);
+      }
       throw error;
     }
   },
@@ -350,7 +388,9 @@ export const employeeAuthService = {
       
       return response.data.data;
     } catch (error) {
-      console.error('Error adding employee face:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error adding employee face:', error);
+      }
       throw error;
     }
   }

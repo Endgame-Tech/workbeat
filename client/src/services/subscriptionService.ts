@@ -45,25 +45,18 @@ export class SubscriptionService {
    */
   static async getCurrentSubscription(): Promise<Subscription | null> {
     try {
-      console.log('🌐 Fetching current subscription from API...');
       const response = await api.get('/api/subscription/current');
-      console.log('📊 Raw subscription response:', response.data);
-      console.log('📊 Full response object:', response);
       
       if (response.data && response.data.success && response.data.data) {
-        console.log('✅ Subscription data received:', {
-          plan: response.data.data.plan,
-          status: response.data.data.status,
-          isActive: response.data.data.isActive,
-          features: response.data.data.features?.length || 0
-        });
         return response.data.data;
       } else {
-        console.log('⚠️ No subscription data in response');
         return null;
       }
-    } catch (error) {
-      console.error('❌ Error fetching subscription:', error);
+    } catch (error: any) {
+      // Only log non-network errors in development
+      if (process.env.NODE_ENV === 'development' && error.code !== 'ERR_NETWORK' && error.code !== 'ERR_INSUFFICIENT_RESOURCES') {
+        console.error('Error fetching subscription:', error);
+      }
       return null;
     }
   }
@@ -76,7 +69,9 @@ export class SubscriptionService {
       // Use the new current subscription endpoint
       return await this.getCurrentSubscription();
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching subscription:', error);
+      }
       return null;
     }
   }
@@ -95,7 +90,9 @@ export class SubscriptionService {
       const response = await api.get('/api/subscription/plans');
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching plans:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching plans:', error);
+      }
       return [];
     }
   }
@@ -116,7 +113,9 @@ export class SubscriptionService {
       });
       return response.data.data;
     } catch (error) {
-      console.error('Error initiating purchase:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error initiating purchase:', error);
+      }
       throw error;
     }
   }
@@ -138,7 +137,9 @@ export class SubscriptionService {
         message: response.data.message
       };
     } catch (error: unknown) {
-      console.error('Error verifying payment:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error verifying payment:', error);
+      }
       const apiError = error as { response?: { data?: { message?: string; details?: unknown } } };
       return {
         success: false,
@@ -156,7 +157,9 @@ export class SubscriptionService {
       const response = await api.post('/api/subscription/payment-success', paymentData);
       return response.data.success;
     } catch (error) {
-      console.error('Error processing payment:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error processing payment:', error);
+      }
       return false;
     }
   }
@@ -169,7 +172,9 @@ export class SubscriptionService {
       const response = await api.post('/api/subscription/cancel', { reason });
       return response.data.success;
     } catch (error) {
-      console.error('Error cancelling subscription:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error cancelling subscription:', error);
+      }
       return false;
     }
   }
@@ -182,7 +187,9 @@ export class SubscriptionService {
       const response = await api.get(`/api/subscription/feature/${feature}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error checking feature access:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error checking feature access:', error);
+      }
       return { hasAccess: false };
     }
   }
@@ -195,7 +202,9 @@ export class SubscriptionService {
       await organizationService.updateSubscription(organizationId, subscription);
       return true;
     } catch (error) {
-      console.error('Error updating subscription:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating subscription:', error);
+      }
       return false;
     }
   }

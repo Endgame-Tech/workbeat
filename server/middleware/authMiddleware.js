@@ -36,6 +36,7 @@ const protect = async (req, res, next) => {
       });
 
       if (!user) {
+        console.log(`🔒 Auth failed: User not found for token - ${req.method} ${req.originalUrl}`);
         return res.status(401).json({
           success: false,
           message: 'Not authorized, user not found'
@@ -73,19 +74,18 @@ const protect = async (req, res, next) => {
       req.user = user;
       next();
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      console.log(`🔒 Auth failed: Token verification failed - ${req.method} ${req.originalUrl}`, error.message);
       return res.status(401).json({
         success: false,
         message: 'Not authorized, token failed'
       });
     }
   } else {
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized, no token'
-      });
-    }
+    console.log(`🔒 Auth failed: No token provided - ${req.method} ${req.originalUrl}`);
+    return res.status(401).json({
+      success: false,
+      message: 'Not authorized, no token'
+    });
   }
 };
 

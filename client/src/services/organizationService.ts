@@ -28,7 +28,9 @@ export const organizationService = {
       const response = await api.post('/api/organizations/register', organizationData);
       return response.data.data;
     } catch (error) {
-      console.error('Organization registration error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Organization registration error:', error);
+      }
       throw error;
     }
   },
@@ -43,17 +45,17 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching organization:', error);
-      // Only log detailed error info in development
-      if (
-        process.env.NODE_ENV === 'development' &&
-        typeof error === 'object' &&
-        error !== null &&
-        'response' in error
-      ) {
-        const err = error as { response: { data: unknown; status: unknown } };
-        console.error('Response data:', err.response.data);
-        console.error('Response status:', err.response.status);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching organization:', error);
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'response' in error
+        ) {
+          const err = error as { response: { data: unknown; status: unknown } };
+          console.error('Response data:', err.response.data);
+          console.error('Response status:', err.response.status);
+        }
       }
       throw error;
     }
@@ -73,7 +75,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating organization:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating organization:', error);
+      }
       throw error;
     }
   },
@@ -88,7 +92,9 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}/subscription`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching subscription:', error);
+      }
       throw error;
     }
   },
@@ -107,7 +113,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating subscription:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating subscription:', error);
+      }
       throw error;
     }
   },
@@ -122,7 +130,9 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}/stats`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching organization stats:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching organization stats:', error);
+      }
       throw error;
     }
   },
@@ -137,7 +147,9 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}/users`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching organization users:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching organization users:', error);
+      }
       throw error;
     }
   },
@@ -156,7 +168,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error adding organization user:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error adding organization user:', error);
+      }
       throw error;
     }
   },
@@ -176,7 +190,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating organization user:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating organization user:', error);
+      }
       throw error;
     }
   },
@@ -194,7 +210,9 @@ export const organizationService = {
       );
       return response.data.success;
     } catch (error) {
-      console.error('Error removing organization user:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error removing organization user:', error);
+      }
       throw error;
     }
   },
@@ -211,7 +229,9 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}/departments`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching departments:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching departments:', error);
+      }
       throw error;
     }
   },
@@ -230,7 +250,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error creating department:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating department:', error);
+      }
       throw error;
     }
   },
@@ -250,7 +272,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating department:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating department:', error);
+      }
       throw error;
     }
   },
@@ -268,7 +292,9 @@ export const organizationService = {
       );
       return response.data.success;
     } catch (error) {
-      console.error('Error deleting department:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting department:', error);
+      }
       throw error;
     }
   },
@@ -285,7 +311,9 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}/settings`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching organization settings:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching organization settings:', error);
+      }
       throw error;
     }
   },
@@ -304,7 +332,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating organization settings:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating organization settings:', error);
+      }
       throw error;
     }
   },
@@ -319,7 +349,9 @@ export const organizationService = {
       const response = await api.post(`/api/organizations/${organizationId}/settings/reset`);
       return response.data.success;
     } catch (error) {
-      console.error('Error resetting organization settings:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error resetting organization settings:', error);
+      }
       throw error;
     }
   },
@@ -340,7 +372,9 @@ export const organizationService = {
       );
       return response.data;
     } catch (error) {
-      console.error('Error exporting organization data:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error exporting organization data:', error);
+      }
       throw error;
     }
   },
@@ -361,7 +395,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching audit logs:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching audit logs:', error);
+      }
       throw error;
     }
   },
@@ -380,7 +416,9 @@ export const organizationService = {
       const response = await api.get(`/api/organizations/${organizationId}/holidays${yearParam}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching holiday calendar:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching holiday calendar:', error);
+      }
       throw error;
     }
   },
@@ -399,7 +437,9 @@ export const organizationService = {
       );
       return response.data.data;
     } catch (error) {
-      console.error('Error updating holiday calendar:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating holiday calendar:', error);
+      }
       throw error;
     }
   }

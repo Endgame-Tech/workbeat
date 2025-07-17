@@ -255,6 +255,111 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
+// Subscription routes
+app.get('/api/subscription/current', async (req, res) => {
+  try {
+    // Return a mock free subscription
+    res.json({
+      success: true,
+      data: {
+        id: 1,
+        plan: 'free',
+        status: 'active',
+        organizationId: 8,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        isActive: true,
+        features: ['basicAttendance', 'employeeManagement', 'emailSupport'],
+        maxEmployees: 7
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Attendance routes
+app.get('/api/attendance', async (req, res) => {
+  try {
+    const attendance = await prisma.attendance.findMany({
+      take: parseInt(req.query.limit) || 100,
+      orderBy: { checkIn: 'desc' }
+    });
+    res.json({ data: attendance });
+  } catch (error) {
+    console.error('Attendance fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/attendance/stats/today', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const count = await prisma.attendance.count({
+      where: {
+        checkIn: {
+          gte: today
+        }
+      }
+    });
+    
+    res.json({
+      data: {
+        todayCount: count,
+        totalEmployees: await prisma.employee.count(),
+        presentToday: count,
+        absentToday: Math.max(0, await prisma.employee.count() - count)
+      }
+    });
+  } catch (error) {
+    console.error('Today stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Employee creation route
+app.post('/api/employees', async (req, res) => {
+  try {
+    const employeeData = req.body;
+    
+    // Simple validation
+    if (!employeeData.name || !employeeData.email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+    
+    // For emergency server, return mock successful creation
+    res.json({
+      success: true,
+      data: {
+        id: Math.floor(Math.random() * 1000),
+        name: employeeData.name,
+        email: employeeData.email,
+        organizationId: 8,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Employee creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Department routes
+app.get('/api/organizations/:id/departments', async (req, res) => {
+  try {
+    const departments = await prisma.department.findMany({
+      where: { organizationId: parseInt(req.params.id) }
+    });
+    res.json({ data: departments });
+  } catch (error) {
+    console.error('Department fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);

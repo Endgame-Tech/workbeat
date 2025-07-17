@@ -8,7 +8,6 @@ const getCurrentOrganizationId = (): string | null => {
     const userString = localStorage.getItem('user');
 
     if (!userString) {
-      console.warn("No user data in localStorage");
       return null;
     }
     
@@ -21,12 +20,16 @@ const getCurrentOrganizationId = (): string | null => {
       const userData = JSON.parse(jsonString);
       
       if (!userData.organizationId) {
-        console.warn("No organizationId in user data");
+        if (process.env.NODE_ENV === 'development') {
+          console.warn("No organizationId in user data");
+        }
       }
       
       return userData.organizationId || null;
     } catch (err) {
-      console.error('Error parsing user data:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error parsing user data:', err);
+      }
       // Try a more flexible approach in case json is malformed
       const match = jsonString.match(/"organizationId"\s*:\s*"?(\d+)"?/);
       if (match && match[1]) {
@@ -35,7 +38,9 @@ const getCurrentOrganizationId = (): string | null => {
     }
     return null;
   } catch (err) {
-    console.error('Error getting organization ID:', err);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error getting organization ID:', err);
+    }
     return null;
   }
 };
@@ -58,7 +63,9 @@ const getAllEmployees = async (activeOnly: boolean = false) => {
     
     return [];
   } catch (error) {
-    console.error('Error in getAllEmployees:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in getAllEmployees:', error);
+    }
     throw error;
   }
 };
@@ -70,7 +77,9 @@ const getEmployeeById = async (id: string) => {
     const response = await api.get(`/api/employees/${id}`);
     return response.data.data;
   } catch (error) {
-    console.error('Error in getEmployeeById:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in getEmployeeById:', error);
+    }
     throw error;
   }
 };
@@ -87,7 +96,6 @@ const createEmployee = async (employeeData: Partial<Employee>) => {
       if (organizationId) {
         dataToSubmit.organizationId = organizationId;
       } else {
-        console.error('No organization ID found for creating employee');
         throw new Error('Organization ID not found. Please log out and log in again.');
       }
     }
@@ -95,7 +103,9 @@ const createEmployee = async (employeeData: Partial<Employee>) => {
     const response = await api.post('/api/employees', dataToSubmit);
     return response.data.data;
   } catch (error) {
-    console.error('Error in createEmployee:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in createEmployee:', error);
+    }
     throw error;
   }
 };
@@ -129,7 +139,9 @@ const updateEmployee = async (id: string, employeeData: Partial<Employee>) => {
     const response = await api.put(`/api/employees/${id}`, employeeData);
     return response.data.data;
   } catch (error) {
-    console.error('Error in updateEmployee:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in updateEmployee:', error);
+    }
     throw error;
   }
 };
@@ -142,7 +154,9 @@ const deleteEmployee = async (id: string) => {
     await api.delete(`/api/employees/${id}`);
     return true;
   } catch (error) {
-    console.error('Error in deleteEmployee:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in deleteEmployee:', error);
+    }
     throw error;
   }
 };
@@ -157,7 +171,9 @@ const toggleEmployeeStatus = async (id: string, isActive: boolean): Promise<Empl
     const response = await updateEmployee(id, { isActive });
     return response;
   } catch (error) {
-    console.error('Error toggling employee status:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error toggling employee status:', error);
+    }
     throw error;
   }
 };
@@ -190,7 +206,9 @@ const searchEmployees = async (searchParams: {
     const response = await api.get(`/api/employees?${queryParams.toString()}`);
     return response.data.data;
   } catch (error) {
-    console.error('Error searching employees:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error searching employees:', error);
+    }
     throw error;
   }
 };

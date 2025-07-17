@@ -25,11 +25,24 @@ export const useSubscription = (): UseSubscriptionReturn => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastErrorTime, setLastErrorTime] = useState<number>(0);
 
   const loadSubscription = useCallback(async () => {
     if (!organizationId) {
       setIsLoading(false);
       setError('No organization ID available');
+      return;
+    }
+
+    // Prevent too many retries
+    if (retryCount >= 3) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Subscription fetch retry limit reached, using fallback');
+      }
+      setSubscription(null);
+      setError(null);
+      setIsLoading(false);
       return;
     }
 
@@ -39,13 +52,21 @@ export const useSubscription = (): UseSubscriptionReturn => {
     try {
       const subscriptionData = await SubscriptionService.getSubscription();
       setSubscription(subscriptionData);
-    } catch (err) {
-      console.error('❌ Error loading subscription:', err);
-      setError('Failed to load subscription data');
+      setError(null);
+      setRetryCount(0); // Reset retry count on success
+    } catch (err: any) {
+      // For network errors, silently fail and use default free plan
+      if (err.code === 'ERR_NETWORK' || err.code === 'ERR_INSUFFICIENT_RESOURCES' || err.response?.status >= 500) {
+        setSubscription(null);
+        setError(null);
+        setRetryCount(prev => prev + 1);
+      } else {
+        setError('Failed to load subscription data');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, retryCount, lastErrorTime]);
 
   useEffect(() => {
     loadSubscription();
@@ -54,10 +75,11 @@ export const useSubscription = (): UseSubscriptionReturn => {
   // Enhanced plan determination with better fallback logic
   const plan = subscription?.plan || 'free';
   
-  // Additional safety check - if subscription exists but has no plan, log warning and refresh
+  // Additional safety check - if subscription exists but has no plan, refresh data
   if (subscription && !subscription.plan) {
-    console.warn('⚠️ Subscription object exists but has no plan:', subscription);
-    console.warn('⚠️ Full subscription object:', subscription);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Subscription object exists but has no plan:', subscription);
+    }
     // Force a refresh to get updated subscription data
     setTimeout(() => {
       loadSubscription();
@@ -73,17 +95,6 @@ export const useSubscription = (): UseSubscriptionReturn => {
 
 
   const hasFeature = useCallback((feature: keyof SubscriptionFeatures): boolean => {
-    console.log('🔍 Checking feature access:', {
-      feature,
-      plan,
-      isActive,
-      subscription: subscription ? {
-        plan: subscription.plan,
-        status: subscription.status,
-        endDate: subscription.endDate
-      } : null
-    });
-    
     if (!isActive) {
       // Only allow basic features if subscription is not active
       const basicFeatures: (keyof SubscriptionFeatures)[] = [
@@ -91,13 +102,10 @@ export const useSubscription = (): UseSubscriptionReturn => {
         'employeeManagement',
         'emailSupport'
       ];
-      const hasBasicFeature = basicFeatures.includes(feature);
-      return hasBasicFeature;
+      return basicFeatures.includes(feature);
     }
     
-    const hasFeatureResult = SubscriptionService.hasFeature(plan, feature);
-    
-    return hasFeatureResult;
+    return SubscriptionService.hasFeature(plan, feature);
   }, [plan, isActive, subscription]);
 
   const canAddEmployees = useCallback((currentCount: number, additionalCount: number = 1): boolean => {
@@ -122,15 +130,18 @@ export const useSubscription = (): UseSubscriptionReturn => {
 
   // Auto-refresh if subscription changes to active status
   useEffect(() => {
+    // Only set up interval if we have a subscription and it's in a pending state
+    if (!subscription || retryCount >= 3) return;
+    
     const interval = setInterval(() => {
       // Only auto-refresh if subscription is pending payment or being processed
       if (subscription && (subscription.status === 'pending_payment' || subscription.status === 'pending')) {
         loadSubscription();
       }
-    }, 10000); // Check every 10 seconds
+    }, 30000); // Check every 30 seconds instead of 10
 
     return () => clearInterval(interval);
-  }, [subscription, loadSubscription]);
+  }, [subscription, loadSubscription, retryCount]);
 
   return {
     subscription,

@@ -6,7 +6,9 @@ const retryRequest = async (fn: () => Promise<any>, retries = 3, delay = 1000): 
     return await fn();
   } catch (error: any) {
     if (retries > 0 && (error.code === 'ERR_NETWORK' || error.code === 'ERR_INSUFFICIENT_RESOURCES' || error.response?.status >= 500)) {
-      console.warn(`Request failed, retrying in ${delay}ms... (${retries} retries left)`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Request failed, retrying in ${delay}ms... (${retries} retries left)`);
+      }
       await new Promise(resolve => setTimeout(resolve, delay));
       return retryRequest(fn, retries - 1, delay * 2);
     }
@@ -33,7 +35,9 @@ const getApiUrl = () => {
   
   // Production fallback - you need to set VITE_APP_API_URL in Vercel
   if (import.meta.env.PROD) {
-    console.error('VITE_APP_API_URL not set in production. Please set it in your deployment platform.');
+    if (process.env.NODE_ENV === 'development') {
+      console.error('VITE_APP_API_URL not set in production. Please set it in your deployment platform.');
+    }
     // Fallback to a common production API URL pattern
     const fallbackUrl = 'https://workbeat-api.onrender.com';
     return fallbackUrl;
@@ -69,8 +73,10 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    // Log error but don't show toast - let components handle their own error messages
-    console.error('Request Error:', error.message);
+    // Only log request errors in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Request Error:', error.message);
+    }
     return Promise.reject(error);
   }
 );
@@ -86,15 +92,17 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message;
     
-    // Log error for debugging but categorize appropriately
-    if (status === 404) {
-      console.log('Resource not found (expected for new users/organizations):', message);
-    } else if (status >= 500) {
-      console.error('Server Error:', message);
-    } else if (status === 400) {
-      console.warn('Client Error:', message);
-    } else {
-      console.error('API Response Error:', message);
+    // Only log errors in development mode
+    if (process.env.NODE_ENV === 'development') {
+      if (status === 404) {
+        console.log('Resource not found (expected for new users/organizations):', message);
+      } else if (status >= 500) {
+        console.error('Server Error:', message);
+      } else if (status === 400) {
+        console.warn('Client Error:', message);
+      } else {
+        console.error('API Response Error:', message);
+      }
     }
     
     // Handle unauthorized errors (401) - this is important for security
