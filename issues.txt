@@ -1,366 +1,468 @@
-Render errors "
-✅ Optimized employee query returned 0 employees with attendance stats
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.118.59',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:33.725Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:38.074Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:39.371Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.118.59',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:41.121Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:43.179Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:44.173Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚀 Applying optimized employee filter: { organizationId: 1 }
-✅ Optimized employee query returned 0 employees with attendance stats
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.118.59',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:46.588Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:49.218Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚀 Applying optimized employee filter: { organizationId: 1 }
-✅ Optimized employee query returned 0 employees with attendance stats
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.118.59',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:53.956Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚀 Applying optimized employee filter: { organizationId: 1 }
-✅ Optimized employee query returned 0 employees with attendance stats
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:56.229Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚀 Applying optimized employee filter: { organizationId: 1 }
-✅ Optimized employee query returned 0 employees with attendance stats
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:55:59.297Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:56:00.862Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚀 Fetching optimized attendance records with filters: { organizationId: 1, page: 1, limit: 100 }
-Optimized attendance query failed: PrismaClientKnownRequestError: 
-Invalid `prisma.attendance.findMany()` invocation:
-The column `attendances.employeeName` does not exist in the current database.
-    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
-    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Promise.all (index 0)
-    at async QueryOptimizer.getOptimizedAttendanceRecords (/opt/render/project/src/server/utils/queryOptimizer.js:44:32)
-    at async getAttendanceRecords (/opt/render/project/src/server/controllers/attendanceController.js:144:20) {
-  code: 'P2022',
-  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
-  clientVersion: '6.7.0'
-}
-Error fetching attendance records: PrismaClientKnownRequestError: 
-Invalid `prisma.attendance.findMany()` invocation:
-The column `attendances.employeeName` does not exist in the current database.
-    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
-    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Promise.all (index 0)
-    at async QueryOptimizer.getOptimizedAttendanceRecords (/opt/render/project/src/server/utils/queryOptimizer.js:44:32)
-    at async getAttendanceRecords (/opt/render/project/src/server/controllers/attendanceController.js:144:20) {
-  code: 'P2022',
-  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
-  clientVersion: '6.7.0'
-}
-🚀 Fetching optimized attendance records with filters: { organizationId: 1, page: 1, limit: 100 }
-Optimized attendance query failed: PrismaClientKnownRequestError: 
-Invalid `prisma.attendance.findMany()` invocation:
-The column `attendances.employeeName` does not exist in the current database.
-    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
-    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Promise.all (index 0)
-    at async QueryOptimizer.getOptimizedAttendanceRecords (/opt/render/project/src/server/utils/queryOptimizer.js:44:32)
-    at async getAttendanceRecords (/opt/render/project/src/server/controllers/attendanceController.js:144:20) {
-  code: 'P2022',
-  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
-  clientVersion: '6.7.0'
-}
-Error fetching attendance records: PrismaClientKnownRequestError: 
-Invalid `prisma.attendance.findMany()` invocation:
-The column `attendances.employeeName` does not exist in the current database.
-    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
-    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
-    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
-    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
-    at async Promise.all (index 0)
-    at async QueryOptimizer.getOptimizedAttendanceRecords (/opt/render/project/src/server/utils/queryOptimizer.js:44:32)
-    at async getAttendanceRecords (/opt/render/project/src/server/controllers/attendanceController.js:144:20) {
-  code: 'P2022',
-  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
-  clientVersion: '6.7.0'
-}
-🚀 Applying optimized employee filter: { organizationId: 1 }
-✅ Optimized employee query returned 0 employees with attendance stats
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.118.59',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:56:04.381Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.137.82',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T16:56:05.375Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:101:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-Need better ways to work with logs? Try theRender CLIor set up a log stream integration 
-"
+Failed to load resource: the server responded with a status of 404 ()Understand this error
+hook.js:608 Error loading organization: Gt
+overrideMethod @ hook.js:608Understand this error
+hook.js:608 Error loading organization: Gt
+overrideMethod @ hook.js:608Understand this error
+1:1 Uncaught (in promise) GtUnderstand this error
+workbeat-api.onrender.com/api/attendance/stats/today?organizationId=1:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+workbeat-api.onrender.com/api/attendance/stats/today?organizationId=1:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+5The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.Understand this warning
+workbeat-api.onrender.com/api/attendance/stats/today?organizationId=1:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+workbeat-api.onrender.com/api/attendance/stats/today?organizationId=1:1  Failed to load resource: the server responded with a status of 500 ()Understand this error
+1:1 Uncaught (in promise) GtUnderstand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+hook.js:608 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608Understand this error
+2hook.js:608 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:585  GET https://workbeat-api.onrender.com/api/attendance?limit=100 500 (Internal Server Error)
+(anonymous) @ index-BTzCfffs.js:585
+xhr @ index-BTzCfffs.js:585
+Cb @ index-BTzCfffs.js:587
+Promise.then
+_request @ index-BTzCfffs.js:588
+request @ index-BTzCfffs.js:587
+jl.<computed> @ index-BTzCfffs.js:588
+(anonymous) @ index-BTzCfffs.js:583
+(anonymous) @ index-BTzCfffs.js:588
+Uc @ index-BTzCfffs.js:588
+get @ index-BTzCfffs.js:588
+getAllAttendanceRecords @ index-BTzCfffs.js:588
+(anonymous) @ index-BTzCfffs.js:945
+(anonymous) @ index-BTzCfffs.js:945Understand this error
+index-BTzCfffs.js:585  GET https://workbeat-api.onrender.com/api/attendance?limit=100 500 (Internal Server Error)
+(anonymous) @ index-BTzCfffs.js:585
+xhr @ index-BTzCfffs.js:585
+Cb @ index-BTzCfffs.js:587
+Promise.then
+_request @ index-BTzCfffs.js:588
+request @ index-BTzCfffs.js:587
+jl.<computed> @ index-BTzCfffs.js:588
+(anonymous) @ index-BTzCfffs.js:583
+(anonymous) @ index-BTzCfffs.js:588
+Uc @ index-BTzCfffs.js:588
+Uc @ index-BTzCfffs.js:588
+await in Uc
+get @ index-BTzCfffs.js:588
+getAllAttendanceRecords @ index-BTzCfffs.js:588
+(anonymous) @ index-BTzCfffs.js:945
+(anonymous) @ index-BTzCfffs.js:945Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633
+doOpen @ index-BTzCfffs.js:633
+open @ index-BTzCfffs.js:633
+_open @ index-BTzCfffs.js:633
+Io @ index-BTzCfffs.js:633
+o7 @ index-BTzCfffs.js:633
+l7 @ index-BTzCfffs.js:633
+open @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633
+doOpen @ index-BTzCfffs.js:633
+open @ index-BTzCfffs.js:633
+_open @ index-BTzCfffs.js:633
+Io @ index-BTzCfffs.js:633
+o7 @ index-BTzCfffs.js:633
+l7 @ index-BTzCfffs.js:633
+open @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 WebSocket connection to 'wss://workbeat-api.onrender.com/socket.io/?EIO=4&transport=websocket' failed: 
+createSocket @ index-BTzCfffs.js:633
+doOpen @ index-BTzCfffs.js:633
+open @ index-BTzCfffs.js:633
+_open @ index-BTzCfffs.js:633
+Io @ index-BTzCfffs.js:633
+o7 @ index-BTzCfffs.js:633
+l7 @ index-BTzCfffs.js:633
+open @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ WebSocket connection failed: websocket error
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:633 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:634 ❌ Max reconnection attempts reached
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:634
+(anonymous) @ index-BTzCfffs.js:633
+emit @ index-BTzCfffs.js:633
+handleReconnect @ index-BTzCfffs.js:633
+(anonymous) @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onerror @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+s @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+_onError @ index-BTzCfffs.js:633
+wn.emit @ index-BTzCfffs.js:633
+onError @ index-BTzCfffs.js:633
+ws.onerror @ index-BTzCfffs.js:633Understand this error
+index-BTzCfffs.js:585
