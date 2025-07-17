@@ -30,8 +30,6 @@ export const authService = {
       });
       
       if (response.data && response.data.success) {
-        // Note: Token is now stored as secure httpOnly cookie by the server
-        // No need to store token in localStorage anymore
         
         // Store user data
         if (response.data.data) {

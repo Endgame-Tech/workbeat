@@ -110,6 +110,72 @@ app.get('/api/employees', async (req, res) => {
   }
 });
 
+// User auth login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Simple validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    // For emergency server, return mock successful login
+    res.json({
+      success: true,
+      data: {
+        id: 1,
+        name: 'Test User',
+        email: email,
+        organizationId: 8,
+        organization: {
+          id: 8,
+          name: 'Test Organization'
+        }
+      },
+      token: 'mock-token-for-emergency-server'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// User auth register
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email and password are required' });
+    }
+    
+    // For emergency server, return mock successful registration
+    res.json({
+      success: true,
+      data: {
+        id: 2,
+        name: name,
+        email: email,
+        organizationId: 8
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// User auth logout
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // User auth check
 app.get('/api/auth/me', async (req, res) => {
   try {
