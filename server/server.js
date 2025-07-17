@@ -48,51 +48,6 @@ if (config.app.env === 'production') {
 // Connect to database
 connectDB();
 
-// Emergency schema fix on startup
-(async () => {
-  try {
-    console.log('🔧 Running emergency schema check...');
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    
-    await prisma.$connect();
-    
-    // Check and fix missing columns
-    try {
-      console.log('🔧 Adding missing employee columns...');
-      
-      // Core name fields
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(100)`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(100)`;
-      
-      // Biometric fields
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "faceRecognition" TEXT`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "biometrics" TEXT`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "biometricData" TEXT`;
-      
-      // Additional fields
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "departmentId" INTEGER`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "hireDate" DATE`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "startDate" DATE`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "workingHours" TEXT`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ADD COLUMN IF NOT EXISTS "salary" DECIMAL(10,2)`;
-      
-      // Make nullable columns
-      await prisma.$executeRaw`ALTER TABLE "employees" ALTER COLUMN "department" DROP NOT NULL`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ALTER COLUMN "position" DROP NOT NULL`;
-      await prisma.$executeRaw`ALTER TABLE "employees" ALTER COLUMN "name" TYPE VARCHAR(200)`;
-      
-      console.log('✅ Emergency schema fix completed - all employee columns added');
-    } catch (error) {
-      console.log('ℹ️ Schema fix issue (columns may exist):', error.message);
-    }
-    
-    await prisma.$disconnect();
-  } catch (error) {
-    console.error('❌ Emergency schema fix failed:', error.message);
-  }
-})();
-
 // Security middleware (order matters!)
 app.use(securityConfig.helmet); // Security headers
 app.use(additionalSecurity); // Custom security headers
