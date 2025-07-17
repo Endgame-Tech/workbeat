@@ -32,6 +32,16 @@ const slugToName = (slug) => {
  */
 const findOrganizationByNameOrSlug = async (nameOrSlug) => {
   try {
+    // If the identifier is a number, find by ID first
+    if (!isNaN(nameOrSlug)) {
+      const organizationById = await prisma.organization.findUnique({
+        where: { id: parseInt(nameOrSlug, 10) },
+      });
+      if (organizationById) {
+        return organizationById;
+      }
+    }
+
     // First try to find by exact name
     let organization = await prisma.organization.findFirst({
       where: {

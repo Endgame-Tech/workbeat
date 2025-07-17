@@ -1,53 +1,39 @@
-✔ Generated Prisma Client (v6.7.0) to ./node_modules/@prisma/client in 2.90s
-Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
-Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
-┌─────────────────────────────────────────────────────────┐
-│  Update available 6.7.0 -> 6.12.0                       │
-│  Run the following to update                            │
-│    npm i --save-dev prisma@latest                       │
-│    npm i @prisma/client@latest                          │
-└─────────────────────────────────────────────────────────┘
-==> No open ports detected, continuing to scan...
-==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
-Prisma schema loaded from prisma/schema.prisma
-Datasource "db": PostgreSQL database "workbeat_db", schema "public" at "dpg-d1oheobuibrs73cpppi0-a.oregon-postgres.render.com"
-1 migration found in prisma/migrations
-No pending migrations to apply.
-🌍 Loading environment: production
-📄 Environment file: .env.production
-✅ Configuration validation passed
-✅ Database connection initiated.
-🔌 Initializing WebSocket service...
-📊 Environment check: {
-  JWT_SECRET: 'Set',
-  FRONTEND_URL: 'https://workbeat.vercel.app',
-  DATABASE_URL: 'Set'
-}
-🔍 Testing database connection...
-❌ WebSocket initialization failed: ReferenceError: prisma is not defined
-    at /opt/render/project/src/server/server.js:332:5
-    at Object.<anonymous> (/opt/render/project/src/server/server.js:354:3)
-    at Module._compile (node:internal/modules/cjs/loader:1730:14)
-    at Object..js (node:internal/modules/cjs/loader:1895:10)
-    at Module.load (node:internal/modules/cjs/loader:1465:32)
-    at Function._load (node:internal/modules/cjs/loader:1282:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49
-Stack trace: ReferenceError: prisma is not defined
-    at /opt/render/project/src/server/server.js:332:5
-    at Object.<anonymous> (/opt/render/project/src/server/server.js:354:3)
-    at Module._compile (node:internal/modules/cjs/loader:1730:14)
-    at Object..js (node:internal/modules/cjs/loader:1895:10)
-    at Module.load (node:internal/modules/cjs/loader:1465:32)
-    at Function._load (node:internal/modules/cjs/loader:1282:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49
-==> Exited with status 1
-==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
-==> Running 'npm start'
-> workbeat-api@1.0.0 start
-> npm install && npx prisma generate && npx prisma migrate deploy && node server.js
+Failed to load resource: the server responded with a status of 404 ()Understand this error
+index-BTzCfffs.js:604 Error loading organization: Gt
+overrideMethod @ hook.js:608
+u @ index-BTzCfffs.js:604Understand this error
+content.js:1454 Video element not found for attaching listeners.
+(anonymous) @ content.js:1454
+Hf @ content.js:32
+ll @ content.js:32
+zy @ content.js:32
+Xs @ content.js:30
+Yj @ content.js:32
+Bu @ content.js:32
+by @ content.js:32
+g @ content.js:17
+H @ content.js:17Understand this warning
+index-BTzCfffs.js:585 Uncaught (in promise) Gt
+KE @ index-BTzCfffs.js:585
+y @ index-BTzCfffs.js:585Understand this error
+index-BTzCfffs.js:604 Error loading organization: Gt
+overrideMethod @ hook.js:608
+u @ index-BTzCfffs.js:604Understand this error
+content.js:1454 Video element not found for attaching listeners.
+(anonymous) @ content.js:1454
+Hf @ content.js:32
+ll @ content.js:32
+zy @ content.js:32
+Xs @ content.js:30
+Yj @ content.js:32
+Bu @ content.js:32
+by @ content.js:32
+g @ content.js:17
+H @ content.js:17Understand this warning
+index-BTzCfffs.js:945 No employees returned from API
+overrideMethod @ hook.js:608
+(anonymous) @ index-BTzCfffs.js:945Understand this warning
+employees:1 The resource https://workbeat.vercel.app/fonts/inter.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.Understand this warning
+employees:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+workbeat-api.onrender.com/api/organizations/1:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+employees:1 Uncaught (in promise) Gt

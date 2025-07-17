@@ -133,7 +133,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employee-auth', employeeAuthRoutes);
 app.use('/api/biometrics', biometricRoutes);
 app.use('/api/organizations', organizationRoutes);
-app.use('/api/organizations', departmentRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 
 // New feature routes
