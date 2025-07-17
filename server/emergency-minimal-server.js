@@ -347,11 +347,27 @@ app.post('/api/employees', async (req, res) => {
   }
 });
 
-// Department routes
-app.get('/api/organizations/:id/departments', async (req, res) => {
+// Department routes - updated to use organization names
+app.get('/api/organizations/:orgName/departments', async (req, res) => {
   try {
+    const { orgName } = req.params;
+    
+    // Find organization by name (case-insensitive)
+    const organization = await prisma.organization.findFirst({
+      where: {
+        name: {
+          contains: orgName.replace(/-/g, ' '),
+          mode: 'insensitive'
+        }
+      }
+    });
+    
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+    
     const departments = await prisma.department.findMany({
-      where: { organizationId: parseInt(req.params.id) }
+      where: { organizationId: organization.id }
     });
     res.json({ data: departments });
   } catch (error) {

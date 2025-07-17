@@ -21,42 +21,43 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware.js');
 const { validate, validateParams, paramSchemas } = require('../middleware/validation.js');
 const { registerLimiter, reportLimiter, uploadLimiter } = require('../middleware/rateLimiter.js');
+const { resolveOrganization } = require('../utils/organizationUtils.js');
 
 const router = express.Router();
 
 // Public routes with rate limiting and validation
 router.post('/register', registerLimiter, validate('organizationRegister'), registerOrganization);
 
-// Protected routes
-router.get('/:id', protect, validateParams(paramSchemas.organizationId), getOrganization);
-router.put('/:id', protect, validateParams(paramSchemas.organizationId), validate('organizationUpdate'), updateOrganization);
+// Protected routes - now using organization names instead of IDs
+router.get('/:orgName', protect, resolveOrganization('orgName'), getOrganization);
+router.put('/:orgName', protect, resolveOrganization('orgName'), validate('organizationUpdate'), updateOrganization);
 
 // Settings routes
-router.get('/:id/settings', protect, validateParams(paramSchemas.organizationId), getOrganizationSettings);
-router.put('/:id/settings', protect, validateParams(paramSchemas.organizationId), updateOrganizationSettings);
-router.post('/:id/settings/reset', protect, validateParams(paramSchemas.organizationId), resetOrganizationSettings);
+router.get('/:orgName/settings', protect, resolveOrganization('orgName'), getOrganizationSettings);
+router.put('/:orgName/settings', protect, resolveOrganization('orgName'), updateOrganizationSettings);
+router.post('/:orgName/settings/reset', protect, resolveOrganization('orgName'), resetOrganizationSettings);
 
 // Data export routes
-router.get('/:id/export', protect, validateParams(paramSchemas.organizationId), exportOrganizationData);
+router.get('/:orgName/export', protect, resolveOrganization('orgName'), exportOrganizationData);
 
 // Audit log routes
-router.get('/:id/audit-logs', protect, validateParams(paramSchemas.organizationId), getOrganizationAuditLogs);
+router.get('/:orgName/audit-logs', protect, resolveOrganization('orgName'), getOrganizationAuditLogs);
 
 // Subscription routes
-router.get('/:id/subscription', protect, validateParams(paramSchemas.organizationId), getOrganizationSubscription);
-router.put('/:id/subscription', protect, validateParams(paramSchemas.organizationId), updateOrganizationSubscription);
+router.get('/:orgName/subscription', protect, resolveOrganization('orgName'), getOrganizationSubscription);
+router.put('/:orgName/subscription', protect, resolveOrganization('orgName'), updateOrganizationSubscription);
 
 // User management routes
-router.get('/:id/users', protect, validateParams(paramSchemas.organizationId), getOrganizationUsers);
-router.post('/:id/users', protect, validateParams(paramSchemas.organizationId), addOrganizationUser);
-router.put('/:id/users/:userId', protect, validateParams(paramSchemas.organizationId), updateOrganizationUser);
-router.delete('/:id/users/:userId', protect, validateParams(paramSchemas.organizationId), removeOrganizationUser);
+router.get('/:orgName/users', protect, resolveOrganization('orgName'), getOrganizationUsers);
+router.post('/:orgName/users', protect, resolveOrganization('orgName'), addOrganizationUser);
+router.put('/:orgName/users/:userId', protect, resolveOrganization('orgName'), updateOrganizationUser);
+router.delete('/:orgName/users/:userId', protect, resolveOrganization('orgName'), removeOrganizationUser);
 
 // Holiday calendar routes
-router.get('/:id/holidays', protect, validateParams(paramSchemas.organizationId), getOrganizationHolidays);
-router.put('/:id/holidays', protect, validateParams(paramSchemas.organizationId), updateOrganizationHolidays);
+router.get('/:orgName/holidays', protect, resolveOrganization('orgName'), getOrganizationHolidays);
+router.put('/:orgName/holidays', protect, resolveOrganization('orgName'), updateOrganizationHolidays);
 
 // Statistics routes
-router.get('/:id/stats', protect, validateParams(paramSchemas.organizationId), getOrganizationStats);
+router.get('/:orgName/stats', protect, resolveOrganization('orgName'), getOrganizationStats);
 
 module.exports = router;

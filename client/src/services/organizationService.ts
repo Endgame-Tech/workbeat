@@ -7,6 +7,7 @@ import {
   DepartmentData,
   Holiday
 } from '../types';
+import { buildOrganizationApiUrl, getOrganizationSlugFromId } from '../utils/organizationUtils';
 
 export interface RegisterOrganizationData {
   name: string;
@@ -221,12 +222,14 @@ export const organizationService = {
 
   /**
    * Get all departments in an organization
-   * @param organizationId The ID of the organization
+   * @param organizationId The ID of the organization (legacy parameter, now converted to name)
    * @returns List of departments
    */
   async getDepartments(organizationId: string) {
     try {
-      const response = await api.get(`/api/organizations/${organizationId}/departments`);
+      // Convert organization ID to slug for the new API
+      const slug = getOrganizationSlugFromId(organizationId);
+      const response = await api.get(`/api/organizations/${slug}/departments`);
       return response.data.data;
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -238,14 +241,16 @@ export const organizationService = {
 
   /**
    * Create a new department
-   * @param organizationId The ID of the organization
+   * @param organizationId The ID of the organization (legacy parameter, now converted to name)
    * @param departmentData The department data to create
    * @returns The created department
    */
   async createDepartment(organizationId: string, departmentData: DepartmentData) {
     try {
+      // Convert organization ID to slug for the new API
+      const slug = getOrganizationSlugFromId(organizationId);
       const response = await api.post(
-        `/api/organizations/${organizationId}/departments`,
+        `/api/organizations/${slug}/departments`,
         departmentData
       );
       return response.data.data;
@@ -266,8 +271,10 @@ export const organizationService = {
    */
   async updateDepartment(organizationId: string, departmentId: string, departmentData: DepartmentData) {
     try {
+      // Convert organization ID to slug for the new API
+      const slug = getOrganizationSlugFromId(organizationId);
       const response = await api.put(
-        `/api/organizations/${organizationId}/departments/${departmentId}`,
+        `/api/organizations/${slug}/departments/${departmentId}`,
         departmentData
       );
       return response.data.data;
@@ -287,8 +294,10 @@ export const organizationService = {
    */
   async deleteDepartment(organizationId: string, departmentId: string) {
     try {
+      // Convert organization ID to slug for the new API
+      const slug = getOrganizationSlugFromId(organizationId);
       const response = await api.delete(
-        `/api/organizations/${organizationId}/departments/${departmentId}`
+        `/api/organizations/${slug}/departments/${departmentId}`
       );
       return response.data.success;
     } catch (error) {

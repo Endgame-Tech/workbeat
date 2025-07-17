@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { prisma } = require('../config/db');
+const { resolveOrganization } = require('../utils/organizationUtils');
 
 // Get all departments for an organization
-router.get('/:organizationId/departments', protect, async (req, res) => {
+router.get('/:orgName/departments', protect, resolveOrganization('orgName'), async (req, res) => {
   try {
-    const { organizationId } = req.params;
+    // Organization is already resolved by middleware
+    const organizationId = req.organizationId;
     
     // Verify user belongs to organization
-    if (req.user.organizationId !== parseInt(organizationId)) {
+    if (req.user.organizationId !== organizationId) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this organization'
@@ -18,7 +20,7 @@ router.get('/:organizationId/departments', protect, async (req, res) => {
 
     const departments = await prisma.department.findMany({
       where: {
-        organizationId: parseInt(organizationId),
+        organizationId: organizationId,
         isActive: true
       },
       orderBy: {
@@ -40,13 +42,13 @@ router.get('/:organizationId/departments', protect, async (req, res) => {
 });
 
 // Create a new department
-router.post('/:organizationId/departments', protect, async (req, res) => {
+router.post('/:orgName/departments', protect, resolveOrganization('orgName'), async (req, res) => {
   try {
-    const { organizationId } = req.params;
+    const organizationId = req.organizationId;
     const { name, description } = req.body;
     
     // Verify user belongs to organization and is admin
-    if (req.user.organizationId !== parseInt(organizationId) || req.user.role !== 'admin') {
+    if (req.user.organizationId !== organizationId || req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.'
@@ -56,7 +58,7 @@ router.post('/:organizationId/departments', protect, async (req, res) => {
     // Check if department name already exists
     const existingDepartment = await prisma.department.findFirst({
       where: {
-        organizationId: parseInt(organizationId),
+        organizationId: organizationId,
         name: name.trim(),
         isActive: true
       }
@@ -73,7 +75,7 @@ router.post('/:organizationId/departments', protect, async (req, res) => {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        organizationId: parseInt(organizationId),
+        organizationId: organizationId,
         isActive: true
       }
     });
@@ -93,13 +95,14 @@ router.post('/:organizationId/departments', protect, async (req, res) => {
 });
 
 // Update a department
-router.put('/:organizationId/departments/:departmentId', protect, async (req, res) => {
+router.put('/:orgName/departments/:departmentId', protect, resolveOrganization('orgName'), async (req, res) => {
   try {
-    const { organizationId, departmentId } = req.params;
+    const organizationId = req.organizationId;
+    const { departmentId } = req.params;
     const { name, description, isActive } = req.body;
     
     // Verify user belongs to organization and is admin
-    if (req.user.organizationId !== parseInt(organizationId) || req.user.role !== 'admin') {
+    if (req.user.organizationId !== organizationId || req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.'
@@ -110,7 +113,7 @@ router.put('/:organizationId/departments/:departmentId', protect, async (req, re
     const existingDepartment = await prisma.department.findFirst({
       where: {
         id: parseInt(departmentId),
-        organizationId: parseInt(organizationId)
+        organizationId: organizationId
       }
     });
 
@@ -125,7 +128,7 @@ router.put('/:organizationId/departments/:departmentId', protect, async (req, re
     if (name && name.trim() !== existingDepartment.name) {
       const nameConflict = await prisma.department.findFirst({
         where: {
-          organizationId: parseInt(organizationId),
+          organizationId: organizationId,
           name: name.trim(),
           isActive: true,
           id: { not: parseInt(departmentId) }
@@ -174,12 +177,13 @@ router.put('/:organizationId/departments/:departmentId', protect, async (req, re
 });
 
 // Delete a department
-router.delete('/:organizationId/departments/:departmentId', protect, async (req, res) => {
+router.delete('/:orgName/departments/:departmentId', protect, resolveOrganization('orgName'), async (req, res) => {
   try {
-    const { organizationId, departmentId } = req.params;
+    const organizationId = req.organizationId;
+    const { departmentId } = req.params;
     
     // Verify user belongs to organization and is admin
-    if (req.user.organizationId !== parseInt(organizationId) || req.user.role !== 'admin') {
+    if (req.user.organizationId !== organizationId || req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.'
@@ -190,7 +194,7 @@ router.delete('/:organizationId/departments/:departmentId', protect, async (req,
     const department = await prisma.department.findFirst({
       where: {
         id: parseInt(departmentId),
-        organizationId: parseInt(organizationId)
+        organizationId: organizationId
       },
       include: {
         _count: {
@@ -241,12 +245,13 @@ router.delete('/:organizationId/departments/:departmentId', protect, async (req,
 });
 
 // Get department statistics
-router.get('/:organizationId/departments/:departmentId/stats', protect, async (req, res) => {
+router.get('/:orgName/departments/:departmentId/stats', protect, resolveOrganization('orgName'), async (req, res) => {
   try {
-    const { organizationId, departmentId } = req.params;
+    const organizationId = req.organizationId;
+    const { departmentId } = req.params;
     
     // Verify user belongs to organization
-    if (req.user.organizationId !== parseInt(organizationId)) {
+    if (req.user.organizationId !== organizationId) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this organization'
