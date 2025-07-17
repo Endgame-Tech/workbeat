@@ -42,17 +42,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     date: new Date().toISOString()
   });
   
-  useEffect(() => {
-    fetchAttendanceStats();
-  }, [fetchAttendanceStats]);
-  
-  // Update stats when props change
-  useEffect(() => {
-    if (employeeCount !== undefined) {
-      updateStatsFromProps(employeeCount, attendanceRecords);
-    }
-  }, [employeeCount, attendanceRecords]);
-
   const fetchAttendanceStats = useCallback(async () => {
     setLoading(true);
     try {
@@ -66,6 +55,17 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchAttendanceStats();
+  }, [fetchAttendanceStats]);
+  
+  // Update stats when props change
+  useEffect(() => {
+    if (employeeCount !== undefined) {
+      updateStatsFromProps(employeeCount, attendanceRecords);
+    }
+  }, [employeeCount, attendanceRecords]);
 
   // Handle real-time attendance updates
   useEffect(() => {

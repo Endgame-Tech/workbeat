@@ -11,6 +11,7 @@ import { OfflineProvider } from './components/context/OfflineContext';
 import { OfflineDataCacheProvider } from './components/context/OfflineDataCacheProvider';
 import { PWAProvider } from './components/context/PWAProvider';
 import { Toaster } from 'react-hot-toast';
+import { OrganizationProvider } from './components/context/OrganizationContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -25,8 +26,10 @@ root.render(
             <OfflineProvider>
               <WebSocketProvider>
                 <NotificationProvider>
-                  <AppRoutes />
-                  <Toaster position="top-right" />
+                  <OrganizationProvider>
+                    <AppRoutes />
+                    <Toaster position="top-right" />
+                  </OrganizationProvider>
                 </NotificationProvider>
               </WebSocketProvider>
             </OfflineProvider>

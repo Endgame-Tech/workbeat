@@ -233,14 +233,14 @@ const OrganizationLayout: React.FC<OrganizationLayoutProps> = ({ children }) => 
                     e.currentTarget.style.display = 'none';
                     const fallback = e.currentTarget.nextElementSibling;
                     if (fallback) {
-                      fallback.style.display = 'flex';
+                      (fallback as HTMLElement).style.display = 'flex';
                     }
                   }}
                   onLoad={(e) => {
                     e.currentTarget.style.display = 'block';
                     const fallback = e.currentTarget.nextElementSibling;
                     if (fallback) {
-                      fallback.style.display = 'none';
+                      (fallback as HTMLElement).style.display = 'none';
                     }
                   }}
                 />
