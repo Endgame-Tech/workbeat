@@ -52,7 +52,7 @@ const LandingPage: React.FC = () => {
                 size="sm"
                 onClick={handleGetStarted}
                 leftIcon={<UserPlus size={16} />}
-                className="bg-white text-blue-800 hover:bg-white/90"
+                className="bg-white/40 text-blue-800 hover:bg-white/90"
               >
                 Get Started
               </Button>
