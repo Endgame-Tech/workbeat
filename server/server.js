@@ -346,3 +346,9 @@ handleUncaughtException();
       console.log(`⚡ Performance monitoring: ${baseUrl}/api/performance`);
       console.log(`🔌 WebSocket statistics: ${baseUrl}/api/websocket/stats`);
     });
+  } catch (error) {
+    console.error('❌ WebSocket initialization failed:', error);
+    console.error('Stack trace:', error.stack);
+    process.exit(1); // Exit if WebSocket setup fails
+  }
+})();

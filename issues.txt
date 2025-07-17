@@ -1,42 +1,32 @@
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.118.59',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T17:07:54.907Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:107:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
-🚨 Error occurred: {
-  message: 'Route /socket.io/?EIO=4&transport=websocket not found',
-  statusCode: 404,
-  errorCode: 'NOT_FOUND_ERROR',
-  url: '/socket.io/?EIO=4&transport=websocket',
-  method: 'GET',
-  ip: '10.223.65.234',
-  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  timestamp: '2025-07-17T17:07:56.297Z',
-  stack: 'Error: Route /socket.io/?EIO=4&transport=websocket not found\n' +
-    '    at notFoundHandler (/opt/render/project/src/server/utils/errorHandler.js:202:17)\n' +
-    '    at Layer.handle [as handle_request] (/opt/render/project/src/server/node_modules/express/lib/router/layer.js:95:5)\n' +
-    '    at trim_prefix (/opt/render/project/src/server/node_modules/express/lib/router/index.js:328:13)\n' +
-    '    at /opt/render/project/src/server/node_modules/express/lib/router/index.js:286:9\n' +
-    '    at Function.process_params (/opt/render/project/src/server/node_modules/express/lib/router/index.js:346:12)\n' +
-    '    at next (/opt/render/project/src/server/node_modules/express/lib/router/index.js:280:10)\n' +
-    '    at cors (/opt/render/project/src/server/node_modules/cors/lib/index.js:188:7)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:224:17\n' +
-    '    at origin (/opt/render/project/src/server/server.js:107:14)\n' +
-    '    at /opt/render/project/src/server/node_modules/cors/lib/index.js:219:13'
-}
+✔ Generated Prisma Client (v6.7.0) to ./node_modules/@prisma/client in 3.71s
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+Tip: Easily identify and fix slow SQL queries in your app. Optimize helps you enhance your visibility: https://pris.ly/--optimize
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.7.0 -> 6.12.0                       │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "workbeat_db", schema "public" at "dpg-d1oheobuibrs73cpppi0-a.oregon-postgres.render.com"
+1 migration found in prisma/migrations
+No pending migrations to apply.
+/opt/render/project/src/server/server.js:348
+    });
+       
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
+    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+Node.js v22.16.0
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+==> Running 'npm start'
+> workbeat-api@1.0.0 start
+> npm install && npx prisma generate && npx prisma migrate deploy && node server.js
