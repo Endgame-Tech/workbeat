@@ -106,10 +106,10 @@ app.get('/organizations/:id', async (req, res) => {
 // Organization registration route
 app.post('/api/organizations/register', async (req, res) => {
   try {
-    const { organizationName, adminName, adminEmail, adminPassword } = req.body;
+    const { name, adminName, adminEmail, adminPassword } = req.body;
     
     // Simple validation
-    if (!organizationName || !adminName || !adminEmail || !adminPassword) {
+    if (!name || !adminName || !adminEmail || !adminPassword) {
       return res.status(400).json({ 
         error: 'Organization name, admin name, email and password are required' 
       });
@@ -121,7 +121,7 @@ app.post('/api/organizations/register', async (req, res) => {
       data: {
         organization: {
           id: 8,
-          name: organizationName,
+          name: name,
           createdAt: new Date().toISOString()
         },
         admin: {
@@ -132,7 +132,7 @@ app.post('/api/organizations/register', async (req, res) => {
           organizationId: 8,
           organization: {
             id: 8,
-            name: organizationName
+            name: name
           }
         },
         token: 'mock-token-for-emergency-server'
