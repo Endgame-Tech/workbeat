@@ -7,8 +7,22 @@
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: [
+      'https://workbeat.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
@@ -262,10 +276,26 @@ app.use((req, res) => {
   });
 });
 
+// Basic Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('🔌 Client connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('🔌 Client disconnected:', socket.id);
+  });
+  
+  // Handle any socket events that the frontend might send
+  socket.on('join-organization', (data) => {
+    console.log('📡 Client joined organization:', data);
+    socket.join(`org-${data.organizationId}`);
+  });
+});
+
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚨 Emergency server running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔌 Socket.IO enabled`);
 });
 
 // Graceful shutdown
