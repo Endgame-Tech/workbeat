@@ -1,0 +1,186 @@
+404: GET /api/organizations/8/settings
+404: GET /api/leave-balances?year=2025
+404: GET /api/leave-requests?
+404: GET /api/leave-types
+404: GET /api/scheduled-shifts?startDate=2025-06-30&endDate=2025-07-30
+404: GET /api/shift-templates
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Attendance fetch error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.findMany()` invocation:
+The column `attendances.employeeName` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:284:24 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.employeeName' },
+  clientVersion: '6.7.0'
+}
+Today stats error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.count()` invocation:
+The column `attendances.checkIn` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:300:19 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.checkIn' },
+  clientVersion: '6.7.0'
+}
+Today stats error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.count()` invocation:
+The column `attendances.checkIn` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:300:19 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.checkIn' },
+  clientVersion: '6.7.0'
+}
+Today stats error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.count()` invocation:
+The column `attendances.checkIn` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:300:19 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.checkIn' },
+  clientVersion: '6.7.0'
+}
+Today stats error: PrismaClientKnownRequestError: 
+Invalid `prisma.attendance.count()` invocation:
+The column `attendances.checkIn` does not exist in the current database.
+    at zn.handleRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:7459)
+    at zn.handleAndLogRequestError (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6784)
+    at zn.request (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:121:6491)
+    at async l (/opt/render/project/src/server/node_modules/@prisma/client/runtime/library.js:130:9778)
+    at async /opt/render/project/src/server/emergency-minimal-server.js:300:19 {
+  code: 'P2022',
+  meta: { modelName: 'Attendance', column: 'attendances.checkIn' },
+  clientVersion: '6.7.0'
+}
