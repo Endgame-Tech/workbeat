@@ -1,5 +1,19 @@
 import axios from 'axios';
 
+// Retry mechanism with exponential backoff
+const retryRequest = async (fn: () => Promise<any>, retries = 3, delay = 1000): Promise<any> => {
+  try {
+    return await fn();
+  } catch (error: any) {
+    if (retries > 0 && (error.code === 'ERR_NETWORK' || error.code === 'ERR_INSUFFICIENT_RESOURCES' || error.response?.status >= 500)) {
+      console.warn(`Request failed, retrying in ${delay}ms... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryRequest(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+};
+
 interface RuntimeConfig {
   VITE_APP_API_URL?: string;
   // Add other environment variables as needed
@@ -38,6 +52,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Include cookies in requests
+  timeout: 30000, // 30 second timeout
 });
 
 // Request interceptor (no need to add token manually since we're using httpOnly cookies)
@@ -103,4 +118,51 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+// Request debouncing cache to prevent excessive requests
+const requestCache = new Map<string, { promise: Promise<any>; timestamp: number }>();
+const CACHE_DURATION = 5000; // 5 seconds
+
+// Create API wrapper with retry logic and debouncing
+const createApiWithRetry = (apiInstance: typeof api) => {
+  const wrappedApi = {
+    get: (url: string, config?: any) => {
+      const cacheKey = `GET:${url}:${JSON.stringify(config)}`;
+      const cached = requestCache.get(cacheKey);
+      
+      // Return cached promise if within cache duration
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        return cached.promise;
+      }
+      
+      const promise = retryRequest(() => apiInstance.get(url, config));
+      requestCache.set(cacheKey, { promise, timestamp: Date.now() });
+      
+      // Clean up cache after request completes
+      promise.finally(() => {
+        setTimeout(() => requestCache.delete(cacheKey), CACHE_DURATION);
+      });
+      
+      return promise;
+    },
+    
+    post: (url: string, data?: any, config?: any) => {
+      return retryRequest(() => apiInstance.post(url, data, config));
+    },
+    
+    put: (url: string, data?: any, config?: any) => {
+      return retryRequest(() => apiInstance.put(url, data, config));
+    },
+    
+    delete: (url: string, config?: any) => {
+      return retryRequest(() => apiInstance.delete(url, config));
+    },
+    
+    patch: (url: string, data?: any, config?: any) => {
+      return retryRequest(() => apiInstance.patch(url, data, config));
+    }
+  };
+  
+  return wrappedApi;
+};
+
+export default createApiWithRetry(api);
