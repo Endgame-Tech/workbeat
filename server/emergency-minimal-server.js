@@ -17,12 +17,18 @@ console.log('🚨 Starting emergency minimal server...');
 // Trust proxy for Render
 app.set('trust proxy', 1);
 
-// Simple CORS - allow all origins temporarily
+// CORS configuration for production
 app.use(cors({
-  origin: true,
+  origin: [
+    'https://workbeat.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://workbeat-api.onrender.com'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200
 }));
 
 // Basic middleware
@@ -97,6 +103,46 @@ app.get('/organizations/:id', async (req, res) => {
   }
 });
 
+// Organization registration route
+app.post('/api/organizations/register', async (req, res) => {
+  try {
+    const { organizationName, adminName, adminEmail, adminPassword } = req.body;
+    
+    // Simple validation
+    if (!organizationName || !adminName || !adminEmail || !adminPassword) {
+      return res.status(400).json({ 
+        error: 'Organization name, admin name, email and password are required' 
+      });
+    }
+    
+    // For emergency server, return mock successful registration
+    res.json({
+      success: true,
+      data: {
+        organization: {
+          id: 8,
+          name: organizationName,
+          createdAt: new Date().toISOString()
+        },
+        admin: {
+          id: 1,
+          name: adminName,
+          email: adminEmail,
+          role: 'admin',
+          organizationId: 8,
+          organization: {
+            id: 8,
+            name: organizationName
+          }
+        },
+        token: 'mock-token-for-emergency-server'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Employee routes
 app.get('/api/employees', async (req, res) => {
   try {
@@ -127,6 +173,7 @@ app.post('/api/auth/login', async (req, res) => {
         id: 1,
         name: 'Test User',
         email: email,
+        role: 'admin',
         organizationId: 8,
         organization: {
           id: 8,
@@ -185,6 +232,7 @@ app.get('/api/auth/me', async (req, res) => {
         id: 1,
         name: 'Test User',
         email: 'test@example.com',
+        role: 'admin',
         organizationId: 8
       }
     });
