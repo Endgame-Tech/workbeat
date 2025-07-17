@@ -329,6 +329,7 @@ handleUncaughtException();
     
     // Test database connection before WebSocket initialization
     console.log('🔍 Testing database connection...');
+    const { prisma } = require('./config/db');
     await prisma.$connect();
     console.log('✅ Database connection established');
     

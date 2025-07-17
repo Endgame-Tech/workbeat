@@ -1,22 +1,33 @@
-✔ Generated Prisma Client (v6.7.0) to ./node_modules/@prisma/client in 3.71s
+✔ Generated Prisma Client (v6.7.0) to ./node_modules/@prisma/client in 2.90s
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
-Tip: Easily identify and fix slow SQL queries in your app. Optimize helps you enhance your visibility: https://pris.ly/--optimize
+Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
 ┌─────────────────────────────────────────────────────────┐
 │  Update available 6.7.0 -> 6.12.0                       │
 │  Run the following to update                            │
 │    npm i --save-dev prisma@latest                       │
 │    npm i @prisma/client@latest                          │
 └─────────────────────────────────────────────────────────┘
+==> No open ports detected, continuing to scan...
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
 Prisma schema loaded from prisma/schema.prisma
 Datasource "db": PostgreSQL database "workbeat_db", schema "public" at "dpg-d1oheobuibrs73cpppi0-a.oregon-postgres.render.com"
 1 migration found in prisma/migrations
 No pending migrations to apply.
-/opt/render/project/src/server/server.js:348
-    });
-       
-SyntaxError: Unexpected end of input
-    at wrapSafe (node:internal/modules/cjs/loader:1662:18)
-    at Module._compile (node:internal/modules/cjs/loader:1704:20)
+🌍 Loading environment: production
+📄 Environment file: .env.production
+✅ Configuration validation passed
+✅ Database connection initiated.
+🔌 Initializing WebSocket service...
+📊 Environment check: {
+  JWT_SECRET: 'Set',
+  FRONTEND_URL: 'https://workbeat.vercel.app',
+  DATABASE_URL: 'Set'
+}
+🔍 Testing database connection...
+❌ WebSocket initialization failed: ReferenceError: prisma is not defined
+    at /opt/render/project/src/server/server.js:332:5
+    at Object.<anonymous> (/opt/render/project/src/server/server.js:354:3)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
     at Object..js (node:internal/modules/cjs/loader:1895:10)
     at Module.load (node:internal/modules/cjs/loader:1465:32)
     at Function._load (node:internal/modules/cjs/loader:1282:12)
@@ -24,7 +35,17 @@ SyntaxError: Unexpected end of input
     at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
     at node:internal/main/run_main_module:36:49
-Node.js v22.16.0
+Stack trace: ReferenceError: prisma is not defined
+    at /opt/render/project/src/server/server.js:332:5
+    at Object.<anonymous> (/opt/render/project/src/server/server.js:354:3)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
 ==> Exited with status 1
 ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
 ==> Running 'npm start'
