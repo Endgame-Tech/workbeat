@@ -46,7 +46,13 @@ if (config.app.env === 'production') {
 }
 
 // Connect to database
-connectDB();
+try {
+  connectDB();
+  console.log('✅ Database connection initiated.');
+} catch (error) {
+  console.error('❌ Could not connect to the database. Exiting...', error);
+  process.exit(1);
+}
 
 // Security middleware (order matters!)
 app.use(securityConfig.helmet); // Security headers
