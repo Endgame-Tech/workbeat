@@ -334,34 +334,15 @@ handleUncaughtException();
     
     webSocketService.initialize(server);
     console.log('✅ WebSocket service initialized successfully');
-  } catch (error) {
-    console.error('❌ WebSocket initialization failed:', error);
-    console.error('Stack trace:', error.stack);
-    // Don't exit the process, but log the error clearly
-  }
-})();
 
-// Add WebSocket statistics endpoint
-app.get('/api/websocket/stats', (req, res) => {
-  // Simple admin check
-  if (!req.headers.authorization && !['127.0.0.1', '::1'].includes(req.ip)) {
-    return res.status(403).json({ success: false, message: 'Unauthorized' });
-  }
-  
-  res.json({
-    success: true,
-    websocket: webSocketService.getStats()
-  });
-});
-
-// Start server
-const PORT = config.app.port;
-server.listen(PORT, () => {
-  console.log(`🚀 WorkBeat API v${config.app.version} running on port ${PORT}`);
-  console.log(`🌍 Environment: ${config.app.env}`);
-  console.log(`🔗 Frontend URL: ${config.app.frontendUrl}`);
-  const baseUrl = config.app.baseUrl || `http://localhost:${PORT}`;
-  console.log(`📊 Health check: ${baseUrl}/health`);
-  console.log(`⚡ Performance monitoring: ${baseUrl}/api/performance`);
-  console.log(`🔌 WebSocket statistics: ${baseUrl}/api/websocket/stats`);
-});
+    // Start server
+    const PORT = config.app.port;
+    server.listen(PORT, () => {
+      console.log(`🚀 WorkBeat API v${config.app.version} running on port ${PORT}`);
+      console.log(`🌍 Environment: ${config.app.env}`);
+      console.log(`🔗 Frontend URL: ${config.app.frontendUrl}`);
+      const baseUrl = config.app.baseUrl || `http://localhost:${PORT}`;
+      console.log(`📊 Health check: ${baseUrl}/health`);
+      console.log(`⚡ Performance monitoring: ${baseUrl}/api/performance`);
+      console.log(`🔌 WebSocket statistics: ${baseUrl}/api/websocket/stats`);
+    });
