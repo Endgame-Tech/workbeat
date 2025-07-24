@@ -26,7 +26,6 @@ export const useSubscription = (): UseSubscriptionReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [lastErrorTime, setLastErrorTime] = useState<number>(0);
 
   const loadSubscription = useCallback(async () => {
     if (!organizationId) {
@@ -54,9 +53,10 @@ export const useSubscription = (): UseSubscriptionReturn => {
       setSubscription(subscriptionData);
       setError(null);
       setRetryCount(0); // Reset retry count on success
-    } catch (err: any) {
+    } catch (err: unknown) {
       // For network errors, silently fail and use default free plan
-      if (err.code === 'ERR_NETWORK' || err.code === 'ERR_INSUFFICIENT_RESOURCES' || err.response?.status >= 500) {
+      const error = err as { code?: string; response?: { status?: number } };
+      if (error.code === 'ERR_NETWORK' || error.code === 'ERR_INSUFFICIENT_RESOURCES' || (error.response?.status && error.response.status >= 500)) {
         setSubscription(null);
         setError(null);
         setRetryCount(prev => prev + 1);
@@ -66,7 +66,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [organizationId, retryCount, lastErrorTime]);
+  }, [organizationId, retryCount]);
 
   useEffect(() => {
     loadSubscription();
@@ -106,7 +106,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
     }
     
     return SubscriptionService.hasFeature(plan, feature);
-  }, [plan, isActive, subscription]);
+  }, [plan, isActive]);
 
   const canAddEmployees = useCallback((currentCount: number, additionalCount: number = 1): boolean => {
     if (!isActive) return false;

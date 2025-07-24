@@ -52,9 +52,9 @@ export class SubscriptionService {
       } else {
         return null;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Only log non-network errors in development
-      if (process.env.NODE_ENV === 'development' && error.code !== 'ERR_NETWORK' && error.code !== 'ERR_INSUFFICIENT_RESOURCES') {
+      const err = error as { code?: string };\n      if (process.env.NODE_ENV === 'development' && err.code !== 'ERR_NETWORK' && err.code !== 'ERR_INSUFFICIENT_RESOURCES') {
         console.error('Error fetching subscription:', error);
       }
       return null;

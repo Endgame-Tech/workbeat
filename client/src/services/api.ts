@@ -1,11 +1,12 @@
 import axios from 'axios';
 
 // Retry mechanism with exponential backoff
-const retryRequest = async (fn: () => Promise<any>, retries = 3, delay = 1000): Promise<any> => {
+const retryRequest = async (fn: () => Promise<unknown>, retries = 3, delay = 1000): Promise<unknown> => {
   try {
     return await fn();
-  } catch (error: any) {
-    if (retries > 0 && (error.code === 'ERR_NETWORK' || error.code === 'ERR_INSUFFICIENT_RESOURCES' || error.response?.status >= 500)) {
+  } catch (error: unknown) {
+    const err = error as { code?: string; response?: { status?: number } };
+    if (retries > 0 && (err.code === 'ERR_NETWORK' || err.code === 'ERR_INSUFFICIENT_RESOURCES' || (err.response?.status && err.response.status >= 500))) {
       if (process.env.NODE_ENV === 'development') {
         console.warn(`Request failed, retrying in ${delay}ms... (${retries} retries left)`);
       }
@@ -112,9 +113,9 @@ api.interceptors.response.use(
     }
     
     // Add error metadata to help components handle errors appropriately
-    error.isExpectedEmpty = status === 404;
-    error.isServerError = status >= 500;
-    error.isClientError = status >= 400 && status < 500;
+    (error as { isExpectedEmpty?: boolean; isServerError?: boolean; isClientError?: boolean }).isExpectedEmpty = status === 404;
+    (error as { isExpectedEmpty?: boolean; isServerError?: boolean; isClientError?: boolean }).isServerError = status >= 500;
+    (error as { isExpectedEmpty?: boolean; isServerError?: boolean; isClientError?: boolean }).isClientError = status >= 400 && status < 500;
     
     return Promise.reject(error);
   }
@@ -127,7 +128,7 @@ const CACHE_DURATION = 5000; // 5 seconds
 // Create API wrapper with retry logic and debouncing
 const createApiWithRetry = (apiInstance: typeof api) => {
   const wrappedApi = {
-    get: (url: string, config?: any) => {
+    get: (url: string, config?: Record<string, unknown>) => {
       const cacheKey = `GET:${url}:${JSON.stringify(config)}`;
       const cached = requestCache.get(cacheKey);
       
@@ -136,7 +137,7 @@ const createApiWithRetry = (apiInstance: typeof api) => {
         return cached.promise;
       }
       
-      const promise = retryRequest(() => apiInstance.get(url, config));
+      const promise = retryRequest(() => apiInstance.get(url, config)) as Promise<unknown>;
       requestCache.set(cacheKey, { promise, timestamp: Date.now() });
       
       // Clean up cache after request completes
@@ -147,19 +148,19 @@ const createApiWithRetry = (apiInstance: typeof api) => {
       return promise;
     },
     
-    post: (url: string, data?: any, config?: any) => {
+    post: (url: string, data?: unknown, config?: Record<string, unknown>) => {
       return retryRequest(() => apiInstance.post(url, data, config));
     },
     
-    put: (url: string, data?: any, config?: any) => {
+    put: (url: string, data?: unknown, config?: Record<string, unknown>) => {
       return retryRequest(() => apiInstance.put(url, data, config));
     },
     
-    delete: (url: string, config?: any) => {
+    delete: (url: string, config?: Record<string, unknown>) => {
       return retryRequest(() => apiInstance.delete(url, config));
     },
     
-    patch: (url: string, data?: any, config?: any) => {
+    patch: (url: string, data?: unknown, config?: Record<string, unknown>) => {
       return retryRequest(() => apiInstance.patch(url, data, config));
     }
   };

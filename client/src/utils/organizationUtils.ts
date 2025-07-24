@@ -85,7 +85,7 @@ export const buildOrganizationApiUrl = (endpoint: string, organizationName?: str
  * @param organizationId - Organization ID (legacy parameter)
  * @returns Organization slug
  */
-export const getOrganizationSlugFromId = (organizationId: string): string => {
+export const getOrganizationSlugFromId = (_organizationId: string): string => {
   // For now, we'll just return the current user's organization slug
   // In a full implementation, this would lookup the organization by ID
   const slug = getCurrentOrganizationSlug();

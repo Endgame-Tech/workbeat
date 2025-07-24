@@ -7,7 +7,7 @@ import {
   DepartmentData,
   Holiday
 } from '../types';
-import { buildOrganizationApiUrl, getOrganizationSlugFromId } from '../utils/organizationUtils';
+import { getOrganizationSlugFromId } from '../utils/organizationUtils';
 
 export interface RegisterOrganizationData {
   name: string;
