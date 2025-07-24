@@ -114,11 +114,6 @@ export const authService = {
         }
       }
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        return null;
-      }
-      
       const response = await api.get('/api/auth/me');
       
       // Process user data to ensure organizationId is present
@@ -135,7 +130,6 @@ export const authService = {
     } catch (error) {
       console.error('Get current user error:', error);
       // Clear storage on auth error
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
       return null;
     }
@@ -243,20 +237,14 @@ export const authService = {
    */
   async checkAuth(): Promise<boolean> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        return false;
-      }
-      
-      // Verify token is valid with a lightweight API call
+      // Verify auth with server (relies on httpOnly cookie)
       await api.get('/api/auth/me');
       return true;
     } catch (error) {
       console.error('Auth check error:', error);
-      // Clear invalid tokens
-      localStorage.removeItem('token');
+      // Clear local storage on auth failure
       localStorage.removeItem('user');
-      localStorage.removeItem('organization'); // Also clear organization
+      localStorage.removeItem('organization');
       return false;
     }
   },

@@ -1,39 +1,113 @@
-Failed to load resource: the server responded with a status of 404 ()Understand this error
-index-BTzCfffs.js:604 Error loading organization: Gt
-overrideMethod @ hook.js:608
-u @ index-BTzCfffs.js:604Understand this error
-content.js:1454 Video element not found for attaching listeners.
-(anonymous) @ content.js:1454
-Hf @ content.js:32
-ll @ content.js:32
-zy @ content.js:32
-Xs @ content.js:30
-Yj @ content.js:32
-Bu @ content.js:32
-by @ content.js:32
-g @ content.js:17
-H @ content.js:17Understand this warning
-index-BTzCfffs.js:585 Uncaught (in promise) Gt
-KE @ index-BTzCfffs.js:585
-y @ index-BTzCfffs.js:585Understand this error
-index-BTzCfffs.js:604 Error loading organization: Gt
-overrideMethod @ hook.js:608
-u @ index-BTzCfffs.js:604Understand this error
-content.js:1454 Video element not found for attaching listeners.
-(anonymous) @ content.js:1454
-Hf @ content.js:32
-ll @ content.js:32
-zy @ content.js:32
-Xs @ content.js:30
-Yj @ content.js:32
-Bu @ content.js:32
-by @ content.js:32
-g @ content.js:17
-H @ content.js:17Understand this warning
-index-BTzCfffs.js:945 No employees returned from API
-overrideMethod @ hook.js:608
-(anonymous) @ index-BTzCfffs.js:945Understand this warning
-employees:1 The resource https://workbeat.vercel.app/fonts/inter.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.Understand this warning
-employees:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
-workbeat-api.onrender.com/api/organizations/1:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
-employees:1 Uncaught (in promise) Gt
+🏊 PostgreSQL connection pool initialized (2-10 connections)
+🕐 Database time: Thu Jul 24 2025 12:19:21 GMT+0000 (Coordinated Universal Time)
+💚 Database health check passed
+🔒 Auth failed: No token provided - GET /api/employees
+Security event: {
+  timestamp: '2025-07-24T12:19:31.580Z',
+  ip: '10.223.233.97',
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 2,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /organizations/1
+Security event: {
+  timestamp: '2025-07-24T12:19:31.591Z',
+  ip: '10.223.64.24',
+  method: 'GET',
+  url: '/1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 2,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/subscription/current
+Security event: {
+  timestamp: '2025-07-24T12:19:31.593Z',
+  ip: '10.223.121.216',
+  method: 'GET',
+  url: '/current',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/attendance/stats/today?organizationId=1
+Security event: {
+  timestamp: '2025-07-24T12:19:32.217Z',
+  ip: '10.223.121.216',
+  method: 'GET',
+  url: '/stats/today?organizationId=1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/auth/me
+Security event: {
+  timestamp: '2025-07-24T12:19:32.219Z',
+  ip: '10.223.233.97',
+  method: 'GET',
+  url: '/me',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/employees
+Security event: {
+  timestamp: '2025-07-24T12:22:16.003Z',
+  ip: '10.223.64.24',
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 0,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /organizations/1
+Security event: {
+  timestamp: '2025-07-24T12:22:16.009Z',
+  ip: '10.223.64.24',
+  method: 'GET',
+  url: '/1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/attendance/stats/today?organizationId=1
+Security event: {
+  timestamp: '2025-07-24T12:22:16.637Z',
+  ip: '10.223.121.216',
+  method: 'GET',
+  url: '/stats/today?organizationId=1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/auth/me
+Security event: {
+  timestamp: '2025-07-24T12:22:16.639Z',
+  ip: '10.223.121.216',
+  method: 'GET',
+  url: '/me',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
+🔒 Auth failed: No token provided - GET /api/subscription/current
+Security event: {
+  timestamp: '2025-07-24T12:22:16.685Z',
+  ip: '10.223.64.24',
+  method: 'GET',
+  url: '/current',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  statusCode: 401,
+  duration: 1,
+  user: 'anonymous'
+}
