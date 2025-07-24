@@ -166,8 +166,18 @@ const registerOrganization = async (req, res) => {
 // @access  Private
 const getOrganization = async (req, res) => {
   try {
+    // Handle both old route format (/organizations/:id) and new format (/organizations/:orgIdentifier)
+    const organizationId = req.organizationId || parseInt(req.params.id) || parseInt(req.params.orgIdentifier);
+    
+    if (!organizationId || isNaN(organizationId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid organization ID is required'
+      });
+    }
+    
     const organization = await prisma.organization.findUnique({
-      where: { id: parseInt(req.params.id) }
+      where: { id: organizationId }
     });
     
     // Check if organization exists

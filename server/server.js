@@ -223,9 +223,29 @@ app.post('/api/admin/fix-schema', async (req, res) => {
       ADD COLUMN IF NOT EXISTS "resetPasswordExpire" TIMESTAMPTZ(6)
     `;
     
+    // Add missing employeeName column to attendance table
+    await prisma.$executeRaw`
+      ALTER TABLE "attendances" 
+      ADD COLUMN IF NOT EXISTS "employeeName" VARCHAR(200)
+    `;
+    
+    // Update existing attendance records with employee names
+    await prisma.$executeRaw`
+      UPDATE "attendances" 
+      SET "employeeName" = "employees"."name"
+      FROM "employees"
+      WHERE "attendances"."employeeId" = "employees"."id" 
+      AND "attendances"."employeeName" IS NULL
+    `;
+    
     // Test the fix
     await prisma.user.findMany({
       where: { resetPasswordToken: { not: null } },
+      take: 1
+    });
+    
+    // Test attendance table fix
+    await prisma.attendance.findMany({
       take: 1
     });
     
